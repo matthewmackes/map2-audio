@@ -1174,6 +1174,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/audio/interfaces": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Audio Interfaces
+         * @description List every audio interface visible across PipeWire, AVB, and the cluster.
+         *
+         *     Each entry carries a stable `interface_id` so snapshots can bind to a
+         *     specific interface independently of PipeWire renaming or USB-port reshuffles.
+         */
+        get: operations["interfaces_list_audio_interfaces_get_api_audio_interfaces"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/audio/state/status": {
         parameters: {
             query?: never;
@@ -1303,8 +1326,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Sync Brain Into Audio State */
-        post: operations["audio_state_sync_brain_into_audio_state_post_api_audio_state_brain_sync"];
+        /** Sync Sequencer Into Audio State */
+        post: operations["audio_state_sync_sequencer_into_audio_state_post_api_audio_state_sequencer_sync"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2119,6 +2142,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/midi/chain-configs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Chain Configs
+         * @description List all chain Program Change bindings.
+         */
+        get: operations["midi_v2_list_chain_configs_get_api_v2_midi_chain_configs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/midi/chain-configs/{chain_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Upsert Chain Config
+         * @description Upsert the Program Change binding for a chain.
+         */
+        put: operations["midi_v2_upsert_chain_config_put_api_v2_midi_chain_configs_chain_id"];
+        post?: never;
+        /**
+         * Delete Chain Config
+         * @description Remove the Program Change binding for a chain.
+         */
+        delete: operations["midi_v2_delete_chain_config_delete_api_v2_midi_chain_configs_chain_id"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/midi/device-configs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Device Configs
+         * @description List persistent MIDI device configurations.
+         */
+        get: operations["midi_v2_list_device_configs_get_api_v2_midi_device_configs"];
+        put?: never;
+        /**
+         * Upsert Device Config
+         * @description Upsert a persistent MIDI device configuration (keyed by device_name).
+         */
+        post: operations["midi_v2_upsert_device_config_post_api_v2_midi_device_configs"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/midi/learn/start": {
         parameters: {
             query?: never;
@@ -2923,6 +3014,51 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/midi/legacy_retirement_status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * MIDI v1 legacy-route retirement schedule + flag state
+         * @description T2459-H5 Slice 15 — surface the retirement window state.
+         *
+         *     Returns the deprecation-window metadata operators need to schedule
+         *     their migration off the legacy `/api/v1/midi/...` mounts. The
+         *     endpoint lives under the v2 prefix so it survives the 410-Gone
+         *     flip.
+         */
+        get: operations["_midi_v1_retirement_get_midi_legacy_retirement_status_get_api_v2_midi_legacy_retirement_status"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/midi/ump/capabilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Ump Capabilities
+         * @description T2459-H5 Slice 16 — UMP / MIDI 2.0 capabilities envelope.
+         */
+        get: operations["midi_ump_capabilities_get_ump_capabilities_get_api_v2_midi_ump_capabilities"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/midi/hub/status": {
         parameters: {
             query?: never;
@@ -2930,7 +3066,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Hub Status */
+        /**
+         * Get Hub Status
+         * @deprecated
+         */
         get: operations["midi_hub_get_hub_status_get_api_midi_hub_status"];
         put?: never;
         post?: never;
@@ -2949,7 +3088,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Start Hub */
+        /**
+         * Start Hub
+         * @deprecated
+         */
         post: operations["midi_hub_start_hub_post_api_midi_hub_start"];
         delete?: never;
         options?: never;
@@ -2966,7 +3108,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Stop Hub */
+        /**
+         * Stop Hub
+         * @deprecated
+         */
         post: operations["midi_hub_stop_hub_post_api_midi_hub_stop"];
         delete?: never;
         options?: never;
@@ -2981,7 +3126,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Device Inventory */
+        /**
+         * Get Device Inventory
+         * @deprecated
+         */
         get: operations["midi_hub_get_device_inventory_get_api_midi_hub_devices"];
         put?: never;
         post?: never;
@@ -2998,10 +3146,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Device Profiles */
+        /**
+         * List Device Profiles
+         * @deprecated
+         */
         get: operations["midi_hub_list_device_profiles_get_api_midi_hub_devices_profiles"];
         put?: never;
-        /** Upsert Device Profile */
+        /**
+         * Upsert Device Profile
+         * @deprecated
+         */
         post: operations["midi_hub_upsert_device_profile_post_api_midi_hub_devices_profiles"];
         delete?: never;
         options?: never;
@@ -3016,11 +3170,17 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Device Profile */
+        /**
+         * Get Device Profile
+         * @deprecated
+         */
         get: operations["midi_hub_get_device_profile_get_api_midi_hub_devices_profiles_profile_id"];
         put?: never;
         post?: never;
-        /** Delete Device Profile */
+        /**
+         * Delete Device Profile
+         * @deprecated
+         */
         delete: operations["midi_hub_delete_device_profile_delete_api_midi_hub_devices_profiles_profile_id"];
         options?: never;
         head?: never;
@@ -3035,7 +3195,10 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Assign Device Port */
+        /**
+         * Assign Device Port
+         * @deprecated
+         */
         put: operations["midi_hub_assign_device_port_put_api_midi_hub_devices_assignments"];
         post?: never;
         delete?: never;
@@ -3054,8 +3217,76 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Clear Device Assignment */
+        /**
+         * Clear Device Assignment
+         * @deprecated
+         */
         delete: operations["midi_hub_clear_device_assignment_delete_api_midi_hub_devices_assignments_port_name"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/midi/hub/devices/{device_id}/bindings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Device Bindings
+         * @deprecated
+         */
+        get: operations["midi_hub_list_device_bindings_get_api_midi_hub_devices_device_id_bindings"];
+        put?: never;
+        /**
+         * Add Device Binding
+         * @deprecated
+         */
+        post: operations["midi_hub_add_device_binding_post_api_midi_hub_devices_device_id_bindings"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/midi/hub/devices/{device_id}/bindings/{consumer_type}/{consumer_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove Device Binding
+         * @deprecated
+         */
+        delete: operations["midi_hub_remove_device_binding_delete_api_midi_hub_devices_device_id_bindings_consumer_type_consumer_id"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/midi/hub/consumers/{consumer_type}/{consumer_id}/devices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Consumer Devices
+         * @deprecated
+         * @description Reverse-link: which devices are bound to this consumer?
+         */
+        get: operations["midi_hub_list_consumer_devices_get_api_midi_hub_consumers_consumer_type_consumer_id_devices"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -3068,10 +3299,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Routes */
+        /**
+         * List Routes
+         * @deprecated
+         */
         get: operations["midi_hub_list_routes_get_api_midi_hub_routes"];
         put?: never;
-        /** Create Route */
+        /**
+         * Create Route
+         * @deprecated
+         */
         post: operations["midi_hub_create_route_post_api_midi_hub_routes"];
         delete?: never;
         options?: never;
@@ -3087,10 +3324,16 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Update Route */
+        /**
+         * Update Route
+         * @deprecated
+         */
         put: operations["midi_hub_update_route_put_api_midi_hub_routes_route_id"];
         post?: never;
-        /** Delete Route */
+        /**
+         * Delete Route
+         * @deprecated
+         */
         delete: operations["midi_hub_delete_route_delete_api_midi_hub_routes_route_id"];
         options?: never;
         head?: never;
@@ -3106,7 +3349,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Enable Route */
+        /**
+         * Enable Route
+         * @deprecated
+         */
         post: operations["midi_hub_enable_route_post_api_midi_hub_routes_route_id_enable"];
         delete?: never;
         options?: never;
@@ -3123,7 +3369,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Disable Route */
+        /**
+         * Disable Route
+         * @deprecated
+         */
         post: operations["midi_hub_disable_route_post_api_midi_hub_routes_route_id_disable"];
         delete?: never;
         options?: never;
@@ -3138,7 +3387,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Topology */
+        /**
+         * Get Topology
+         * @deprecated
+         */
         get: operations["midi_hub_get_topology_get_api_midi_hub_topology"];
         put?: never;
         post?: never;
@@ -3155,7 +3407,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Transform Types */
+        /**
+         * Get Transform Types
+         * @deprecated
+         */
         get: operations["midi_hub_get_transform_types_get_api_midi_hub_transforms_types"];
         put?: never;
         post?: never;
@@ -3172,10 +3427,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Presets */
+        /**
+         * List Presets
+         * @deprecated
+         */
         get: operations["midi_hub_list_presets_get_api_midi_hub_presets"];
         put?: never;
-        /** Save Preset */
+        /**
+         * Save Preset
+         * @deprecated
+         */
         post: operations["midi_hub_save_preset_post_api_midi_hub_presets"];
         delete?: never;
         options?: never;
@@ -3192,7 +3453,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Recall Preset */
+        /**
+         * Recall Preset
+         * @deprecated
+         */
         post: operations["midi_hub_recall_preset_post_api_midi_hub_presets_preset_id_recall"];
         delete?: never;
         options?: never;
@@ -3207,11 +3471,17 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Preset */
+        /**
+         * Get Preset
+         * @deprecated
+         */
         get: operations["midi_hub_get_preset_get_api_midi_hub_presets_preset_id"];
         put?: never;
         post?: never;
-        /** Delete Preset */
+        /**
+         * Delete Preset
+         * @deprecated
+         */
         delete: operations["midi_hub_delete_preset_delete_api_midi_hub_presets_preset_id"];
         options?: never;
         head?: never;
@@ -3227,7 +3497,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Compare Presets */
+        /**
+         * Compare Presets
+         * @deprecated
+         */
         post: operations["midi_hub_compare_presets_post_api_midi_hub_presets_compare"];
         delete?: never;
         options?: never;
@@ -3244,7 +3517,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Export Preset */
+        /**
+         * Export Preset
+         * @deprecated
+         */
         post: operations["midi_hub_export_preset_post_api_midi_hub_presets_preset_id_export"];
         delete?: never;
         options?: never;
@@ -3261,7 +3537,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Import Preset */
+        /**
+         * Import Preset
+         * @deprecated
+         */
         post: operations["midi_hub_import_preset_post_api_midi_hub_presets_import"];
         delete?: never;
         options?: never;
@@ -3276,9 +3555,15 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Default Preset */
+        /**
+         * Get Default Preset
+         * @deprecated
+         */
         get: operations["midi_hub_get_default_preset_get_api_midi_hub_presets_default"];
-        /** Set Default Preset */
+        /**
+         * Set Default Preset
+         * @deprecated
+         */
         put: operations["midi_hub_set_default_preset_put_api_midi_hub_presets_default"];
         post?: never;
         delete?: never;
@@ -3296,7 +3581,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Recall Default Preset */
+        /**
+         * Recall Default Preset
+         * @deprecated
+         */
         post: operations["midi_hub_recall_default_preset_post_api_midi_hub_presets_default_recall"];
         delete?: never;
         options?: never;
@@ -3311,7 +3599,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Preset Chains */
+        /**
+         * Get Preset Chains
+         * @deprecated
+         */
         get: operations["midi_hub_get_preset_chains_get_api_midi_hub_presets_chains"];
         put?: never;
         post?: never;
@@ -3329,7 +3620,10 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Set Preset Chain */
+        /**
+         * Set Preset Chain
+         * @deprecated
+         */
         put: operations["midi_hub_set_preset_chain_put_api_midi_hub_presets_chains_chain_id"];
         post?: never;
         delete?: never;
@@ -3347,7 +3641,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Recall Preset Chain Step */
+        /**
+         * Recall Preset Chain Step
+         * @deprecated
+         */
         post: operations["midi_hub_recall_preset_chain_step_post_api_midi_hub_presets_chains_chain_id_recall_step_index"];
         delete?: never;
         options?: never;
@@ -3364,7 +3661,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Run Preset Chain */
+        /**
+         * Run Preset Chain
+         * @deprecated
+         */
         post: operations["midi_hub_run_preset_chain_post_api_midi_hub_presets_chains_chain_id_run"];
         delete?: never;
         options?: never;
@@ -3381,7 +3681,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Stop Preset Chain */
+        /**
+         * Stop Preset Chain
+         * @deprecated
+         */
         post: operations["midi_hub_stop_preset_chain_post_api_midi_hub_presets_chains_chain_id_stop"];
         delete?: never;
         options?: never;
@@ -3396,7 +3699,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Program Slots */
+        /**
+         * Get Program Slots
+         * @deprecated
+         */
         get: operations["midi_hub_get_program_slots_get_api_midi_hub_presets_slots"];
         put?: never;
         post?: never;
@@ -3414,10 +3720,16 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Set Program Slot */
+        /**
+         * Set Program Slot
+         * @deprecated
+         */
         put: operations["midi_hub_set_program_slot_put_api_midi_hub_presets_slots_program_number"];
         post?: never;
-        /** Delete Program Slot */
+        /**
+         * Delete Program Slot
+         * @deprecated
+         */
         delete: operations["midi_hub_delete_program_slot_delete_api_midi_hub_presets_slots_program_number"];
         options?: never;
         head?: never;
@@ -3433,7 +3745,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Evaluate Preset Context */
+        /**
+         * Evaluate Preset Context
+         * @deprecated
+         */
         post: operations["midi_hub_evaluate_preset_context_post_api_midi_hub_presets_context_evaluate"];
         delete?: never;
         options?: never;
@@ -3448,10 +3763,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Event Lists */
+        /**
+         * List Event Lists
+         * @deprecated
+         */
         get: operations["midi_hub_list_event_lists_get_api_midi_hub_events_lists"];
         put?: never;
-        /** Upsert Event List */
+        /**
+         * Upsert Event List
+         * @deprecated
+         */
         post: operations["midi_hub_upsert_event_list_post_api_midi_hub_events_lists"];
         delete?: never;
         options?: never;
@@ -3466,11 +3787,17 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Event List */
+        /**
+         * Get Event List
+         * @deprecated
+         */
         get: operations["midi_hub_get_event_list_get_api_midi_hub_events_lists_event_list_id"];
         put?: never;
         post?: never;
-        /** Delete Event List */
+        /**
+         * Delete Event List
+         * @deprecated
+         */
         delete: operations["midi_hub_delete_event_list_delete_api_midi_hub_events_lists_event_list_id"];
         options?: never;
         head?: never;
@@ -3486,7 +3813,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Start Event List */
+        /**
+         * Start Event List
+         * @deprecated
+         */
         post: operations["midi_hub_start_event_list_post_api_midi_hub_events_lists_event_list_id_start"];
         delete?: never;
         options?: never;
@@ -3503,7 +3833,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Stop Event List */
+        /**
+         * Stop Event List
+         * @deprecated
+         */
         post: operations["midi_hub_stop_event_list_post_api_midi_hub_events_lists_event_list_id_stop"];
         delete?: never;
         options?: never;
@@ -3518,7 +3851,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Event List Status */
+        /**
+         * Get Event List Status
+         * @deprecated
+         */
         get: operations["midi_hub_get_event_list_status_get_api_midi_hub_events_lists_event_list_id_status"];
         put?: never;
         post?: never;
@@ -3535,10 +3871,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Event List Events */
+        /**
+         * List Event List Events
+         * @deprecated
+         */
         get: operations["midi_hub_list_event_list_events_get_api_midi_hub_events_lists_event_list_id_events"];
         put?: never;
-        /** Upsert Event List Event */
+        /**
+         * Upsert Event List Event
+         * @deprecated
+         */
         post: operations["midi_hub_upsert_event_list_event_post_api_midi_hub_events_lists_event_list_id_events"];
         delete?: never;
         options?: never;
@@ -3556,7 +3898,10 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Delete Event List Event */
+        /**
+         * Delete Event List Event
+         * @deprecated
+         */
         delete: operations["midi_hub_delete_event_list_event_delete_api_midi_hub_events_lists_event_list_id_events_event_id"];
         options?: never;
         head?: never;
@@ -3571,7 +3916,10 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Set Event List Learn Mode */
+        /**
+         * Set Event List Learn Mode
+         * @deprecated
+         */
         put: operations["midi_hub_set_event_list_learn_mode_put_api_midi_hub_events_lists_event_list_id_learn"];
         post?: never;
         delete?: never;
@@ -3589,7 +3937,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Capture Event List Learn Mode */
+        /**
+         * Capture Event List Learn Mode
+         * @deprecated
+         */
         post: operations["midi_hub_capture_event_list_learn_mode_post_api_midi_hub_events_lists_event_list_id_learn_capture"];
         delete?: never;
         options?: never;
@@ -3606,7 +3957,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Send Msc Message */
+        /**
+         * Send Msc Message
+         * @deprecated
+         */
         post: operations["midi_hub_send_msc_message_post_api_midi_hub_events_msc_send"];
         delete?: never;
         options?: never;
@@ -3621,7 +3975,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Script Examples */
+        /**
+         * List Script Examples
+         * @deprecated
+         */
         get: operations["midi_hub_list_script_examples_get_api_midi_hub_scripts_examples"];
         put?: never;
         post?: never;
@@ -3638,10 +3995,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Scripts */
+        /**
+         * List Scripts
+         * @deprecated
+         */
         get: operations["midi_hub_list_scripts_get_api_midi_hub_scripts"];
         put?: never;
-        /** Upsert Script */
+        /**
+         * Upsert Script
+         * @deprecated
+         */
         post: operations["midi_hub_upsert_script_post_api_midi_hub_scripts"];
         delete?: never;
         options?: never;
@@ -3656,11 +4019,17 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Script */
+        /**
+         * Get Script
+         * @deprecated
+         */
         get: operations["midi_hub_get_script_get_api_midi_hub_scripts_script_id"];
         put?: never;
         post?: never;
-        /** Delete Script */
+        /**
+         * Delete Script
+         * @deprecated
+         */
         delete: operations["midi_hub_delete_script_delete_api_midi_hub_scripts_script_id"];
         options?: never;
         head?: never;
@@ -3676,7 +4045,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Enable Script */
+        /**
+         * Enable Script
+         * @deprecated
+         */
         post: operations["midi_hub_enable_script_post_api_midi_hub_scripts_script_id_enable"];
         delete?: never;
         options?: never;
@@ -3693,7 +4065,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Disable Script */
+        /**
+         * Disable Script
+         * @deprecated
+         */
         post: operations["midi_hub_disable_script_post_api_midi_hub_scripts_script_id_disable"];
         delete?: never;
         options?: never;
@@ -3710,7 +4085,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Run Script */
+        /**
+         * Run Script
+         * @deprecated
+         */
         post: operations["midi_hub_run_script_post_api_midi_hub_scripts_script_id_run"];
         delete?: never;
         options?: never;
@@ -3727,7 +4105,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Trigger Script */
+        /**
+         * Trigger Script
+         * @deprecated
+         */
         post: operations["midi_hub_trigger_script_post_api_midi_hub_scripts_script_id_trigger"];
         delete?: never;
         options?: never;
@@ -3744,7 +4125,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Stop Script */
+        /**
+         * Stop Script
+         * @deprecated
+         */
         post: operations["midi_hub_stop_script_post_api_midi_hub_scripts_script_id_stop"];
         delete?: never;
         options?: never;
@@ -3759,7 +4143,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Script Console */
+        /**
+         * Get Script Console
+         * @deprecated
+         */
         get: operations["midi_hub_get_script_console_get_api_midi_hub_scripts_script_id_console"];
         put?: never;
         post?: never;
@@ -3776,9 +4163,15 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Clock Status */
+        /**
+         * Get Clock Status
+         * @deprecated
+         */
         get: operations["midi_hub_get_clock_status_get_api_midi_hub_clock"];
-        /** Configure Clock */
+        /**
+         * Configure Clock
+         * @deprecated
+         */
         put: operations["midi_hub_configure_clock_put_api_midi_hub_clock"];
         post?: never;
         delete?: never;
@@ -3796,7 +4189,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Tap Clock */
+        /**
+         * Tap Clock
+         * @deprecated
+         */
         post: operations["midi_hub_tap_clock_post_api_midi_hub_clock_tap"];
         delete?: never;
         options?: never;
@@ -3813,7 +4209,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Start Clock */
+        /**
+         * Start Clock
+         * @deprecated
+         */
         post: operations["midi_hub_start_clock_post_api_midi_hub_clock_start"];
         delete?: never;
         options?: never;
@@ -3830,7 +4229,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Stop Clock */
+        /**
+         * Stop Clock
+         * @deprecated
+         */
         post: operations["midi_hub_stop_clock_post_api_midi_hub_clock_stop"];
         delete?: never;
         options?: never;
@@ -3847,7 +4249,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Continue Clock */
+        /**
+         * Continue Clock
+         * @deprecated
+         */
         post: operations["midi_hub_continue_clock_post_api_midi_hub_clock_continue"];
         delete?: never;
         options?: never;
@@ -3862,10 +4267,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Network Sessions */
+        /**
+         * List Network Sessions
+         * @deprecated
+         */
         get: operations["midi_hub_list_network_sessions_get_api_midi_hub_network_sessions"];
         put?: never;
-        /** Create Network Session */
+        /**
+         * Create Network Session
+         * @deprecated
+         */
         post: operations["midi_hub_create_network_session_post_api_midi_hub_network_sessions"];
         delete?: never;
         options?: never;
@@ -3883,7 +4294,10 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Delete Network Session */
+        /**
+         * Delete Network Session
+         * @deprecated
+         */
         delete: operations["midi_hub_delete_network_session_delete_api_midi_hub_network_sessions_session_id"];
         options?: never;
         head?: never;
@@ -3899,7 +4313,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Send Network Midi */
+        /**
+         * Send Network Midi
+         * @deprecated
+         */
         post: operations["midi_hub_send_network_midi_post_api_midi_hub_network_sessions_session_id_send"];
         delete?: never;
         options?: never;
@@ -3914,9 +4331,15 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Osc Mappings */
+        /**
+         * Get Osc Mappings
+         * @deprecated
+         */
         get: operations["midi_hub_get_osc_mappings_get_api_midi_hub_network_osc_mappings"];
-        /** Set Osc Mappings */
+        /**
+         * Set Osc Mappings
+         * @deprecated
+         */
         put: operations["midi_hub_set_osc_mappings_put_api_midi_hub_network_osc_mappings"];
         post?: never;
         delete?: never;
@@ -3934,9 +4357,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Start Osc Server */
+        /**
+         * Start Osc Server
+         * @deprecated
+         */
         post: operations["midi_hub_start_osc_server_post_api_midi_hub_network_osc_server"];
-        /** Stop Osc Server */
+        /**
+         * Stop Osc Server
+         * @deprecated
+         */
         delete: operations["midi_hub_stop_osc_server_delete_api_midi_hub_network_osc_server"];
         options?: never;
         head?: never;
@@ -3952,7 +4381,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Send Osc */
+        /**
+         * Send Osc
+         * @deprecated
+         */
         post: operations["midi_hub_send_osc_post_api_midi_hub_network_osc_send"];
         delete?: never;
         options?: never;
@@ -3967,7 +4399,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Osc Namespace */
+        /**
+         * Get Osc Namespace
+         * @deprecated
+         */
         get: operations["midi_hub_get_osc_namespace_get_api_midi_hub_network_osc_namespace"];
         put?: never;
         post?: never;
@@ -3986,7 +4421,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Dispatch Osc Namespace */
+        /**
+         * Dispatch Osc Namespace
+         * @deprecated
+         */
         post: operations["midi_hub_dispatch_osc_namespace_post_api_midi_hub_network_osc_namespace_dispatch"];
         delete?: never;
         options?: never;
@@ -4001,9 +4439,15 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Midi2 Status */
+        /**
+         * Get Midi2 Status
+         * @deprecated
+         */
         get: operations["midi_hub_get_midi2_status_get_api_midi_hub_midi2"];
-        /** Configure Midi2 */
+        /**
+         * Configure Midi2
+         * @deprecated
+         */
         put: operations["midi_hub_configure_midi2_put_api_midi_hub_midi2"];
         post?: never;
         delete?: never;
@@ -4021,7 +4465,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Discover Midi2 Device */
+        /**
+         * Discover Midi2 Device
+         * @deprecated
+         */
         post: operations["midi_hub_discover_midi2_device_post_api_midi_hub_midi2_discover"];
         delete?: never;
         options?: never;
@@ -4038,7 +4485,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Translate Midi1 To Ump */
+        /**
+         * Translate Midi1 To Ump
+         * @deprecated
+         */
         post: operations["midi_hub_translate_midi1_to_ump_post_api_midi_hub_midi2_translate_midi1_to_ump"];
         delete?: never;
         options?: never;
@@ -4055,7 +4505,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Translate Ump To Midi1 */
+        /**
+         * Translate Ump To Midi1
+         * @deprecated
+         */
         post: operations["midi_hub_translate_ump_to_midi1_post_api_midi_hub_midi2_translate_ump_to_midi1"];
         delete?: never;
         options?: never;
@@ -4072,7 +4525,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Inspect Ump */
+        /**
+         * Inspect Ump
+         * @deprecated
+         */
         post: operations["midi_hub_inspect_ump_post_api_midi_hub_midi2_translate_inspect_ump"];
         delete?: never;
         options?: never;
@@ -4088,7 +4544,10 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Set Midi2 Profile */
+        /**
+         * Set Midi2 Profile
+         * @deprecated
+         */
         put: operations["midi_hub_set_midi2_profile_put_api_midi_hub_midi2_device_id_profiles"];
         post?: never;
         delete?: never;
@@ -4106,7 +4565,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Inquire Midi2 Profiles */
+        /**
+         * Inquire Midi2 Profiles
+         * @deprecated
+         */
         post: operations["midi_hub_inquire_midi2_profiles_post_api_midi_hub_midi2_device_id_profiles_inquiry"];
         delete?: never;
         options?: never;
@@ -4123,7 +4585,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Inquire Midi2 Profile Details */
+        /**
+         * Inquire Midi2 Profile Details
+         * @deprecated
+         */
         post: operations["midi_hub_inquire_midi2_profile_details_post_api_midi_hub_midi2_device_id_profiles_details"];
         delete?: never;
         options?: never;
@@ -4140,7 +4605,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Inquire Midi2 Property Exchange Capabilities */
+        /**
+         * Inquire Midi2 Property Exchange Capabilities
+         * @deprecated
+         */
         post: operations["midi_hub_inquire_midi2_property_exchange_capabilities_post_api_midi_hub_midi2_device_id_property_exchange_capabilities"];
         delete?: never;
         options?: never;
@@ -4157,7 +4625,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Invalidate Midi2 Device */
+        /**
+         * Invalidate Midi2 Device
+         * @deprecated
+         */
         post: operations["midi_hub_invalidate_midi2_device_post_api_midi_hub_midi2_device_id_invalidate"];
         delete?: never;
         options?: never;
@@ -4174,7 +4645,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Subscribe Midi2 Property */
+        /**
+         * Subscribe Midi2 Property
+         * @deprecated
+         */
         post: operations["midi_hub_subscribe_midi2_property_post_api_midi_hub_midi2_device_id_subscriptions"];
         delete?: never;
         options?: never;
@@ -4191,7 +4665,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** End Midi2 Subscription */
+        /**
+         * End Midi2 Subscription
+         * @deprecated
+         */
         post: operations["midi_hub_end_midi2_subscription_post_api_midi_hub_midi2_device_id_subscriptions_subscribe_id_end"];
         delete?: never;
         options?: never;
@@ -4207,7 +4684,10 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Set Midi2 Property */
+        /**
+         * Set Midi2 Property
+         * @deprecated
+         */
         put: operations["midi_hub_set_midi2_property_put_api_midi_hub_midi2_device_id_properties"];
         post?: never;
         delete?: never;
@@ -4225,7 +4705,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Read Midi2 Property */
+        /**
+         * Read Midi2 Property
+         * @deprecated
+         */
         post: operations["midi_hub_read_midi2_property_post_api_midi_hub_midi2_device_id_properties_read"];
         delete?: never;
         options?: never;
@@ -4240,7 +4723,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Midi2 Property */
+        /**
+         * Get Midi2 Property
+         * @deprecated
+         */
         get: operations["midi_hub_get_midi2_property_get_api_midi_hub_midi2_device_id_properties_key"];
         put?: never;
         post?: never;
@@ -4257,7 +4743,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Tesira Status */
+        /**
+         * Get Tesira Status
+         * @deprecated
+         */
         get: operations["midi_hub_get_tesira_status_get_api_midi_hub_tesira"];
         put?: never;
         post?: never;
@@ -4276,7 +4765,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Connect Tesira */
+        /**
+         * Connect Tesira
+         * @deprecated
+         */
         post: operations["midi_hub_connect_tesira_post_api_midi_hub_tesira_connect"];
         delete?: never;
         options?: never;
@@ -4293,7 +4785,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Disconnect Tesira */
+        /**
+         * Disconnect Tesira
+         * @deprecated
+         */
         post: operations["midi_hub_disconnect_tesira_post_api_midi_hub_tesira_disconnect"];
         delete?: never;
         options?: never;
@@ -4310,7 +4805,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Send Tesira Command */
+        /**
+         * Send Tesira Command
+         * @deprecated
+         */
         post: operations["midi_hub_send_tesira_command_post_api_midi_hub_tesira_command"];
         delete?: never;
         options?: never;
@@ -4325,7 +4823,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Tesira Aliases */
+        /**
+         * List Tesira Aliases
+         * @deprecated
+         */
         get: operations["midi_hub_list_tesira_aliases_get_api_midi_hub_tesira_aliases"];
         put?: never;
         post?: never;
@@ -4342,7 +4843,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Tesira Device Info */
+        /**
+         * Tesira Device Info
+         * @deprecated
+         */
         get: operations["midi_hub_tesira_device_info_get_api_midi_hub_tesira_device_info"];
         put?: never;
         post?: never;
@@ -4360,7 +4864,10 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Set Tesira Level */
+        /**
+         * Set Tesira Level
+         * @deprecated
+         */
         put: operations["midi_hub_set_tesira_level_put_api_midi_hub_tesira_controls_level"];
         post?: never;
         delete?: never;
@@ -4377,7 +4884,10 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Set Tesira Mute */
+        /**
+         * Set Tesira Mute
+         * @deprecated
+         */
         put: operations["midi_hub_set_tesira_mute_put_api_midi_hub_tesira_controls_mute"];
         post?: never;
         delete?: never;
@@ -4393,7 +4903,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Tesira Matrix Status */
+        /**
+         * Tesira Matrix Status
+         * @deprecated
+         */
         get: operations["midi_hub_tesira_matrix_status_get_api_midi_hub_tesira_matrix"];
         put?: never;
         post?: never;
@@ -4412,7 +4925,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Recall Tesira Preset */
+        /**
+         * Recall Tesira Preset
+         * @deprecated
+         */
         post: operations["midi_hub_recall_tesira_preset_post_api_midi_hub_tesira_presets_recall"];
         delete?: never;
         options?: never;
@@ -4429,7 +4945,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Save Tesira Preset */
+        /**
+         * Save Tesira Preset
+         * @deprecated
+         */
         post: operations["midi_hub_save_tesira_preset_post_api_midi_hub_tesira_presets_save"];
         delete?: never;
         options?: never;
@@ -4444,10 +4963,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Tesira Subscriptions */
+        /**
+         * List Tesira Subscriptions
+         * @deprecated
+         */
         get: operations["midi_hub_list_tesira_subscriptions_get_api_midi_hub_tesira_subscriptions"];
         put?: never;
-        /** Create Tesira Subscription */
+        /**
+         * Create Tesira Subscription
+         * @deprecated
+         */
         post: operations["midi_hub_create_tesira_subscription_post_api_midi_hub_tesira_subscriptions"];
         delete?: never;
         options?: never;
@@ -4465,7 +4990,10 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Delete Tesira Subscription */
+        /**
+         * Delete Tesira Subscription
+         * @deprecated
+         */
         delete: operations["midi_hub_delete_tesira_subscription_delete_api_midi_hub_tesira_subscriptions_token"];
         options?: never;
         head?: never;
@@ -4479,7 +5007,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Virtual Gpio */
+        /**
+         * Get Virtual Gpio
+         * @deprecated
+         */
         get: operations["midi_hub_get_virtual_gpio_get_api_midi_hub_gpio"];
         put?: never;
         post?: never;
@@ -4497,7 +5028,10 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Set Virtual Gpio Label */
+        /**
+         * Set Virtual Gpio Label
+         * @deprecated
+         */
         put: operations["midi_hub_set_virtual_gpio_label_put_api_midi_hub_gpio_channel_id_label"];
         post?: never;
         delete?: never;
@@ -4514,7 +5048,10 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Set Virtual Gpio State */
+        /**
+         * Set Virtual Gpio State
+         * @deprecated
+         */
         put: operations["midi_hub_set_virtual_gpio_state_put_api_midi_hub_gpio_channel_id_state"];
         post?: never;
         delete?: never;
@@ -4532,7 +5069,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Toggle Virtual Gpio State */
+        /**
+         * Toggle Virtual Gpio State
+         * @deprecated
+         */
         post: operations["midi_hub_toggle_virtual_gpio_state_post_api_midi_hub_gpio_channel_id_toggle"];
         delete?: never;
         options?: never;
@@ -4547,9 +5087,15 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get String Interface Status */
+        /**
+         * Get String Interface Status
+         * @deprecated
+         */
         get: operations["midi_hub_get_string_interface_status_get_api_midi_hub_string_interface"];
-        /** Configure String Interface */
+        /**
+         * Configure String Interface
+         * @deprecated
+         */
         put: operations["midi_hub_configure_string_interface_put_api_midi_hub_string_interface"];
         post?: never;
         delete?: never;
@@ -4567,7 +5113,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Send String Interface Command */
+        /**
+         * Send String Interface Command
+         * @deprecated
+         */
         post: operations["midi_hub_send_string_interface_command_post_api_midi_hub_string_interface_send"];
         delete?: never;
         options?: never;
@@ -4584,7 +5133,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Receive String Interface Command */
+        /**
+         * Receive String Interface Command
+         * @deprecated
+         */
         post: operations["midi_hub_receive_string_interface_command_post_api_midi_hub_string_interface_receive"];
         delete?: never;
         options?: never;
@@ -4601,7 +5153,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Clear String Interface Logs */
+        /**
+         * Clear String Interface Logs
+         * @deprecated
+         */
         post: operations["midi_hub_clear_string_interface_logs_post_api_midi_hub_string_interface_clear"];
         delete?: never;
         options?: never;
@@ -4618,7 +5173,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Get Learn Suggestions */
+        /**
+         * Get Learn Suggestions
+         * @deprecated
+         */
         post: operations["midi_hub_get_learn_suggestions_post_api_midi_hub_learn_suggestions"];
         delete?: never;
         options?: never;
@@ -4633,7 +5191,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Message Mapper Slots */
+        /**
+         * List Message Mapper Slots
+         * @deprecated
+         */
         get: operations["midi_hub_list_message_mapper_slots_get_api_midi_hub_processing_mappers"];
         put?: never;
         post?: never;
@@ -4651,7 +5212,10 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Upsert Message Mapper Slot */
+        /**
+         * Upsert Message Mapper Slot
+         * @deprecated
+         */
         put: operations["midi_hub_upsert_message_mapper_slot_put_api_midi_hub_processing_mappers_slot_id"];
         post?: never;
         delete?: never;
@@ -4669,7 +5233,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Clear Message Mapper Slot */
+        /**
+         * Clear Message Mapper Slot
+         * @deprecated
+         */
         post: operations["midi_hub_clear_message_mapper_slot_post_api_midi_hub_processing_mappers_slot_id_clear"];
         delete?: never;
         options?: never;
@@ -4686,7 +5253,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Reset Message Mapper Slots */
+        /**
+         * Reset Message Mapper Slots
+         * @deprecated
+         */
         post: operations["midi_hub_reset_message_mapper_slots_post_api_midi_hub_processing_mappers_reset"];
         delete?: never;
         options?: never;
@@ -4701,10 +5271,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Macros */
+        /**
+         * List Macros
+         * @deprecated
+         */
         get: operations["midi_hub_list_macros_get_api_midi_hub_macros"];
         put?: never;
-        /** Upsert Macro */
+        /**
+         * Upsert Macro
+         * @deprecated
+         */
         post: operations["midi_hub_upsert_macro_post_api_midi_hub_macros"];
         delete?: never;
         options?: never;
@@ -4719,11 +5295,17 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Macro */
+        /**
+         * Get Macro
+         * @deprecated
+         */
         get: operations["midi_hub_get_macro_get_api_midi_hub_macros_macro_id"];
         put?: never;
         post?: never;
-        /** Delete Macro */
+        /**
+         * Delete Macro
+         * @deprecated
+         */
         delete: operations["midi_hub_delete_macro_delete_api_midi_hub_macros_macro_id"];
         options?: never;
         head?: never;
@@ -4739,7 +5321,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Trigger Macro */
+        /**
+         * Trigger Macro
+         * @deprecated
+         */
         post: operations["midi_hub_trigger_macro_post_api_midi_hub_macros_macro_id_trigger"];
         delete?: never;
         options?: never;
@@ -4756,7 +5341,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Match Macros */
+        /**
+         * Match Macros
+         * @deprecated
+         */
         post: operations["midi_hub_match_macros_post_api_midi_hub_macros_match"];
         delete?: never;
         options?: never;
@@ -4771,7 +5359,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Recording Sessions */
+        /**
+         * List Recording Sessions
+         * @deprecated
+         */
         get: operations["midi_hub_list_recording_sessions_get_api_midi_hub_recorder_sessions"];
         put?: never;
         post?: never;
@@ -4788,11 +5379,17 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Recording Session */
+        /**
+         * Get Recording Session
+         * @deprecated
+         */
         get: operations["midi_hub_get_recording_session_get_api_midi_hub_recorder_sessions_session_id"];
         put?: never;
         post?: never;
-        /** Delete Recording Session */
+        /**
+         * Delete Recording Session
+         * @deprecated
+         */
         delete: operations["midi_hub_delete_recording_session_delete_api_midi_hub_recorder_sessions_session_id"];
         options?: never;
         head?: never;
@@ -4808,7 +5405,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Start Recording */
+        /**
+         * Start Recording
+         * @deprecated
+         */
         post: operations["midi_hub_start_recording_post_api_midi_hub_recorder_start"];
         delete?: never;
         options?: never;
@@ -4825,7 +5425,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Stop Recording */
+        /**
+         * Stop Recording
+         * @deprecated
+         */
         post: operations["midi_hub_stop_recording_post_api_midi_hub_recorder_stop"];
         delete?: never;
         options?: never;
@@ -4842,7 +5445,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Playback Recording Session */
+        /**
+         * Playback Recording Session
+         * @deprecated
+         */
         post: operations["midi_hub_playback_recording_session_post_api_midi_hub_recorder_sessions_session_id_playback"];
         delete?: never;
         options?: never;
@@ -4859,7 +5465,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Stop Recording Playback */
+        /**
+         * Stop Recording Playback
+         * @deprecated
+         */
         post: operations["midi_hub_stop_recording_playback_post_api_midi_hub_recorder_sessions_session_id_stop"];
         delete?: never;
         options?: never;
@@ -4876,7 +5485,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Export Recording Session */
+        /**
+         * Export Recording Session
+         * @deprecated
+         */
         post: operations["midi_hub_export_recording_session_post_api_midi_hub_recorder_sessions_session_id_export"];
         delete?: never;
         options?: never;
@@ -4891,10 +5503,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Scheduler Entries */
+        /**
+         * List Scheduler Entries
+         * @deprecated
+         */
         get: operations["midi_hub_list_scheduler_entries_get_api_midi_hub_scheduler"];
         put?: never;
-        /** Create Scheduler Entry */
+        /**
+         * Create Scheduler Entry
+         * @deprecated
+         */
         post: operations["midi_hub_create_scheduler_entry_post_api_midi_hub_scheduler"];
         delete?: never;
         options?: never;
@@ -4909,12 +5527,21 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Scheduler Entry */
+        /**
+         * Get Scheduler Entry
+         * @deprecated
+         */
         get: operations["midi_hub_get_scheduler_entry_get_api_midi_hub_scheduler_schedule_id"];
-        /** Update Scheduler Entry */
+        /**
+         * Update Scheduler Entry
+         * @deprecated
+         */
         put: operations["midi_hub_update_scheduler_entry_put_api_midi_hub_scheduler_schedule_id"];
         post?: never;
-        /** Cancel Scheduler Entry */
+        /**
+         * Cancel Scheduler Entry
+         * @deprecated
+         */
         delete: operations["midi_hub_cancel_scheduler_entry_delete_api_midi_hub_scheduler_schedule_id"];
         options?: never;
         head?: never;
@@ -4930,7 +5557,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Clear Finished Scheduler Entries */
+        /**
+         * Clear Finished Scheduler Entries
+         * @deprecated
+         */
         post: operations["midi_hub_clear_finished_scheduler_entries_post_api_midi_hub_scheduler_clear_finished"];
         delete?: never;
         options?: never;
@@ -4945,7 +5575,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Mesh Status */
+        /**
+         * Get Mesh Status
+         * @deprecated
+         */
         get: operations["midi_hub_get_mesh_status_get_api_midi_hub_network_mesh"];
         put?: never;
         post?: never;
@@ -4964,7 +5597,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Upsert Mesh Peer */
+        /**
+         * Upsert Mesh Peer
+         * @deprecated
+         */
         post: operations["midi_hub_upsert_mesh_peer_post_api_midi_hub_network_mesh_peers"];
         delete?: never;
         options?: never;
@@ -4982,7 +5618,10 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Delete Mesh Peer */
+        /**
+         * Delete Mesh Peer
+         * @deprecated
+         */
         delete: operations["midi_hub_delete_mesh_peer_delete_api_midi_hub_network_mesh_peers_peer_id"];
         options?: never;
         head?: never;
@@ -4997,7 +5636,10 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Set Mesh Forwarding */
+        /**
+         * Set Mesh Forwarding
+         * @deprecated
+         */
         put: operations["midi_hub_set_mesh_forwarding_put_api_midi_hub_network_mesh_forwarding"];
         post?: never;
         delete?: never;
@@ -5015,7 +5657,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Publish Mesh Routes */
+        /**
+         * Publish Mesh Routes
+         * @deprecated
+         */
         post: operations["midi_hub_publish_mesh_routes_post_api_midi_hub_network_mesh_routes"];
         delete?: never;
         options?: never;
@@ -5032,7 +5677,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Receive Mesh Forward */
+        /**
+         * Receive Mesh Forward
+         * @deprecated
+         */
         post: operations["midi_hub_receive_mesh_forward_post_api_midi_hub_network_mesh_forward"];
         delete?: never;
         options?: never;
@@ -5047,7 +5695,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Shadow Drift */
+        /**
+         * List Shadow Drift
+         * @deprecated
+         */
         get: operations["midi_hub_list_shadow_drift_get_api_midi_hub_devices_shadow"];
         put?: never;
         post?: never;
@@ -5065,7 +5716,10 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Upsert Shadow State */
+        /**
+         * Upsert Shadow State
+         * @deprecated
+         */
         put: operations["midi_hub_upsert_shadow_state_put_api_midi_hub_devices_device_id_shadow"];
         post?: never;
         delete?: never;
@@ -5083,7 +5737,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Clear Shadow Drift */
+        /**
+         * Clear Shadow Drift
+         * @deprecated
+         */
         post: operations["midi_hub_clear_shadow_drift_post_api_midi_hub_devices_shadow_clear"];
         delete?: never;
         options?: never;
@@ -5098,7 +5755,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Traffic Snapshot */
+        /**
+         * Get Traffic Snapshot
+         * @deprecated
+         */
         get: operations["midi_hub_get_traffic_snapshot_get_api_midi_hub_traffic_snapshot"];
         put?: never;
         post?: never;
@@ -5115,7 +5775,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Traffic Stats */
+        /**
+         * Get Traffic Stats
+         * @deprecated
+         */
         get: operations["midi_hub_get_traffic_stats_get_api_midi_hub_traffic_stats"];
         put?: never;
         post?: never;
@@ -5134,7 +5797,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Export Traffic */
+        /**
+         * Export Traffic
+         * @deprecated
+         */
         post: operations["midi_hub_export_traffic_post_api_midi_hub_traffic_export"];
         delete?: never;
         options?: never;
@@ -5151,7 +5817,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Clear Traffic */
+        /**
+         * Clear Traffic
+         * @deprecated
+         */
         post: operations["midi_hub_clear_traffic_post_api_midi_hub_traffic_clear"];
         delete?: never;
         options?: never;
@@ -5166,7 +5835,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Cluster Nodes */
+        /**
+         * List Cluster Nodes
+         * @deprecated
+         */
         get: operations["midi_cluster_list_cluster_nodes_get_api_midi_cluster_nodes"];
         put?: never;
         post?: never;
@@ -5183,7 +5855,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Cluster Node */
+        /**
+         * Get Cluster Node
+         * @deprecated
+         */
         get: operations["midi_cluster_get_cluster_node_get_api_midi_cluster_nodes_node_id"];
         put?: never;
         post?: never;
@@ -5200,7 +5875,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Cluster Node Ports */
+        /**
+         * Get Cluster Node Ports
+         * @deprecated
+         */
         get: operations["midi_cluster_get_cluster_node_ports_get_api_midi_cluster_nodes_node_id_ports"];
         put?: never;
         post?: never;
@@ -5217,7 +5895,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Cluster Endpoints */
+        /**
+         * List Cluster Endpoints
+         * @deprecated
+         */
         get: operations["midi_cluster_list_cluster_endpoints_get_api_midi_cluster_endpoints"];
         put?: never;
         post?: never;
@@ -5234,7 +5915,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Cluster Summary */
+        /**
+         * Get Cluster Summary
+         * @deprecated
+         */
         get: operations["midi_cluster_get_cluster_summary_get_api_midi_cluster_summary"];
         put?: never;
         post?: never;
@@ -5251,10 +5935,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Cluster Connections */
+        /**
+         * List Cluster Connections
+         * @deprecated
+         */
         get: operations["midi_cluster_list_cluster_connections_get_api_midi_cluster_connections"];
         put?: never;
-        /** Create Cluster Connection */
+        /**
+         * Create Cluster Connection
+         * @deprecated
+         */
         post: operations["midi_cluster_create_cluster_connection_post_api_midi_cluster_connections"];
         delete?: never;
         options?: never;
@@ -5271,7 +5961,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Run Cluster Auto Connect */
+        /**
+         * Run Cluster Auto Connect
+         * @deprecated
+         */
         post: operations["midi_cluster_run_cluster_auto_connect_post_api_midi_cluster_connections_auto_connect"];
         delete?: never;
         options?: never;
@@ -5286,7 +5979,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Cluster Auto Connect Status */
+        /**
+         * Get Cluster Auto Connect Status
+         * @deprecated
+         */
         get: operations["midi_cluster_get_cluster_auto_connect_status_get_api_midi_cluster_connections_auto_connect_status"];
         put?: never;
         post?: never;
@@ -5303,11 +5999,17 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Cluster Connection */
+        /**
+         * Get Cluster Connection
+         * @deprecated
+         */
         get: operations["midi_cluster_get_cluster_connection_get_api_midi_cluster_connections_connection_id"];
         put?: never;
         post?: never;
-        /** Delete Cluster Connection */
+        /**
+         * Delete Cluster Connection
+         * @deprecated
+         */
         delete: operations["midi_cluster_delete_cluster_connection_delete_api_midi_cluster_connections_connection_id"];
         options?: never;
         head?: never;
@@ -5321,7 +6023,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Cluster Clock Drift */
+        /**
+         * Get Cluster Clock Drift
+         * @deprecated
+         */
         get: operations["midi_cluster_get_cluster_clock_drift_get_api_midi_cluster_clock_drift"];
         put?: never;
         post?: never;
@@ -5338,7 +6043,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Cluster Clock */
+        /**
+         * Get Cluster Clock
+         * @deprecated
+         */
         get: operations["midi_cluster_get_cluster_clock_get_api_midi_cluster_clock"];
         put?: never;
         post?: never;
@@ -5356,7 +6064,10 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Update Cluster Clock Strategy */
+        /**
+         * Update Cluster Clock Strategy
+         * @deprecated
+         */
         put: operations["midi_cluster_update_cluster_clock_strategy_put_api_midi_cluster_clock_strategy"];
         post?: never;
         delete?: never;
@@ -5374,7 +6085,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Sync Cluster Clock */
+        /**
+         * Sync Cluster Clock
+         * @deprecated
+         */
         post: operations["midi_cluster_sync_cluster_clock_post_api_midi_cluster_clock_sync"];
         delete?: never;
         options?: never;
@@ -5389,7 +6103,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Cluster Devices */
+        /**
+         * Get Cluster Devices
+         * @deprecated
+         */
         get: operations["midi_cluster_get_cluster_devices_get_api_midi_cluster_devices"];
         put?: never;
         post?: never;
@@ -5406,7 +6123,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Cluster Node Devices */
+        /**
+         * Get Cluster Node Devices
+         * @deprecated
+         */
         get: operations["midi_cluster_get_cluster_node_devices_get_api_midi_cluster_devices_node_id"];
         put?: never;
         post?: never;
@@ -5425,7 +6145,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Failover Cluster Port */
+        /**
+         * Failover Cluster Port
+         * @deprecated
+         */
         post: operations["midi_cluster_failover_cluster_port_post_api_midi_cluster_devices_failover_port_name"];
         delete?: never;
         options?: never;
@@ -5440,7 +6163,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Cluster Health */
+        /**
+         * Get Cluster Health
+         * @deprecated
+         */
         get: operations["midi_cluster_get_cluster_health_get_api_midi_cluster_health"];
         put?: never;
         post?: never;
@@ -5450,26 +6176,536 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/midi/cluster/proxy/nodes/{node_id}/hub/{path}": {
+    "/api/midi/cluster/settings": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Proxy Midi Hub */
-        get: operations["midi_cluster_proxy_proxy_midi_hub_delete_get_options_patch_post_put_api_midi_cluster_proxy_nodes_node_id_hub_path"];
-        /** Proxy Midi Hub */
-        put: operations["midi_cluster_proxy_proxy_midi_hub_delete_get_options_patch_post_put_api_midi_cluster_proxy_nodes_node_id_hub_path"];
-        /** Proxy Midi Hub */
-        post: operations["midi_cluster_proxy_proxy_midi_hub_delete_get_options_patch_post_put_api_midi_cluster_proxy_nodes_node_id_hub_path"];
-        /** Proxy Midi Hub */
-        delete: operations["midi_cluster_proxy_proxy_midi_hub_delete_get_options_patch_post_put_api_midi_cluster_proxy_nodes_node_id_hub_path"];
-        /** Proxy Midi Hub */
-        options: operations["midi_cluster_proxy_proxy_midi_hub_delete_get_options_patch_post_put_api_midi_cluster_proxy_nodes_node_id_hub_path"];
+        /**
+         * Get Cluster Settings
+         * @deprecated
+         * @description Read the current values of the two cluster MIDI gates.
+         *
+         *     `midi.cluster.enabled` is the master switch — when False, the
+         *     cluster MIDI router is fully disabled. `midi.cluster.auto_connect`
+         *     is the per-peer auto-pair switch — when True (and enabled is also
+         *     True), discovered peer ports are automatically paired with local
+         *     ports on `midi.node.discovered`. Both default to False per the
+         *     fail-closed posture asserted in
+         *     `tests/test_cluster_midi_foundation.py::test_cluster_midi_defaults_fail_closed`.
+         */
+        get: operations["midi_cluster_get_cluster_settings_get_api_midi_cluster_settings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
         head?: never;
-        /** Proxy Midi Hub */
-        patch: operations["midi_cluster_proxy_proxy_midi_hub_delete_get_options_patch_post_put_api_midi_cluster_proxy_nodes_node_id_hub_path"];
+        /**
+         * Update Cluster Settings
+         * @deprecated
+         * @description T2486-1 — partial update of the cluster MIDI gates.
+         *
+         *     Only the fields explicitly set on the payload are written. Schema
+         *     defaults (False/False) remain the on-disk default unless the
+         *     operator explicitly opts in here. The Carbon Modal in
+         *     MidiServicesNetworkPage uses the coupled-flip flow: enabling
+         *     `enabled` prompts the operator to also enable `auto_connect` (Q2
+         *     locked decision in PROJECT_WORKLIST.md T2486 entry).
+         *
+         *     T2486-3 — emits midi.cluster.enabled.changed and
+         *     midi.cluster.auto_connect.changed PlatformEvents on operator
+         *     flips. Programmatic config writes that don't hit this route are
+         *     NOT audited — only operator-initiated changes via the UI flow.
+         */
+        patch: operations["midi_cluster_update_cluster_settings_patch_api_midi_cluster_settings"];
+        trace?: never;
+    };
+    "/api/midi-learn/learn/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Learn
+         * @deprecated
+         * @description Start MIDI learn mode for a parameter
+         *
+         *     Query parameters:
+         *     - parameter_id: Parameter to assign (e.g., "plugin_1:0")
+         *
+         *     Returns:
+         *         Learn mode status
+         */
+        post: operations["midi_learn_start_learn_post_api_midi_learn_learn_start"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/midi-learn/learn/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Stop Learn
+         * @deprecated
+         * @description Stop MIDI learn mode
+         *
+         *     Returns:
+         *         Success message
+         */
+        post: operations["midi_learn_stop_learn_post_api_midi_learn_learn_stop"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/midi-learn/learn/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Learn Status
+         * @deprecated
+         * @description Get current MIDI learn status
+         *
+         *     Returns:
+         *         Learn mode status
+         */
+        get: operations["midi_learn_get_learn_status_get_api_midi_learn_learn_status"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/midi-learn/mappings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Mappings
+         * @deprecated
+         * @description Get all active MIDI mappings
+         *
+         *     Returns:
+         *         List of mappings
+         */
+        get: operations["midi_learn_list_mappings_get_api_midi_learn_mappings"];
+        put?: never;
+        /**
+         * Create Mapping
+         * @deprecated
+         * @description Create a new MIDI CC to parameter mapping
+         *
+         *     Request body:
+         *     - parameter_id: Target parameter
+         *     - cc_number: MIDI CC number (0-127)
+         *     - channel: MIDI channel (0-15, None = omni)
+         *     - min_value: Minimum parameter value
+         *     - max_value: Maximum parameter value
+         *     - curve: Response curve ("linear", "exponential", "logarithmic")
+         *     - inverted: Invert CC direction
+         *
+         *     Returns:
+         *         Created mapping
+         */
+        post: operations["midi_learn_create_mapping_post_api_midi_learn_mappings"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/midi-learn/mappings/{parameter_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Mapping
+         * @deprecated
+         * @description Get MIDI mapping for a parameter
+         *
+         *     Path parameters:
+         *     - parameter_id: Parameter to query
+         *
+         *     Returns:
+         *         Mapping data
+         */
+        get: operations["midi_learn_get_mapping_get_api_midi_learn_mappings_parameter_id"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Mapping
+         * @deprecated
+         * @description Delete MIDI mapping for a parameter
+         *
+         *     Path parameters:
+         *     - parameter_id: Parameter to unmap
+         *
+         *     Returns:
+         *         Success message
+         */
+        delete: operations["midi_learn_delete_mapping_delete_api_midi_learn_mappings_parameter_id"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/midi-learn/mappings/cc/{cc_number}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Mappings For Cc
+         * @deprecated
+         * @description Get all mappings for a MIDI CC number
+         *
+         *     Path parameters:
+         *     - cc_number: MIDI CC number (0-127)
+         *
+         *     Query parameters:
+         *     - channel: MIDI channel filter (optional)
+         *
+         *     Returns:
+         *         List of mappings
+         */
+        get: operations["midi_learn_get_mappings_for_cc_get_api_midi_learn_mappings_cc_cc_number"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/midi-learn/process": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Process Midi Cc
+         * @deprecated
+         * @description Process incoming MIDI CC message
+         *
+         *     Request body:
+         *     - cc_number: MIDI CC number (0-127)
+         *     - cc_value: MIDI CC value (0-127)
+         *     - channel: MIDI channel (0-15, None = omni)
+         *
+         *     Returns:
+         *         List of parameter updates
+         */
+        post: operations["midi_learn_process_midi_cc_post_api_midi_learn_process"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/midi-learn/clear": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Clear Mappings
+         * @deprecated
+         * @description Clear all MIDI mappings
+         *
+         *     Returns:
+         *         Success message
+         */
+        post: operations["midi_learn_clear_mappings_post_api_midi_learn_clear"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/midi-learn/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Mappings
+         * @deprecated
+         * @description Export all MIDI mappings
+         *
+         *     Returns:
+         *         Mapping data for export
+         */
+        get: operations["midi_learn_export_mappings_get_api_midi_learn_export"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/midi-learn/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import Mappings
+         * @deprecated
+         * @description Import MIDI mappings
+         *
+         *     Request body:
+         *     - Array of mapping objects
+         *
+         *     Returns:
+         *         Import status
+         */
+        post: operations["midi_learn_import_mappings_post_api_midi_learn_import"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/midi-learn/templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Template
+         * @deprecated
+         * @description Create a mapping template from current mappings
+         *
+         *     Request body:
+         *     - name: Template name
+         *     - description: Template description
+         *
+         *     Returns:
+         *         Created template
+         */
+        post: operations["midi_learn_create_template_post_api_midi_learn_templates"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/midi-learn/templates/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Apply Template
+         * @deprecated
+         * @description Apply a mapping template
+         *
+         *     Request body:
+         *     - Template data (from create_template)
+         *
+         *     Query parameters:
+         *     - clear_existing: Clear existing mappings first (default: true)
+         *
+         *     Returns:
+         *         Application status
+         */
+        post: operations["midi_learn_apply_template_post_api_midi_learn_templates_apply"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/midi-commander/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Midi Commander Status
+         * @deprecated
+         */
+        get: operations["midi_commander_surface_get_midi_commander_status_get_api_midi_commander_status"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/midi-commander/projection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Midi Commander Projection
+         * @deprecated
+         */
+        get: operations["midi_commander_surface_get_midi_commander_projection_get_api_midi_commander_projection"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/midi-commander/mapping": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Patch Live Midi Commander Mapping
+         * @deprecated
+         */
+        post: operations["midi_commander_surface_patch_live_midi_commander_mapping_post_api_midi_commander_mapping"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/enriched-midi-physical-surfaces/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Enriched Midi Physical Surfaces Summary
+         * @deprecated
+         */
+        get: operations["enriched_midi_physical_surfaces_get_enriched_midi_physical_surfaces_summary_get_api_enriched_midi_physical_surfaces_summary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/enriched-midi-physical-surfaces/units/{unit_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Enriched Midi Physical Surface Unit
+         * @deprecated
+         */
+        get: operations["enriched_midi_physical_surfaces_get_enriched_midi_physical_surface_unit_get_api_enriched_midi_physical_surfaces_units_unit_id"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/enriched-midi-physical-surfaces/units/{unit_id}/view": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update Enriched Midi Physical Surface View
+         * @deprecated
+         */
+        put: operations["enriched_midi_physical_surfaces_update_enriched_midi_physical_surface_view_put_api_enriched_midi_physical_surfaces_units_unit_id_view"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/enriched-midi-physical-surfaces/units/{unit_id}/recent-target": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update Enriched Midi Physical Surface Recent Target
+         * @deprecated
+         */
+        put: operations["enriched_midi_physical_surfaces_update_enriched_midi_physical_surface_recent_target_put_api_enriched_midi_physical_surfaces_units_unit_id_recent_target"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/chains/": {
@@ -7747,7 +8983,10 @@ export interface paths {
          * @description Get list of all parameters with automation
          *
          *     Returns:
-         *         List of parameter IDs
+         *         ``{"parameters": [parameter_id, ...], "count": int}``. The previous
+         *         annotation was ``Dict[str, List[str]]`` which forced FastAPI to
+         *         validate ``count`` as a list and made every call to this endpoint
+         *         raise ``ResponseValidationError`` (``'list_type', input: 0``).
          */
         get: operations["automation_list_lanes_get_api_automation_lanes"];
         put?: never;
@@ -8336,338 +9575,6 @@ export interface paths {
          *         Restored state data
          */
         post: operations["history_restore_snapshot_post_api_history_snapshots_index_restore"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/midi-learn/learn/start": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Start Learn
-         * @description Start MIDI learn mode for a parameter
-         *
-         *     Query parameters:
-         *     - parameter_id: Parameter to assign (e.g., "plugin_1:0")
-         *
-         *     Returns:
-         *         Learn mode status
-         */
-        post: operations["midi_learn_start_learn_post_api_midi_learn_learn_start"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/midi-learn/learn/stop": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Stop Learn
-         * @description Stop MIDI learn mode
-         *
-         *     Returns:
-         *         Success message
-         */
-        post: operations["midi_learn_stop_learn_post_api_midi_learn_learn_stop"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/midi-learn/learn/status": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Learn Status
-         * @description Get current MIDI learn status
-         *
-         *     Returns:
-         *         Learn mode status
-         */
-        get: operations["midi_learn_get_learn_status_get_api_midi_learn_learn_status"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/midi-learn/mappings": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Mappings
-         * @description Get all active MIDI mappings
-         *
-         *     Returns:
-         *         List of mappings
-         */
-        get: operations["midi_learn_list_mappings_get_api_midi_learn_mappings"];
-        put?: never;
-        /**
-         * Create Mapping
-         * @description Create a new MIDI CC to parameter mapping
-         *
-         *     Request body:
-         *     - parameter_id: Target parameter
-         *     - cc_number: MIDI CC number (0-127)
-         *     - channel: MIDI channel (0-15, None = omni)
-         *     - min_value: Minimum parameter value
-         *     - max_value: Maximum parameter value
-         *     - curve: Response curve ("linear", "exponential", "logarithmic")
-         *     - inverted: Invert CC direction
-         *
-         *     Returns:
-         *         Created mapping
-         */
-        post: operations["midi_learn_create_mapping_post_api_midi_learn_mappings"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/midi-learn/mappings/{parameter_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Mapping
-         * @description Get MIDI mapping for a parameter
-         *
-         *     Path parameters:
-         *     - parameter_id: Parameter to query
-         *
-         *     Returns:
-         *         Mapping data
-         */
-        get: operations["midi_learn_get_mapping_get_api_midi_learn_mappings_parameter_id"];
-        put?: never;
-        post?: never;
-        /**
-         * Delete Mapping
-         * @description Delete MIDI mapping for a parameter
-         *
-         *     Path parameters:
-         *     - parameter_id: Parameter to unmap
-         *
-         *     Returns:
-         *         Success message
-         */
-        delete: operations["midi_learn_delete_mapping_delete_api_midi_learn_mappings_parameter_id"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/midi-learn/mappings/cc/{cc_number}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Mappings For Cc
-         * @description Get all mappings for a MIDI CC number
-         *
-         *     Path parameters:
-         *     - cc_number: MIDI CC number (0-127)
-         *
-         *     Query parameters:
-         *     - channel: MIDI channel filter (optional)
-         *
-         *     Returns:
-         *         List of mappings
-         */
-        get: operations["midi_learn_get_mappings_for_cc_get_api_midi_learn_mappings_cc_cc_number"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/midi-learn/process": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Process Midi Cc
-         * @description Process incoming MIDI CC message
-         *
-         *     Request body:
-         *     - cc_number: MIDI CC number (0-127)
-         *     - cc_value: MIDI CC value (0-127)
-         *     - channel: MIDI channel (0-15, None = omni)
-         *
-         *     Returns:
-         *         List of parameter updates
-         */
-        post: operations["midi_learn_process_midi_cc_post_api_midi_learn_process"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/midi-learn/clear": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Clear Mappings
-         * @description Clear all MIDI mappings
-         *
-         *     Returns:
-         *         Success message
-         */
-        post: operations["midi_learn_clear_mappings_post_api_midi_learn_clear"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/midi-learn/export": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Export Mappings
-         * @description Export all MIDI mappings
-         *
-         *     Returns:
-         *         Mapping data for export
-         */
-        get: operations["midi_learn_export_mappings_get_api_midi_learn_export"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/midi-learn/import": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Import Mappings
-         * @description Import MIDI mappings
-         *
-         *     Request body:
-         *     - Array of mapping objects
-         *
-         *     Returns:
-         *         Import status
-         */
-        post: operations["midi_learn_import_mappings_post_api_midi_learn_import"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/midi-learn/templates": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Template
-         * @description Create a mapping template from current mappings
-         *
-         *     Request body:
-         *     - name: Template name
-         *     - description: Template description
-         *
-         *     Returns:
-         *         Created template
-         */
-        post: operations["midi_learn_create_template_post_api_midi_learn_templates"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/midi-learn/templates/apply": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Apply Template
-         * @description Apply a mapping template
-         *
-         *     Request body:
-         *     - Template data (from create_template)
-         *
-         *     Query parameters:
-         *     - clear_existing: Clear existing mappings first (default: true)
-         *
-         *     Returns:
-         *         Application status
-         */
-        post: operations["midi_learn_apply_template_post_api_midi_learn_templates_apply"];
         delete?: never;
         options?: never;
         head?: never;
@@ -15095,6 +16002,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/snapshots/preload-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Snapshot Preload Status
+         * @description T2454: live warm-cache status for the editor's Preload Slots panel.
+         *
+         *     Joins the orchestrator's process-local warm cache with the Raft-replicated
+         *     pinned set so the UI always renders the canonical 5-slot layout, with
+         *     each slot tagged warm/cold. Declared before the parametrized
+         *     `/api/snapshots/{snapshot_id}` route so the static segment wins routing.
+         */
+        get: operations["unified_snapshots_get_snapshot_preload_status_get_api_snapshots_preload_status"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/templates": {
         parameters: {
             query?: never;
@@ -15570,6 +16502,30 @@ export interface paths {
         get: operations["unified_snapshots_get_snapshot_preload_plan_get_api_snapshots_snapshot_id_preload_plan"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/snapshots/{snapshot_id}/preload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preload Snapshot
+         * @description T2454: explicitly warm a snapshot's plugin instances in the engine.
+         *
+         *     Called by the operator pinning a snapshot, by the reconciler self-heal loop,
+         *     and on demand from the editor. Idempotent. Returns the resulting warm
+         *     state so the UI can refresh its dot/spinner.
+         */
+        post: operations["unified_snapshots_preload_snapshot_post_api_snapshots_snapshot_id_preload"];
         delete?: never;
         options?: never;
         head?: never;
@@ -24036,57 +24992,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/midi-commander/status": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Midi Commander Status */
-        get: operations["midi_commander_surface_get_midi_commander_status_get_api_midi_commander_status"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/midi-commander/projection": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Midi Commander Projection */
-        get: operations["midi_commander_surface_get_midi_commander_projection_get_api_midi_commander_projection"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/midi-commander/mapping": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Patch Live Midi Commander Mapping */
-        post: operations["midi_commander_surface_patch_live_midi_commander_mapping_post_api_midi_commander_mapping"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/transport/state": {
         parameters: {
             query?: never;
@@ -24146,10 +25051,10 @@ export interface paths {
             cookie?: never;
         };
         /** Get Brain State */
-        get: operations["brain_get_brain_state_get_api_engine_brain_state"];
+        get: operations["sequencer_get_brain_state_get_api_engine_sequencer_state"];
         put?: never;
         /** Update Brain State */
-        post: operations["brain_update_brain_state_post_api_engine_brain_state"];
+        post: operations["sequencer_update_brain_state_post_api_engine_sequencer_state"];
         delete?: never;
         options?: never;
         head?: never;
@@ -24164,10 +25069,10 @@ export interface paths {
             cookie?: never;
         };
         /** Get Brain Transport */
-        get: operations["brain_get_brain_transport_get_api_engine_brain_transport"];
+        get: operations["sequencer_get_brain_transport_get_api_engine_sequencer_transport"];
         put?: never;
         /** Update Brain Transport */
-        post: operations["brain_update_brain_transport_post_api_engine_brain_transport"];
+        post: operations["sequencer_update_brain_transport_post_api_engine_sequencer_transport"];
         delete?: never;
         options?: never;
         head?: never;
@@ -24182,7 +25087,7 @@ export interface paths {
             cookie?: never;
         };
         /** List Brain Slots */
-        get: operations["brain_list_brain_slots_get_api_engine_brain_slots"];
+        get: operations["sequencer_list_brain_slots_get_api_engine_sequencer_slots"];
         put?: never;
         post?: never;
         delete?: never;
@@ -24205,7 +25110,7 @@ export interface paths {
         options?: never;
         head?: never;
         /** Update Brain Slot */
-        patch: operations["brain_update_brain_slot_patch_api_engine_brain_slots_slot_id"];
+        patch: operations["sequencer_update_brain_slot_patch_api_engine_sequencer_slots_slot_id"];
         trace?: never;
     };
     "/api/engine/sequencer/layers": {
@@ -24216,10 +25121,10 @@ export interface paths {
             cookie?: never;
         };
         /** Get Brain Layers */
-        get: operations["brain_get_brain_layers_get_api_engine_brain_layers"];
+        get: operations["sequencer_get_brain_layers_get_api_engine_sequencer_layers"];
         put?: never;
         /** Update Brain Layers */
-        post: operations["brain_update_brain_layers_post_api_engine_brain_layers"];
+        post: operations["sequencer_update_brain_layers_post_api_engine_sequencer_layers"];
         delete?: never;
         options?: never;
         head?: never;
@@ -24234,10 +25139,10 @@ export interface paths {
             cookie?: never;
         };
         /** Get Brain Sequence */
-        get: operations["brain_get_brain_sequence_get_api_engine_brain_sequence"];
+        get: operations["sequencer_get_brain_sequence_get_api_engine_sequencer_sequence"];
         put?: never;
         /** Update Brain Sequence */
-        post: operations["brain_update_brain_sequence_post_api_engine_brain_sequence"];
+        post: operations["sequencer_update_brain_sequence_post_api_engine_sequencer_sequence"];
         delete?: never;
         options?: never;
         head?: never;
@@ -24252,10 +25157,10 @@ export interface paths {
             cookie?: never;
         };
         /** Get Brain Song */
-        get: operations["brain_get_brain_song_get_api_engine_brain_song"];
+        get: operations["sequencer_get_brain_song_get_api_engine_sequencer_song"];
         put?: never;
         /** Update Brain Song */
-        post: operations["brain_update_brain_song_post_api_engine_brain_song"];
+        post: operations["sequencer_update_brain_song_post_api_engine_sequencer_song"];
         delete?: never;
         options?: never;
         head?: never;
@@ -24270,10 +25175,10 @@ export interface paths {
             cookie?: never;
         };
         /** Get Brain Mixer */
-        get: operations["brain_get_brain_mixer_get_api_engine_brain_mixer"];
+        get: operations["sequencer_get_brain_mixer_get_api_engine_sequencer_mixer"];
         put?: never;
         /** Update Brain Mixer */
-        post: operations["brain_update_brain_mixer_post_api_engine_brain_mixer"];
+        post: operations["sequencer_update_brain_mixer_post_api_engine_sequencer_mixer"];
         delete?: never;
         options?: never;
         head?: never;
@@ -24288,10 +25193,10 @@ export interface paths {
             cookie?: never;
         };
         /** Get Brain Inputs */
-        get: operations["brain_get_brain_inputs_get_api_engine_brain_inputs"];
+        get: operations["sequencer_get_brain_inputs_get_api_engine_sequencer_inputs"];
         put?: never;
         /** Update Brain Inputs */
-        post: operations["brain_update_brain_inputs_post_api_engine_brain_inputs"];
+        post: operations["sequencer_update_brain_inputs_post_api_engine_sequencer_inputs"];
         delete?: never;
         options?: never;
         head?: never;
@@ -24306,7 +25211,41 @@ export interface paths {
             cookie?: never;
         };
         /** Get Brain Library */
-        get: operations["brain_get_brain_library_get_api_engine_brain_library"];
+        get: operations["sequencer_get_brain_library_get_api_engine_sequencer_library"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/engine/sequencer/library/assets/{asset_id}/authored-with": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Set Brain Asset Authored With */
+        post: operations["sequencer_set_brain_asset_authored_with_post_api_engine_sequencer_library_assets_asset_id_authored_with"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/engine/sequencer/library/by-device/{profile_key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Brain Assets For Device */
+        get: operations["sequencer_list_brain_assets_for_device_get_api_engine_sequencer_library_by_device_profile_key"];
         put?: never;
         post?: never;
         delete?: never;
@@ -24323,10 +25262,10 @@ export interface paths {
             cookie?: never;
         };
         /** Get Brain Sample Editor */
-        get: operations["brain_get_brain_sample_editor_get_api_engine_brain_sample_editor"];
+        get: operations["sequencer_get_brain_sample_editor_get_api_engine_sequencer_sample_editor"];
         put?: never;
         /** Update Brain Sample Editor */
-        post: operations["brain_update_brain_sample_editor_post_api_engine_brain_sample_editor"];
+        post: operations["sequencer_update_brain_sample_editor_post_api_engine_sequencer_sample_editor"];
         delete?: never;
         options?: never;
         head?: never;
@@ -24341,7 +25280,31 @@ export interface paths {
             cookie?: never;
         };
         /** Get Brain Diagnostics */
-        get: operations["brain_get_brain_diagnostics_get_api_engine_brain_diagnostics"];
+        get: operations["sequencer_get_brain_diagnostics_get_api_engine_sequencer_diagnostics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/engine/sequencer/metering": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Sequencer Metering
+         * @description Polling fallback for the per-slot ConsoleView meters.
+         *
+         *     The 30 fps push path is the `sequencer_metering` WebSocket topic broadcast by
+         *     `MeteringBroadcastService`; this endpoint exists so the frontend can warm
+         *     its initial state without waiting for the first broadcast tick.
+         */
+        get: operations["sequencer_get_sequencer_metering_get_api_engine_sequencer_metering"];
         put?: never;
         post?: never;
         delete?: never;
@@ -24360,7 +25323,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Import Brain From Drums */
-        post: operations["brain_import_brain_from_drums_post_api_engine_brain_import_drums"];
+        post: operations["sequencer_import_brain_from_drums_post_api_engine_sequencer_import_drums"];
         delete?: never;
         options?: never;
         head?: never;
@@ -24377,7 +25340,127 @@ export interface paths {
         get?: never;
         put?: never;
         /** Import Brain From Synthforge */
-        post: operations["brain_import_brain_from_synthforge_post_api_engine_brain_import_synthforge"];
+        post: operations["sequencer_import_brain_from_synthforge_post_api_engine_sequencer_import_synthforge"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/engine/sequencer/actions/dispatch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Dispatch Sequencer Action
+         * @description Execute a Sequencer action. Maps the dotted action id back to the
+         *     appropriate state mutation:
+         *
+         *       brain.transport.play         → transport.is_playing = True
+         *       brain.transport.pause        → transport.is_playing = False
+         *       brain.transport.stop         → transport.is_playing = False
+         *       brain.transport.toggle       → transport.is_playing = !current
+         *       brain.section.<id>           → state.active_section = <id>
+         *       brain.slot.<n>.mute_toggle   → slot.mute = !current
+         *
+         *     Trigger-kind actions ignore `value`; toggle-kind actions treat
+         *     `value >= 0.5` as "on". Returns the descriptor + applied flag.
+         */
+        post: operations["sequencer_dispatch_sequencer_action_post_api_engine_sequencer_actions_dispatch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/engine/sequencer/actions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Sequencer Actions
+         * @description Return the operator-facing Sequencer action catalogue.
+         *
+         *     The MIDI Assignments wizard's target step adds these as a fifth
+         *     target source (alongside plugins, MIDIActionType, routing modes,
+         *     and `/v2/engine/parameters`). Each action id is a dotted target
+         *     the binding writer accepts directly.
+         *
+         *     Worklist: T2461-A4.
+         */
+        get: operations["sequencer_list_sequencer_actions_get_api_engine_sequencer_actions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/engine/sequencer/capture/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sequencer Capture Start
+         * @description Arm the Sequencer capture buffer for one slot. The wizard's
+         *     Calibrate step calls this when the operator clicks Calibrate;
+         *     pairs with `/stop` to finalise.
+         */
+        post: operations["sequencer_sequencer_capture_start_post_api_engine_sequencer_capture_start"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/engine/sequencer/capture/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sequencer Capture Stop
+         * @description Finalise the active capture session, returning its frames.
+         */
+        post: operations["sequencer_sequencer_capture_stop_post_api_engine_sequencer_capture_stop"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/engine/sequencer/capture/{session_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Sequencer Capture Get
+         * @description Read back a finalised capture session.
+         */
+        get: operations["sequencer_sequencer_capture_get_get_api_engine_sequencer_capture_session_id"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -27802,74 +28885,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/enriched-midi-physical-surfaces/summary": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Enriched Midi Physical Surfaces Summary */
-        get: operations["enriched_midi_physical_surfaces_get_enriched_midi_physical_surfaces_summary_get_api_enriched_midi_physical_surfaces_summary"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/enriched-midi-physical-surfaces/units/{unit_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Enriched Midi Physical Surface Unit */
-        get: operations["enriched_midi_physical_surfaces_get_enriched_midi_physical_surface_unit_get_api_enriched_midi_physical_surfaces_units_unit_id"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/enriched-midi-physical-surfaces/units/{unit_id}/view": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Update Enriched Midi Physical Surface View */
-        put: operations["enriched_midi_physical_surfaces_update_enriched_midi_physical_surface_view_put_api_enriched_midi_physical_surfaces_units_unit_id_view"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/enriched-midi-physical-surfaces/units/{unit_id}/recent-target": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Update Enriched Midi Physical Surface Recent Target */
-        put: operations["enriched_midi_physical_surfaces_update_enriched_midi_physical_surface_recent_target_put_api_enriched_midi_physical_surfaces_units_unit_id_recent_target"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/node/identity": {
         parameters: {
             query?: never;
@@ -28282,6 +29297,1399 @@ export interface paths {
         post: operations["device_hero_images_upload_device_hero_image_post_api_devices_hero_images_device_id"];
         /** Delete Device Hero Image */
         delete: operations["device_hero_images_delete_device_hero_image_delete_api_devices_hero_images_device_id"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/devices/meloaudio/commander/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Commander Status
+         * @description Detect + classify the connected MeloAudio MIDI Commander.
+         *
+         *     Side-effect-free; safe to poll. The UI polls this every 2-3
+         *     seconds while the Configurator page is open so the operator
+         *     sees firmware-mode changes (e.g., entering DFU mode) live.
+         */
+        get: operations["devices_meloaudio_commander_get_commander_status_get_api_devices_meloaudio_commander_status"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/devices/meloaudio/commander/override": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Commander Override
+         * @description Read the per-installation override file if it exists.
+         *
+         *     Returns ``has_override=False`` when the file is absent (operator
+         *     hasn't run the Discovery Wizard yet). Raises 500 on a corrupted
+         *     override file so the UI surfaces the issue rather than silently
+         *     falling back to the device-pack defaults.
+         */
+        get: operations["devices_meloaudio_commander_get_commander_override_get_api_devices_meloaudio_commander_override"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Commander Override
+         * @description Delete the per-installation override file.
+         *
+         *     Operator does this when they want to revert to device-pack
+         *     defaults (or when they've changed stock firmware modes and need
+         *     to re-run the Discovery Wizard with a clean slate).
+         */
+        delete: operations["devices_meloaudio_commander_delete_commander_override_delete_api_devices_meloaudio_commander_override"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/devices/meloaudio/commander/firmware/bundled": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Bundled Firmware
+         * @description List the .dfu firmware binaries bundled with this MAP2 install.
+         *
+         *     Returned in lexical order; UI typically picks the latest version
+         *     by default and lets advanced operators select a specific one.
+         */
+        get: operations["devices_meloaudio_commander_get_bundled_firmware_get_api_devices_meloaudio_commander_firmware_bundled"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/midi/visualization/graph": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Graph
+         * @description Return the current MIDI topology graph as ``{nodes, edges}``.
+         *
+         *     See :func:`build_topology` for the node/edge schema. The frontend
+         *     feeds this directly into the dagre layout adapter and never
+         *     transforms node ids.
+         */
+        get: operations["midi_visualization_get_graph_get_api_midi_visualization_graph"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/recorder/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all in-flight recorder sessions on this node */
+        get: operations["recorder_list_sessions"];
+        put?: never;
+        /**
+         * Arm a new recorder session
+         * @description Allocates a session id, installs the requested taps (per the snapshot's recording.tap_matrix), and emits a recorder.arm verb to the audio engine. Returns the initial ARMED status.
+         */
+        post: operations["recorder_arm_session"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/recorder/sessions/{session_id}/roll": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start rolling on an armed session */
+        post: operations["recorder_start_rolling"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/recorder/sessions/{session_id}/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Stop a rolling or armed session */
+        post: operations["recorder_stop_session"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/recorder/sessions/{session_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Fetch the current status of an in-flight session */
+        get: operations["recorder_get_session_status"];
+        put?: never;
+        post?: never;
+        /** Disarm + drop a session entirely */
+        delete: operations["recorder_disarm_session"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/recordings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List every captured recording in the artifact registry */
+        get: operations["recordings_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/recordings/{asset_hash}/metadata": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Fetch the sidecar JSON for a recording */
+        get: operations["recordings_get_metadata"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/recordings/{asset_hash}/wav": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Stream the WAV file for a recording */
+        get: operations["recordings_stream_wav"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/recordings/{asset_hash}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a recording (registry row + on-disk file) */
+        delete: operations["recordings_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/looper/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Snapshot of every track in the looper */
+        get: operations["looper_get_status"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/looper/track/{track}/record": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record stomp (empty→record / record→play / play→overdub / overdub→play / stopped→play) */
+        post: operations["looper_record_stomp"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/looper/track/{track}/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Stop or resume playback for the track */
+        post: operations["looper_stop_stomp"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/looper/track/{track}/clear": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Clear the track's loop content */
+        post: operations["looper_clear_stomp"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/looper/track/{track}/undo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Undo the most recent overdub layer (up to 4 deep) */
+        post: operations["looper_undo_stomp"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/looper/track/{track}/redo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Redo a previously-undone overdub layer */
+        post: operations["looper_redo_stomp"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/looper/track/{track}/level": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Set per-track playback level in dB (clamped -60..+6) */
+        patch: operations["looper_set_track_level"];
+        trace?: never;
+    };
+    "/api/v1/looper/track/{track}/muted": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Mute / unmute the track in the looper master sum */
+        patch: operations["looper_set_track_muted"];
+        trace?: never;
+    };
+    "/api/v1/looper/track/{track}/soloed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Solo / un-solo the track (any solo'd track mutes the rest) */
+        patch: operations["looper_set_track_soloed"];
+        trace?: never;
+    };
+    "/api/v1/looper/track/{track}/reverse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Reverse the playback direction of the track */
+        patch: operations["looper_set_track_reverse"];
+        trace?: never;
+    };
+    "/api/v1/looper/track/{track}/half-speed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Halve the playback rate (one octave down) */
+        patch: operations["looper_set_track_half_speed"];
+        trace?: never;
+    };
+    "/api/v1/looper/master/level": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Set the looper master bus level in dB (clamped -60..+6) */
+        patch: operations["looper_set_master_level"];
+        trace?: never;
+    };
+    "/api/v1/looper/master/muted": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * T2512-MASTER-MUTE — toggle the panic-mute on the master bus
+         * @description T2512-MASTER-MUTE — toggle the master-bus panic mute.
+         *
+         *     When the toggle moves OFF→ON, the engine's master gain drops
+         *     to the -60 dB clamp floor and the operator's pre-mute level is
+         *     remembered. ON→OFF restores the saved level. Per-track mute
+         *     flags are untouched — this is a dedicated panic stop on the
+         *     master bus.
+         */
+        patch: operations["looper_set_master_muted"];
+        trace?: never;
+    };
+    "/api/v1/looper/track/{track}/locked": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * T2512-LOCK — toggle write-lock for a track
+         * @description T2512-LOCK — set the write-lock flag for a track.
+         *
+         *     Locked tracks reject ``record``, ``clear``, ``undo``, ``redo`` with
+         *     HTTP 409 Conflict (error code ``track_locked``). Playback, level,
+         *     mute, solo, reverse, half-speed, and stop remain live so the
+         *     operator can still mix and stop the loop.
+         */
+        patch: operations["looper_set_track_locked"];
+        trace?: never;
+    };
+    "/api/v1/looper/track/{track}/one-shot": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * T2512-OS — toggle one-shot / trigger mode for a track
+         * @description T2512-OS — set the one-shot / trigger flag for a track.
+         *
+         *     When True, the track is meant to auto-stop after one playhead
+         *     pass (actual stop scheduling lives in a separate runner — see
+         *     ``T2512-OS-RUNNER`` in PROJECT_WORKLIST). Setting the flag does
+         *     not alter loop content or any other playback parameter; the
+         *     operator clears it by sending ``{"value": false}``.
+         */
+        patch: operations["looper_set_track_one_shot"];
+        trace?: never;
+    };
+    "/api/v1/looper/track/{track}/one-shot-passes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * T2512-OS-COUNT — set consecutive-pass count for one-shot mode (1..32)
+         * @description T2512-OS-COUNT — set how many consecutive loop passes a
+         *     one-shot track plays before the runner auto-stops it.
+         *
+         *     Clamped 1..32 (1 preserves the original T2512-OS single-pass
+         *     contract). Setting this on a non-one-shot track is intentionally
+         *     allowed: operators may stage the count before flipping the
+         *     one-shot flag. The runner only reads this when a track first
+         *     enters the one-shot+playing state.
+         */
+        patch: operations["looper_set_track_one_shot_passes"];
+        trace?: never;
+    };
+    "/api/v1/looper/track/{track}/auto-armed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * T2512-AUTO — arm / disarm input-threshold auto-record for a track
+         * @description T2512-AUTO — operator arms input-level auto-record on a track.
+         *
+         *     Storage-only in v1: actual record triggering depends on the
+         *     forthcoming engine input-level RMS push (T2512-AUTO-TRIGGER).
+         */
+        patch: operations["looper_set_track_auto_armed"];
+        trace?: never;
+    };
+    "/api/v1/looper/track/{track}/auto-threshold": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * T2512-AUTO — set the input-threshold dB for auto-record (clamped -90..0)
+         * @description T2512-AUTO — set the input-threshold dB for auto-record.
+         */
+        patch: operations["looper_set_track_auto_threshold"];
+        trace?: never;
+    };
+    "/api/v1/looper/track/{track}/auto-record/push": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * T2512-AUTO-PUSH — feed an input-level RMS sample to the auto-record trigger
+         * @description T2512-AUTO-PUSH — drive the T2512-AUTO-TRIGGER state machine
+         *     over HTTP. Lets test harnesses or external level monitors fire
+         *     auto-record without the engine binding being wired.
+         *
+         *     Returns ``{fired: bool, status: LooperStatusResponse}``. The
+         *     trigger only fires when the track is armed + EMPTY + level >
+         *     threshold + outside the cooldown window; otherwise ``fired``
+         *     is False and ``status`` reflects the unchanged state.
+         */
+        post: operations["looper_auto_record_push"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/looper/track/{track}/auto-record/reset-peak": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * T2512-AUTO-PEAK — reset the recent-peak indicator for a track
+         * @description T2512-AUTO-PEAK — clear the per-track ``auto_last_level_db``
+         *     + ``auto_peak_db`` indicators without touching the arm flag or
+         *     threshold. UI exposes this as a "reset peak" button next to the
+         *     threshold dial so operators can recalibrate after a deliberately
+         *     loud hit.
+         */
+        post: operations["looper_reset_auto_peak"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/looper/track/{track}/stop-mode": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * T2512-FADE — set the track's stop mode ("hard" | "fade")
+         * @description T2512-FADE — set the operator-visible stop mode for a track.
+         *
+         *     State-only in v1: the C++ engine still performs a hard cutoff
+         *     on ``stop_track`` regardless of this value. The actual gain
+         *     ramp is gated behind T2512-FADE-RAMP for RT-safety review.
+         */
+        patch: operations["looper_set_track_stop_mode"];
+        trace?: never;
+    };
+    "/api/v1/looper/track/{track}/fade-ms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * T2512-FADE — set the fade-out duration in ms (clamped 0..5000)
+         * @description T2512-FADE — set the fade-out duration in milliseconds.
+         */
+        patch: operations["looper_set_track_fade_ms"];
+        trace?: never;
+    };
+    "/api/v1/looper/track/{track}/sync-mode": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * T2512-SYNC — set per-track sync mode ("free" | "master" | "slave")
+         * @description T2512-SYNC — set per-track sync mode.
+         *
+         *     State-only in v1: the engine still plays every track at its own
+         *     captured length regardless of this value. Actual loop-length
+         *     locking is gated behind T2512-SYNC-LOCK (RT-critical).
+         *
+         *     Service enforces the "at most one master" invariant: promoting
+         *     a track to "master" demotes any other track currently set to
+         *     "master" back to "free".
+         */
+        patch: operations["looper_set_track_sync_mode"];
+        trace?: never;
+    };
+    "/api/v1/looper/track/{track}/slices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * T2512-SLICE — add a non-destructive slice to a track
+         * @description T2512-SLICE — append a slice. Overlaps with existing slices
+         *     return HTTP 409 ``slice_overlap``; the per-track 64-slice cap
+         *     returns ``slice_limit``.
+         */
+        post: operations["looper_add_track_slice"];
+        /**
+         * T2512-SLICE — clear all slices on a track
+         * @description T2512-SLICE — drop every slice on a track. Loop content is
+         *     unaffected.
+         */
+        delete: operations["looper_clear_track_slices"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/looper/track/{track}/slices/at-playhead": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * T2512-SLICE-AT-PLAYHEAD — add a slice from the previous boundary to the current playhead
+         * @description T2512-SLICE-AT-PLAYHEAD — convenience helper that reads the
+         *     current playhead and adds a slice from the previous slice
+         *     boundary up to it. Returns HTTP 400 ``invalid_slice`` when the
+         *     playhead is at 0 (no captured content yet) or before the
+         *     previous slice's end (no new region).
+         */
+        post: operations["looper_add_slice_at_playhead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/looper/track/{track}/slices/{start_frame}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * T2512-SLICE-DEL — drop a single slice by start_frame
+         * @description T2512-SLICE-DEL — remove the slice with the matching start_frame.
+         *
+         *     Returns HTTP 404 ``slice_not_found`` when no slice on the track
+         *     has that start_frame. Loop content is unaffected.
+         */
+        delete: operations["looper_delete_track_slice"];
+        options?: never;
+        head?: never;
+        /**
+         * T2512-SLICE-RENAME — replace a slice's label by start_frame
+         * @description T2512-SLICE-RENAME — update an existing slice's label.
+         *
+         *     Frame range is unchanged; label is trimmed + truncated to 64
+         *     chars. Empty label clears the existing one. Returns HTTP 404
+         *     ``slice_not_found`` when no slice on the track matches.
+         */
+        patch: operations["looper_rename_track_slice"];
+        trace?: never;
+    };
+    "/api/v1/looper/track/{track}/quantize-division": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * T2512-QUANT-WIRE — set the auto-close grid ("off" | grid name)
+         * @description T2512-QUANT-WIRE — set per-track quantize grid for auto-close.
+         *
+         *     State-only in v1: the math is wired (``LooperService.quantize_record_length``)
+         *     so callers and the future engine-side auto-close can read it,
+         *     but recording stop currently still uses the raw playhead. Engine
+         *     integration lands later under T2512-QUANT-ENGINE.
+         */
+        patch: operations["looper_set_track_quantize_division"];
+        trace?: never;
+    };
+    "/api/v1/looper/state": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** T2512-SNAP — serialize operator policy state for snapshot save */
+        get: operations["looper_export_state"];
+        put?: never;
+        /**
+         * T2512-SNAP — restore operator policy state from a snapshot payload
+         * @description T2512-SNAP — apply a saved snapshot payload to the looper.
+         *
+         *     Tolerant of missing optional keys; unknown future fields are
+         *     ignored. Out-of-range values are clamped by the underlying
+         *     setters (-90..0 dB threshold; -60..+6 dB master level).
+         */
+        post: operations["looper_apply_state"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/looper/activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * T2512-ACTIVITY — recent operator-action audit log (capped 200 events)
+         * @description T2512-ACTIVITY — return the recent activity log.
+         *
+         *     Oldest first; newest last. Capped at 200 events (configured on
+         *     the service's internal deque). Loop content and engine state
+         *     are not in this log — it's an operator-actions trail, not a
+         *     full state stream.
+         *
+         *     T2512-ACTIVITY-FILTER — optional ``verb`` (comma-separated set)
+         *     and ``track`` (0..3) query params narrow the result; ``limit``
+         *     truncates to the most recent N entries *after* filtering so the
+         *     operator's filter intent isn't masked by an early-drop. ``cap``
+         *     in the response remains 200 (the buffer size) regardless of
+         *     filters — clients can tell the absolute ceiling vs. the
+         *     filtered slice.
+         */
+        get: operations["looper_get_activity"];
+        put?: never;
+        post?: never;
+        /**
+         * T2512-ACTIVITY — drop every recorded activity event
+         * @description T2512-ACTIVITY — clear the audit log. Returns an empty
+         *     ``ActivityLogResponse`` so the client can confirm the wipe in
+         *     one round-trip.
+         */
+        delete: operations["looper_clear_activity"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/looper/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * T2512-METRICS — verb invocation counters
+         * @description T2512-METRICS — return the current verb counter snapshot.
+         *
+         *     Each key is a verb name (record / stop / clear / undo / redo /
+         *     reset_state / apply_state); each value is the cumulative count
+         *     since the last reset.
+         */
+        get: operations["looper_get_metrics"];
+        put?: never;
+        post?: never;
+        /**
+         * T2512-METRICS — zero the verb counters
+         * @description T2512-METRICS — clear every verb counter. The activity log is
+         *     unaffected — use ``DELETE /activity`` for that.
+         */
+        delete: operations["looper_reset_metrics"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/looper/state/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * T2512-RESET — return all operator policy state to defaults
+         * @description T2512-RESET — clear every Python-side per-track flag (lock,
+         *     one-shot, auto-record, stop mode, fade, sync, quantize, slices)
+         *     and reset master level to 0 dB.
+         *
+         *     Captured loop content is NOT touched — operators clear loops
+         *     with the per-track ``clear`` verb. The state-machine state /
+         *     loop_length / playhead come from the engine and are not reset.
+         */
+        post: operations["looper_reset_state"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/looper/presets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * T2512-PRESET — list named in-memory state presets
+         * @description T2512-PRESET — return preset names in save order. Volatile;
+         *     cleared on process restart. Persistent presets go through the
+         *     snapshot service (separate path).
+         */
+        get: operations["looper_list_presets"];
+        put?: never;
+        post?: never;
+        /**
+         * T2512-PRESET — drop every named preset
+         * @description T2512-PRESET — wipe every named preset. Active state is
+         *     unaffected. Returns the current LooperStatus.
+         */
+        delete: operations["looper_clear_presets"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/looper/presets/reorder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * T2512-PRESET-DRAG-REORDER — set the saved presets' explicit order
+         * @description T2512-PRESET-DRAG-REORDER — replace the preset sequence with
+         *     the supplied permutation.
+         *
+         *     Registered before ``POST /presets/{name}`` so the literal path
+         *     matches first (FastAPI matches routes in registration order).
+         *
+         *     Returns 400 ``invalid_preset_order`` when ``names`` is not a
+         *     permutation of the current preset roster (typically because
+         *     another tab raced a save/delete and the local view is stale).
+         */
+        post: operations["looper_reorder_presets"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/looper/presets/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * T2512-PRESET — save current state under a named slot
+         * @description T2512-PRESET — snapshot the current state and store it under
+         *     ``name``. Overwrites silently when the name already exists.
+         *     Returns 409 ``preset_limit`` when adding a new name would exceed
+         *     the 32-preset cap. Reused names update in place.
+         */
+        post: operations["looper_save_preset"];
+        /**
+         * T2512-PRESET — drop a single named preset
+         * @description T2512-PRESET — delete the named preset. Returns 404
+         *     ``preset_not_found`` when the name doesn't match.
+         */
+        delete: operations["looper_delete_preset"];
+        options?: never;
+        head?: never;
+        /**
+         * T2512-PRESET-RENAME — change a preset's name in place
+         * @description T2512-PRESET-RENAME — relabel a saved preset.
+         *
+         *     Preserves the preset's insertion-order position so the operator's
+         *     list ordering doesn't shuffle on every rename. Returns:
+         *
+         *     - 404 ``preset_not_found`` when the source name doesn't match
+         *     - 400 ``invalid_preset_name`` when ``new_name`` normalizes to empty
+         *     - 409 ``preset_name_conflict`` when the destination name already
+         *       exists (operator must delete the target preset first)
+         */
+        patch: operations["looper_rename_preset"];
+        trace?: never;
+    };
+    "/api/v1/looper/presets/{name}/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * T2512-PRESET — restore a named preset into active state
+         * @description T2512-PRESET — restore the named preset via apply_state.
+         *     Returns 404 ``preset_not_found`` when the name doesn't match.
+         */
+        post: operations["looper_apply_preset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/devices/tascam-us144mkii/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Status
+         * @description Current operational state, including driver presence + USB stage.
+         */
+        get: operations["tascam_us144mkii_get_status_get_api_v1_devices_tascam_us144mkii_status"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/devices/tascam-us144mkii/capabilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Capabilities
+         * @description Static profile of declared I/O channels + tier-1 audio settings.
+         */
+        get: operations["tascam_us144mkii_get_capabilities_get_api_v1_devices_tascam_us144mkii_capabilities"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/devices/tascam-us144mkii/meters": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Meters
+         * @description Per-channel peak meter values in dBFS.
+         *
+         *     Reads through the ``tascam_us144mkii_meters`` injection seam. The
+         *     default ``PlaceholderMeterSource`` returns -150 dBFS sentinels per
+         *     channel (Carbon panel renders these as em-dashes). When the JUCE
+         *     engine's per-device ring-buffer metering wire-up lands, lifespan
+         *     startup will swap in a ``JuceEngineMeterSource`` and the ``source``
+         *     field flips from ``placeholder`` to ``engine`` without any change
+         *     to this handler.
+         */
+        get: operations["tascam_us144mkii_get_meters_get_api_v1_devices_tascam_us144mkii_meters"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/devices/tascam-us144mkii/clock-source": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Clock Source
+         * @description Clock-source state + the choice menu the operator sees.
+         *
+         *     Tier-1 pins to ``internal_48k`` to match the platform-wide Tier A
+         *     locks (``audio.sample_rate=48000``). The other options are listed
+         *     with ``selectable=false`` so the panel can render a proper radio
+         *     group with an explanatory subtitle; an operator selecting one will
+         *     hit the (future) transactional clock-source-change route.
+         */
+        get: operations["tascam_us144mkii_get_clock_source_get_api_v1_devices_tascam_us144mkii_clock_source"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/devices/tascam-us144mkii/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reset Device
+         * @description Issue a USB-port reset for the stuck-in-boot-mode recovery case.
+         *
+         *     Refuses without ``confirm=true``. Re-runs the preflight after the reset
+         *     so the response carries the post-reset state.
+         */
+        post: operations["tascam_us144mkii_reset_device_post_api_v1_devices_tascam_us144mkii_reset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/chains/hardware-usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Hardware Usage
+         * @description Snapshot of every singleton hardware plugin currently in use.
+         */
+        get: operations["mpx1_effects_block_get_hardware_usage_get_api_v1_chains_hardware_usage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/interfaces/capabilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Interface Capabilities
+         * @description List every device-pack-declared audio interface and its capability tags.
+         */
+        get: operations["mpx1_effects_block_get_interface_capabilities_get_api_v1_interfaces_capabilities"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/effects/mpx1/instance/{chain_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Mpx1 Instance */
+        get: operations["mpx1_effects_block_get_mpx1_instance_get_api_v1_effects_mpx1_instance_chain_id"];
+        put?: never;
+        /**
+         * Upsert Mpx1 Instance
+         * @description Create or update per-instance config + acquire the singleton lock.
+         */
+        post: operations["mpx1_effects_block_upsert_mpx1_instance_post_api_v1_effects_mpx1_instance_chain_id"];
+        /**
+         * Delete Mpx1 Instance
+         * @description Tear down an instance — releases the singleton lock + removes persisted config.
+         */
+        delete: operations["mpx1_effects_block_delete_mpx1_instance_delete_api_v1_effects_mpx1_instance_chain_id"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/effects/mpx1/instance/{chain_id}/bypass": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Set Mpx1 Bypass */
+        post: operations["mpx1_effects_block_set_mpx1_bypass_post_api_v1_effects_mpx1_instance_chain_id_bypass"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/effects/mpx1/instance/{chain_id}/calibrate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Calibrate Mpx1
+         * @description Record a measured-latency calibration.
+         *
+         *     The actual impulse-response measurement runs on the engine side via the
+         *     pybind binding `set_lexicon_measured_latency_samples`. This route accepts
+         *     the measurement result and persists it; T2517-Follow-up adds the
+         *     end-to-end loopback wizard.
+         */
+        post: operations["mpx1_effects_block_calibrate_mpx1_post_api_v1_effects_mpx1_instance_chain_id_calibrate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/devices/peak-meters/registry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Peak Meters Registry
+         * @description Enumerate every device registered with the meter-source registry.
+         *
+         *     Returned in alphabetical order by ``device_id``. Each entry carries
+         *     the device's declared channel counts and a ``has_engine_source``
+         *     flag indicating whether the engine wire-up is currently installed
+         *     (vs the silence-fallback placeholder).
+         *
+         *     When called with ``include_snapshot=true``, each entry's
+         *     ``snapshot`` field is populated with the same peak-meter payload
+         *     served by ``GET /{device_id}/peak-meters``. This collapses the
+         *     common dashboard pattern (registry + N per-device polls) into a
+         *     single request.
+         *
+         *     The path lives under the ``/api/v1/devices`` prefix and uses the
+         *     ``peak-meters/registry`` segment so it does not collide with the
+         *     parametric ``/{device_id}/peak-meters`` route below. FastAPI's
+         *     matcher tries literal segments first, so this stays unambiguous.
+         *
+         *     Pivot-13e cycle 2 — when ``include_snapshot`` is true, the
+         *     per-device ``read_snapshot`` calls run concurrently via
+         *     ``asyncio.gather`` instead of sequentially. For a registry of N
+         *     devices where each source is async (engine IPC), total latency
+         *     drops from N×t to roughly t. The result list is keyed back by
+         *     device_id before assembly so the returned ``devices`` field
+         *     preserves the alphabetical ordering ``list_devices()`` already
+         *     enforces.
+         */
+        get: operations["device_meters_get_peak_meters_registry_get_api_v1_devices_peak_meters_registry"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/devices/{device_id}/peak-meters": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Device Peak Meters
+         * @description Generic per-device peak-meter readout.
+         *
+         *     Returns a structured payload identical to the per-device legacy
+         *     routes; the only differences are the URL shape and the inclusion
+         *     of the ``device_id`` echo so a single frontend hook can call this
+         *     for any registered audio interface.
+         *
+         *     The path segment is ``/peak-meters`` (not ``/meters``) to avoid
+         *     colliding with the legacy ``/api/v1/devices/tascam-us144mkii/meters``
+         *     route — they share the ``/api/v1/devices`` prefix, and FastAPI's
+         *     path matcher would otherwise treat ``/tascam-us144mkii/meters`` as
+         *     a candidate for both the literal and the parameter route. The
+         *     explicit ``peak-meters`` segment makes the two endpoints
+         *     unambiguous and gives the generic route a name that reads cleanly
+         *     next to ``/status`` / ``/capabilities``.
+         */
+        get: operations["device_meters_get_device_peak_meters_get_api_v1_devices_device_id_peak_meters"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/devices/peak-meters/cluster/registry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Cluster Peak Meters Registry
+         * @description Cluster-wide aggregation of every peer's
+         *     `GET /api/v1/devices/peak-meters/registry`.
+         *
+         *     All peer requests issue concurrently via ``asyncio.gather`` with a
+         *     2 s per-peer timeout. Failed peers populate ``errors`` but don't
+         *     fail the whole request. Local node's registry is returned under
+         *     ``local`` so consumers always have a baseline even when discovery
+         *     is empty.
+         *
+         *     Run-13f cycle 1 of the pivot-13e handoff.
+         */
+        get: operations["device_meters_get_cluster_peak_meters_registry_get_api_v1_devices_peak_meters_cluster_registry"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -29058,6 +31466,853 @@ export interface paths {
          * @description Apply a preset (built-in or user) to the current lcd.displays config.
          */
         post: operations["lcd_apply_lcd_preset_post_api_lcd_presets_name_apply"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/midi/bindings/count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Count Bindings */
+        get: operations["routes_count_bindings_get_api_midi_bindings_count"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/midi/bindings/learn/last-cc": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Last Observed Cc
+         * @description T2483-5 iter 172 — return the most-recently-observed MIDI CC
+         *     captured by MIDILearnManager's existing MidiHub bridge.
+         *
+         *     The frontend SourceDescriptorEditor Learn button polls this
+         *     every 250ms for up to 10s; on first non-null response it writes
+         *     the cc + channel into the descriptor.
+         */
+        get: operations["routes_get_last_observed_cc_get_api_midi_bindings_learn_last_cc"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/midi/cluster/bindings/matrix": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Cluster Bindings Matrix
+         * @description T2484-1 iter 182 — cluster-wide aggregation of every peer's
+         *     GET /api/midi/bindings/matrix. Frontend usePeerMatrix (iter 185)
+         *     consumes this directly.
+         *
+         *     Per the iter-181 plan D3: all peer requests are issued
+         *     concurrently via asyncio.gather with a 2s per-peer timeout. Failed
+         *     peers populate the errors map but don't fail the whole request.
+         */
+        get: operations["routes_get_cluster_bindings_matrix_get_api_midi_cluster_bindings_matrix"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/midi/bindings/matrix": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Bindings Matrix
+         * @description T2483-8 iter 162 — server-side source_type × consumer_type
+         *     aggregation for the iter-118 routing matrix UI.
+         *
+         *     Replaces the iter-117 client-side fan-out (which issued one query
+         *     per BindingConsumerType every 5s poll, 10 queries total). One
+         *     SQL aggregation here returns the same shape.
+         */
+        get: operations["routes_get_bindings_matrix_get_api_midi_bindings_matrix"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/midi/legacy-table-rowcounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Legacy Table Rowcounts
+         * @description T2482-P2.8 readiness gate: report the row counts of every
+         *     legacy MIDI table that is slated for deletion. P2.8 part 2
+         *     requires every count here to be EITHER zero OR fully covered
+         *     by canonical bindings via `metadata.legacy_table` provenance
+         *     matching.
+         *
+         *     Used by future operator tooling + the P2.8 part 2 verification
+         *     script to confirm it's safe to DROP the listed tables.
+         */
+        get: operations["routes_legacy_table_rowcounts_get_api_midi_legacy_table_rowcounts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/midi/bindings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Bindings
+         * @description List bindings, with optional filters. Filter precedence:
+         *     consumer (consumer_type+consumer_id) > device > scope.
+         *
+         *     `consumer_id="*"` is a wildcard: when combined with `consumer_type`,
+         *     every binding of that type is returned regardless of consumer_id
+         *     (T2459-H10 — matches the UI hint "use * for any").
+         */
+        get: operations["routes_list_bindings_get_api_midi_bindings"];
+        put?: never;
+        /** Create Binding */
+        post: operations["routes_create_binding_post_api_midi_bindings"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/midi/bindings/{binding_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Binding */
+        get: operations["routes_get_binding_get_api_midi_bindings_binding_id"];
+        put?: never;
+        post?: never;
+        /** Delete Binding */
+        delete: operations["routes_delete_binding_delete_api_midi_bindings_binding_id"];
+        options?: never;
+        head?: never;
+        /** Update Binding */
+        patch: operations["routes_update_binding_patch_api_midi_bindings_binding_id"];
+        trace?: never;
+    };
+    "/api/midi/bindings/{binding_id}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send Binding Feedback Test */
+        post: operations["routes_send_binding_feedback_test_post_api_midi_bindings_binding_id_test"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/midi/bindings/{binding_id}/disable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Disable Binding */
+        post: operations["routes_disable_binding_post_api_midi_bindings_binding_id_disable"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/midi/bindings/{binding_id}/enable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Enable Binding */
+        post: operations["routes_enable_binding_post_api_midi_bindings_binding_id_enable"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/avb/bindings/count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Count Bindings */
+        get: operations["binding_routes_count_bindings_get_api_avb_bindings_count"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/avb/router/projection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Router Projection
+         * @description T2490-3a — read-side projection of the live AvbRouter state.
+         *
+         *     Renders every `StreamConnection` in the running `AvbRouter`
+         *     singleton as a synthetic AvbBindingRead. Synthetic rows carry
+         *     `metadata.projection_source = "avb_router"` and a deterministic
+         *     `proj-<hash>` binding_id (so they never collide with real UUID4
+         *     rows in the avb_bindings table).
+         *
+         *     The full T2490-3 refactor will turn avb_router.py into a writer
+         *     through `AvbBindingAuthority`; this endpoint is the read-side
+         *     seam that lets the operator surface (T2490-4) show real router
+         *     state today before the writer side flips.
+         */
+        get: operations["binding_routes_get_router_projection_get_api_avb_router_projection"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/avb/bindings/matrix": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Bindings Matrix
+         * @description T2490-2b — server-side aggregation of every AvbBinding.
+         *
+         *     Returns the source_type × consumer_type cell counts AND the full
+         *     binding list in one round-trip, so the Connections DataTable
+         *     (T2490-4) can stop fan-out across scope filters. Mirrors
+         *     `/api/midi/bindings/matrix`.
+         *
+         *     T2490-3a — pass `?include_router=true` to additionally fold the
+         *     live AvbRouter projection into the response. Synthetic rows are
+         *     tagged via `metadata.projection_source` so the frontend can render
+         *     them differently (e.g., with a "live" tag).
+         */
+        get: operations["binding_routes_get_bindings_matrix_get_api_avb_bindings_matrix"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/avb/cluster/bindings/matrix": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Cluster Bindings Matrix
+         * @description T2490-7 — cluster-wide aggregation of every peer's
+         *     GET /api/avb/bindings/matrix. Mirrors the MIDI cluster-matrix
+         *     endpoint shipped in T2484-1.
+         *
+         *     All peer requests are issued concurrently via asyncio.gather with
+         *     a 2s per-peer timeout. Failed peers populate `errors` but don't
+         *     fail the whole request.
+         */
+        get: operations["binding_routes_get_cluster_bindings_matrix_get_api_avb_cluster_bindings_matrix"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/avb/bindings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Bindings
+         * @description List bindings, with optional filters. Filter precedence:
+         *     consumer (consumer_type+consumer_id) > stream_id > cluster pair > scope.
+         *
+         *     At least one filter is required (unfiltered queries are rejected so
+         *     a misconfigured frontend can't accidentally fan out the whole table).
+         */
+        get: operations["binding_routes_list_bindings_get_api_avb_bindings"];
+        put?: never;
+        /** Create Binding */
+        post: operations["binding_routes_create_binding_post_api_avb_bindings"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/avb/bindings/{binding_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Binding */
+        get: operations["binding_routes_get_binding_get_api_avb_bindings_binding_id"];
+        put?: never;
+        post?: never;
+        /** Delete Binding */
+        delete: operations["binding_routes_delete_binding_delete_api_avb_bindings_binding_id"];
+        options?: never;
+        head?: never;
+        /** Update Binding */
+        patch: operations["binding_routes_update_binding_patch_api_avb_bindings_binding_id"];
+        trace?: never;
+    };
+    "/api/avb/bindings/{binding_id}/disable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Disable Binding */
+        post: operations["binding_routes_disable_binding_post_api_avb_bindings_binding_id_disable"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/avb/bindings/{binding_id}/enable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Enable Binding */
+        post: operations["binding_routes_enable_binding_post_api_avb_bindings_binding_id_enable"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sonobus/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Status
+         * @description High-level SonoBus status — drives the /sonobus Overview tile.
+         *
+         *     Daemon-side fields are placeholders until T2521-4 lands. Authority
+         *     and database fields are live from this slice on.
+         */
+        get: operations["binding_routes_get_status_get_api_sonobus_status"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sonobus/bindings/count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Count Bindings */
+        get: operations["binding_routes_count_bindings_get_api_sonobus_bindings_count"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sonobus/bindings/matrix": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Bindings Matrix
+         * @description Server-side aggregation of every SonoBusBinding.
+         *
+         *     Returns the binding_kind × consumer_type cell counts AND the full
+         *     binding list in one round-trip, so the Connections DataTable can
+         *     stop fan-out across filters. Mirrors `/api/avb/bindings/matrix`.
+         */
+        get: operations["binding_routes_get_bindings_matrix_get_api_sonobus_bindings_matrix"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sonobus/cluster/bindings/matrix": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Cluster Bindings Matrix
+         * @description T2521-5b — cluster-wide aggregation of every peer's
+         *     `GET /api/sonobus/bindings/matrix`. Mirrors `AvbClusterBindingsMatrixResponse`.
+         *
+         *     All peer requests are issued concurrently via asyncio.gather with
+         *     a 2 s per-peer timeout. Failed peers populate `errors` but don't
+         *     fail the whole request.
+         */
+        get: operations["binding_routes_get_cluster_bindings_matrix_get_api_sonobus_cluster_bindings_matrix"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sonobus/profiles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Profiles
+         * @description T2521-5d — list of codec + jitter + resend presets.
+         *
+         *     Returns the built-in profiles derived from the T2521 locked
+         *     decisions. Operator-defined custom profiles land when T2521-4
+         *     ships its own profile table; this endpoint will then return both.
+         */
+        get: operations["binding_routes_list_profiles_get_api_sonobus_profiles"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sonobus/profiles/{profile_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Profile
+         * @description T2521-5d — single profile lookup.
+         */
+        get: operations["binding_routes_get_profile_get_api_sonobus_profiles_profile_id"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sonobus/peers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Peers
+         * @description T2521-5c — operator peer view derived from bindings.
+         *
+         *     Aggregates by (listener_node_id, listener_peer_endpoint,
+         *     listener_capability). Drives the `/sonobus/peers` Carbon page.
+         *     Until T2521-4 daemon ships its own discovered-peer table this is
+         *     the authoritative peer projection.
+         */
+        get: operations["binding_routes_list_peers_get_api_sonobus_peers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sonobus/groups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Groups
+         * @description T2521-5c — operator group view derived from bindings.
+         *
+         *     Aggregates by `group_id`. Skips rows without a `group_id` (peer
+         *     bindings, cluster-route bindings).
+         */
+        get: operations["binding_routes_list_groups_get_api_sonobus_groups"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sonobus/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Sessions
+         * @description T2521-5c — active session view.
+         *
+         *     Returns enabled `binding_kind in {stream, client_session}`. Daemon
+         *     integration in T2521-4 will swap this for a live-session projection
+         *     fed by the AOO runtime; the contract stays the same.
+         */
+        get: operations["binding_routes_list_sessions_get_api_sonobus_sessions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sonobus/bindings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Bindings
+         * @description List bindings with optional filters. Filter precedence:
+         *
+         *     consumer (consumer_type+consumer_id) > binding_kind > group_id >
+         *     cluster pair > scope.
+         *
+         *     At least one filter is required to keep the fan-out cost bounded.
+         */
+        get: operations["binding_routes_list_bindings_get_api_sonobus_bindings"];
+        put?: never;
+        /** Create Binding */
+        post: operations["binding_routes_create_binding_post_api_sonobus_bindings"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sonobus/bindings/{binding_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Binding */
+        get: operations["binding_routes_get_binding_get_api_sonobus_bindings_binding_id"];
+        put?: never;
+        post?: never;
+        /** Delete Binding */
+        delete: operations["binding_routes_delete_binding_delete_api_sonobus_bindings_binding_id"];
+        options?: never;
+        head?: never;
+        /** Update Binding */
+        patch: operations["binding_routes_update_binding_patch_api_sonobus_bindings_binding_id"];
+        trace?: never;
+    };
+    "/api/sonobus/bindings/{binding_id}/disable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Disable Binding */
+        post: operations["binding_routes_disable_binding_post_api_sonobus_bindings_binding_id_disable"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sonobus/bindings/{binding_id}/enable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Enable Binding */
+        post: operations["binding_routes_enable_binding_post_api_sonobus_bindings_binding_id_enable"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/midi/devices/auto-generate/lookup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Auto Generate Lookup */
+        post: operations["device_pack_auto_gen_auto_generate_lookup_post_api_midi_devices_auto_generate_lookup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/midi/devices/auto-generate/synthesize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Auto Generate Synthesize */
+        post: operations["device_pack_auto_gen_auto_generate_synthesize_post_api_midi_devices_auto_generate_synthesize"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/midi/devices/auto-generate/commit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Auto Generate Commit */
+        post: operations["device_pack_auto_gen_auto_generate_commit_post_api_midi_devices_auto_generate_commit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/midi/devices/auto-generate/diagnostics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Auto Generate Diagnostics
+         * @description Quick health check: lookup-table sizes + the resolved write target.
+         */
+        get: operations["device_pack_auto_gen_auto_generate_diagnostics_get_api_midi_devices_auto_generate_diagnostics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/midi/configurator/packs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Configurator Packs
+         * @description Return every device-pack the framework Configurator knows about.
+         *
+         *     Default: ``available=True`` packs only. Pass
+         *     ``?include_unavailable=true`` to also list WIP packs the operator
+         *     can't yet exercise (e.g. for QA dashboards or telemetry views).
+         */
+        get: operations["configurator_packs_list_configurator_packs_get_api_midi_configurator_packs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/plugin-inventory/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Plugins */
+        get: operations["plugin_inventory_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/plugin-inventory/{uri}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Plugin */
+        get: operations["plugin_inventory_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/devices/configurator/{pack_id}/overrides": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read the pack's per-installation YAML override file */
+        get: operations["configurator_devices_get_overrides_get_api_devices_configurator_pack_id_overrides"];
+        /** Write the pack's per-installation YAML override file */
+        put: operations["configurator_devices_put_overrides_put_api_devices_configurator_pack_id_overrides"];
+        post?: never;
+        /** Delete the pack's per-installation YAML override file */
+        delete: operations["configurator_devices_delete_overrides_delete_api_devices_configurator_pack_id_overrides"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/devices/configurator/{pack_id}/learn/last-event": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read the pack's most recent Learn event (kind-agnostic) */
+        get: operations["configurator_devices_get_last_learn_event_get_api_devices_configurator_pack_id_learn_last_event"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -30598,6 +33853,32 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/avb/avdecc/substrate-state": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Avdecc Substrate State
+         * @description T2499-C Slice 5 — substrate readiness for the binding wizard.
+         *
+         *     Returns a ``{interface, ptp, entity_count, source}`` dict. When the
+         *     simulator override is installed, the simulator's own
+         *     ``substrate_state()`` is returned. Otherwise the response is built
+         *     from the live AVB service. Schema is pinned by tests so the wizard
+         *     can read either path with one renderer.
+         */
+        get: operations["avb_get_avdecc_substrate_state_get_api_avb_avdecc_substrate_state"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/avb/avdecc/entities": {
         parameters: {
             query?: never;
@@ -30611,6 +33892,11 @@ export interface paths {
          *
          *     Returns:
          *         List of discovered AVDECC entities with capabilities.
+         *
+         *     T2499-C — When `MAP2_AVDECC_SIMULATOR=<bench>` is set, an override
+         *     AVDECC controller (simulator) is consulted first via
+         *     `resolve_avdecc_entity()`. Live la_avdecc remains the default when
+         *     no override is installed.
          */
         get: operations["avb_get_avdecc_entities_get_api_avb_avdecc_entities"];
         put?: never;
@@ -30732,6 +34018,179 @@ export interface paths {
          *         - cleanup_age_days: int
          */
         get: operations["avb_get_aem_cache_stats_get_api_avb_avdecc_cache_stats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/avb/streams/{stream_id}/counters": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Stream Counters
+         * @description Return IEEE 1722.1-2021 §7.4.46 counters for a single AVB stream.
+         *
+         *     The shape is `{stream_id, direction, counters}` where `counters`
+         *     is the STREAM_INPUT_COUNTERS or STREAM_OUTPUT_COUNTERS dict
+         *     matching the stream's direction. Listeners that have observed
+         *     presentation-time-late frames (T2491-7) surface those in the
+         *     `late_timestamp` counter.
+         */
+        get: operations["counters_get_stream_counters_get_api_avb_streams_stream_id_counters"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/avb/ptp/grandmaster_changes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Grandmaster Change Log
+         * @description T2491-2 — surface the BMCA reselection log.
+         *
+         *     Returns the cumulative `change_count` (matches
+         *     `AVB_INTERFACE_COUNTERS::gptp_gm_changed`) plus a bounded
+         *     history of the most recent 32 grandmaster transitions. Each
+         *     entry carries the wall-clock timestamp + old/new clock-identity
+         *     strings. The operator surface (T2490-9 `/avb/network`) renders
+         *     this as a "GM stability" timeline.
+         */
+        get: operations["counters_get_grandmaster_change_log_get_api_avb_ptp_grandmaster_changes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/avb/interfaces/{ifname}/counters": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Interface Counters
+         * @description Return IEEE 1722.1-2021 §7.4.46 AVB_INTERFACE_COUNTERS for the
+         *     named NIC. Numbers are projected from `/sys/class/net/<ifname>/
+         *     statistics/*` (kernel interface counters) — they are accurate
+         *     even when the AVDECC controller has not yet enumerated this
+         *     interface.
+         */
+        get: operations["counters_get_interface_counters_get_api_avb_interfaces_ifname_counters"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/avb/connections/persist": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Persist Connection
+         * @description T2491-8: write the live ACMP connection to AvbBinding so the
+         *     next engine startup replays it via la_avdecc's
+         *     `register_saved_connection()` for sub-2-second fast-connect.
+         */
+        post: operations["saved_connections_persist_connection_post_api_avb_connections_persist"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/avb/connections/saved": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Saved Connections
+         * @description T2491-8: return every persisted ACMP connection. The engine
+         *     startup loop consumes this list and replays each via
+         *     la_avdecc's `register_saved_connection()` API.
+         */
+        get: operations["saved_connections_list_saved_connections_get_api_avb_connections_saved"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/avb/milan/{entity_id}/info": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Milan Info */
+        get: operations["milan_get_milan_info_get_api_avb_milan_entity_id_info"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/avb/milan/{entity_id}/system_unique_id": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get System Unique Id */
+        get: operations["milan_get_system_unique_id_get_api_avb_milan_entity_id_system_unique_id"];
+        put?: never;
+        /** Set System Unique Id */
+        post: operations["milan_set_system_unique_id_post_api_avb_milan_entity_id_system_unique_id"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/avb/milan/{entity_id}/media_clock_reference_info": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Media Clock Reference Info */
+        get: operations["milan_get_media_clock_reference_info_get_api_avb_milan_entity_id_media_clock_reference_info"];
         put?: never;
         post?: never;
         delete?: never;
@@ -31103,6 +34562,13 @@ export interface paths {
         /**
          * Recall a preset
          * @description Recall a preset on the Tesira device by index (1-based).
+         *
+         *     T2496-5 — writes a pending row through `AvbBindingAuthority` BEFORE
+         *     invoking the device, then flips it to enabled=True on success. The
+         *     operator surface (Bindings page, Connections page) sees the recall
+         *     request as a warm-gray row while it's in-flight, then green once
+         *     the device acks. Defensive: authority write/ack failures log +
+         *     swallow without failing the recall.
          */
         post: operations["tesira_recall_preset_post_api_tesira_devices_device_id_presets_preset_index_recall"];
         delete?: never;
@@ -31969,6 +35435,748 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/devices/packs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Packs */
+        get: operations["devices_list_packs_get_api_devices_packs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/devices/profiles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Profiles */
+        get: operations["devices_list_profiles_get_api_devices_profiles"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/devices/profiles/{pack_id}/{model}/{kind}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Profile */
+        get: operations["devices_get_profile_get_api_devices_profiles_pack_id_model_kind"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/devices/profiles/reload/{pack_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reload Pack */
+        post: operations["devices_reload_pack_post_api_devices_profiles_reload_pack_id"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/devices/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Resolve */
+        get: operations["devices_resolve_get_api_devices_resolve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/devices/mappings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Active Mappings */
+        get: operations["devices_list_active_mappings_get_api_devices_mappings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/devices/mappings/assign": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Assign Mapping */
+        post: operations["devices_assign_mapping_post_api_devices_mappings_assign"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/devices/mappings/clear": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Clear Mapping */
+        post: operations["devices_clear_mapping_post_api_devices_mappings_clear"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/devices/{pack_id}/{model}/assets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Assets
+         * @description List every cached metadata asset (image / datasheet / manual)
+         *     for a device, by filename. The frontend uses this to know what
+         *     paths are available under the asset endpoint.
+         */
+        get: operations["devices_list_assets_get_api_devices_pack_id_model_assets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/devices/{pack_id}/{model}/asset/{filename}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Serve Asset
+         * @description Serve one cached metadata asset by filename.
+         */
+        get: operations["devices_serve_asset_get_api_devices_pack_id_model_asset_filename"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/devices/{pack_id}/refresh-metadata": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Metadata
+         * @description Trigger a background metadata fetch for the pack.
+         *
+         *     Pulls product images, datasheet, and manual URLs declared in each
+         *     of the pack's audio profiles. Network failures are swallowed and
+         *     surface in the returned counts.
+         */
+        post: operations["devices_refresh_metadata_post_api_devices_pack_id_refresh_metadata"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/devices/mixxx/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import Mixxx Xml
+         * @description Parse a Mixxx-format XML mapping body and return the resolved
+         *     descriptor.
+         *
+         *     The frontend's ``<MappingNodeGraphEditor/>`` import flow uploads a
+         *     raw XML body here and renders the returned descriptor as a node
+         *     graph. Bindings that fail soft surface in ``stats.skip_reasons``
+         *     so the GUI can show "N bindings imported, M skipped".
+         */
+        post: operations["devices_import_mixxx_xml_post_api_devices_mixxx_import"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/devices/mixxx/export/{pack_id}/{model}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Mixxx Xml
+         * @description Serialize a MAP2 native MIDI mapping back to Mixxx-format XML.
+         */
+        get: operations["devices_export_mixxx_xml_get_api_devices_mixxx_export_pack_id_model"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/devices/learn/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Learn Start */
+        post: operations["devices_learn_start_post_api_devices_learn_start"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/devices/learn/capture": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Learn Capture */
+        post: operations["devices_learn_capture_post_api_devices_learn_capture"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/devices/learn/assign": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Learn Assign */
+        post: operations["devices_learn_assign_post_api_devices_learn_assign"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/devices/learn/cancel/{session_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Learn Cancel */
+        post: operations["devices_learn_cancel_post_api_devices_learn_cancel_session_id"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/devices/measure-latency": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Measure Latency
+         * @description Run path-c IR loopback measurement against the device's
+         *     profile-defined `loopback_ports` and write versioned evidence
+         *     under the service-state `fit-for-purpose-evidence` tree.
+         */
+        post: operations["devices_measure_latency_post_api_devices_measure_latency"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/devices/measure-latency/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Measure Latency History
+         * @description T2459-G6 — list prior loopback evidence files for a pack+model.
+         *
+         *     Walks the service-state evidence tree plus legacy repository evidence
+         *     across every dated directory and returns the most-recent N measurements.
+         */
+        get: operations["devices_measure_latency_history_get_api_devices_measure_latency_history"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/devices/connected": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Connected Devices
+         * @description Live detector snapshot. Q3 chain: USB + ALSA seq + ALSA card +
+         *     PipeWire. Each detection source can fail independently; failed
+         *     sources surface in ``sources_failed`` so the GUI can show partial
+         *     detection state honestly.
+         *
+         *     Side-effect: every matched profile gets recorded in the bench-state
+         *     tracker so ``/known`` and ``/recently-disconnected`` work.
+         */
+        get: operations["devices_list_connected_devices_get_api_devices_connected"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/devices/recently-disconnected": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Recently Disconnected
+         * @description Profile keys seen within the 30-second grace window but absent
+         *     from the current detector pass (Q12 lifecycle).
+         */
+        get: operations["devices_list_recently_disconnected_get_api_devices_recently_disconnected"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/devices/known": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Known Devices
+         * @description Pinned profiles + profiles seen within the last 24 h (Q12/Q14).
+         *
+         *     T2461-A3 — also includes ``last_bound_at`` from the bench-state
+         *     tracker so the GUI can render "Bound Nm ago" beside "Last seen".
+         */
+        get: operations["devices_list_known_devices_get_api_devices_known"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/devices/pin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pin Device
+         * @description Pin a profile so it stays in the Known-to-Bench section
+         *     regardless of connection state (Q12).
+         */
+        post: operations["devices_pin_device_post_api_devices_pin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/devices/unpin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Unpin Device */
+        post: operations["devices_unpin_device_post_api_devices_unpin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/devices/diagnostics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Diagnostics
+         * @description Bench-wide diagnostics aggregate (Q19).
+         *
+         *     Sources unioned:
+         *       - profile_registry: degraded packs (broken YAML, schema fail)
+         *       - controller_host:  recent crash + storm-guard state
+         */
+        get: operations["devices_list_diagnostics_get_api_devices_diagnostics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/devices/sequencer-monitor-candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Sequencer Monitor Candidates
+         * @description T2461-A5 — return connected devices that declare loopback_ports
+         *     plus their latest measure-latency mean/p95/jitter (if any).
+         *
+         *     The Sequencer ConsoleView's "Bench monitor" affordance reads this to
+         *     populate the strip-routing menu and surface a yellow jitter chip
+         *     when the most-recent loopback exceeds the strip's threshold.
+         *
+         *     Worklist: T2461-A5.
+         */
+        get: operations["devices_list_sequencer_monitor_candidates_get_api_devices_sequencer_monitor_candidates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/devices/slot-bindings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Slot Bindings
+         * @description T2461-A2 — return every active Brain-slot ↔ device binding.
+         *
+         *     Read by both the Hardware Store DeviceCard (to scope its pulse
+         *     animation to the bound slot's clip events) and the Brain
+         *     ConsoleView (to greys out a strip when the bound device drops).
+         */
+        get: operations["devices_list_slot_bindings_get_api_devices_slot_bindings"];
+        put?: never;
+        /**
+         * Bind Slot To Profile
+         * @description Bind one Sequencer slot to one device profile_key. Replaces any
+         *     prior binding on either side.
+         */
+        post: operations["devices_bind_slot_to_profile_post_api_devices_slot_bindings"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/devices/slot-bindings/by-slot/{slot_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Unbind Slot */
+        delete: operations["devices_unbind_slot_delete_api_devices_slot_bindings_by_slot_slot_id"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/devices/slot-bindings/by-profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Unbind Profile */
+        delete: operations["devices_unbind_profile_delete_api_devices_slot_bindings_by_profile"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/devices/snapshot-keys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Snapshot Keys
+         * @description T2461-A9 — return the current connected + recently-disconnected
+         *     profile_keys plus a timestamp so callers (e.g. Sequencer Library save
+         *     flow) can record which devices were on the bench when an asset
+         *     was authored. Non-blocking; reads from the BenchStateTracker that
+         *     G1 + G2 already keep up to date.
+         */
+        get: operations["devices_snapshot_keys_get_api_devices_snapshot_keys"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/devices/packs/sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Pack Sources
+         * @description Provenance summary per pack (Q15/Q18). Source classification:
+         *     shipped / user / imported.
+         */
+        get: operations["devices_list_pack_sources_get_api_devices_packs_sources"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/devices/sources/mixxx-checksums": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Mixxx Checksums
+         * @description Hash every shipped file under device-packs/_mixx-imports/ and
+         *     diff against the recorded `IMPORT_CHECKSUMS.txt`. Returns a row
+         *     per drifted file so the admin tab can surface "imported corpus
+         *     has been modified" warnings inline.
+         */
+        get: operations["devices_list_mixxx_checksums_get_api_devices_sources_mixxx_checksums"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/devices/sources/sync-mixxx": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sync Mixxx
+         * @description Stream the output of `scripts/sync_mixxx_imports.py` line-by-line
+         *     as SSE so the admin tab can render it in a Carbon `CodeSnippet`.
+         *
+         *     The script does not commit; the operator commits via the standard
+         *     `update` shorthand once the diff looks right.
+         */
+        post: operations["devices_sync_mixxx_post_api_devices_sources_sync_mixxx"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/devices/profiles/{pack_id}/{model}/{kind}/resolve-alias": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resolve Mixxx Alias
+         * @description T2461-A8 — translate a Mixxx ``(group, key)`` shorthand to the
+         *     MAP2 target string the binding writer accepts. The wizard's target
+         *     step calls this so operators can type the form they already know.
+         *
+         *     Returns ``{resolved: true, target: "audio.chain.1.volume"}`` on a
+         *     hit; ``{resolved: false, reason: "..."}`` on a miss (fail-soft).
+         */
+        post: operations["devices_resolve_mixxx_alias_post_api_devices_profiles_pack_id_model_kind_resolve_alias"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/devices/profiles/{pack_id}/{model}/{kind}/bindings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Write Bindings
+         * @description Q20-shaped: atomic write the new ``controls``/``outputs`` block
+         *     to the profile YAML, return ``{revision, undo_token}`` so the GUI
+         *     can offer an 8-second Undo (Q13).
+         */
+        post: operations["devices_write_bindings_post_api_devices_profiles_pack_id_model_kind_bindings"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/devices/profiles/{pack_id}/{model}/{kind}/bindings/undo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Undo Bindings
+         * @description Q13: restore the previous YAML body keyed by the undo token.
+         */
+        post: operations["devices_undo_bindings_post_api_devices_profiles_pack_id_model_kind_bindings_undo"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/manifest.json": {
         parameters: {
             query?: never;
@@ -32138,6 +36346,30 @@ export interface components {
              */
             leader_epoch: number;
         };
+        /**
+         * ActivityEventResponse
+         * @description T2512-ACTIVITY — single activity-log entry.
+         */
+        ActivityEventResponse: {
+            /** Timestamp Iso */
+            timestamp_iso: string;
+            /** Verb */
+            verb: string;
+            /** Track */
+            track?: number | null;
+            /** Summary */
+            summary: string;
+        };
+        /**
+         * ActivityLogResponse
+         * @description T2512-ACTIVITY — the operator activity log envelope.
+         */
+        ActivityLogResponse: {
+            /** Events */
+            events: components["schemas"]["ActivityEventResponse"][];
+            /** Cap */
+            cap: number;
+        };
         /** AddDeviceRequest */
         AddDeviceRequest: {
             /**
@@ -32173,6 +36405,35 @@ export interface components {
              * @default linear
              */
             curve: string;
+        };
+        /**
+         * AddSliceAtPlayheadRequest
+         * @description T2512-SLICE-AT-PLAYHEAD — body for the playhead helper.
+         *
+         *     Only the label is operator-controlled; start_frame + end_frame
+         *     are computed service-side from the current playhead.
+         */
+        AddSliceAtPlayheadRequest: {
+            /**
+             * Label
+             * @default
+             */
+            label: string;
+        };
+        /**
+         * AddSliceRequest
+         * @description T2512-SLICE — add a non-destructive slice.
+         */
+        AddSliceRequest: {
+            /** Start Frame */
+            start_frame: number;
+            /** End Frame */
+            end_frame: number;
+            /**
+             * Label
+             * @default
+             */
+            label: string;
         };
         /** AddToParallelBranchRequest */
         AddToParallelBranchRequest: {
@@ -32426,6 +36687,24 @@ export interface components {
             /** Total Observed */
             total_observed: number;
         };
+        /**
+         * ArmSessionRequest
+         * @description POST /api/v1/recorder/sessions request body.
+         */
+        ArmSessionRequest: {
+            /**
+             * Snapshot Id
+             * @description Snapshot id to record against.
+             */
+            snapshot_id: number;
+            /**
+             * Tap Matrix
+             * @description Per-chain pre_fx/post_fx capture flags. Empty dict = no taps installed (status surface only).
+             */
+            tap_matrix?: {
+                [key: string]: components["schemas"]["TapConfig"];
+            };
+        };
         /** AssetDeployResponse */
         AssetDeployResponse: {
             /** Asset Hash */
@@ -32434,6 +36713,20 @@ export interface components {
             local_path: string;
             /** Size Bytes */
             size_bytes: number;
+        };
+        /** AssignMappingRequest */
+        AssignMappingRequest: {
+            /**
+             * Controller Key
+             * @description Canonical controller identifier (hardware_id or alsa-seq:<client>:<port>).
+             */
+            controller_key: string;
+            /** Pack Id */
+            pack_id: string;
+            /** Model */
+            model: string;
+            /** Kind */
+            kind: string;
         };
         /** AssignmentCreate */
         AssignmentCreate: {
@@ -32546,6 +36839,10 @@ export interface components {
             requested_input_device?: string | null;
             /** Requested Output Device */
             requested_output_device?: string | null;
+            /** Requested Input Interface Id */
+            requested_input_interface_id?: string | null;
+            /** Requested Output Interface Id */
+            requested_output_interface_id?: string | null;
             /** Monitoring Output Index */
             monitoring_output_index?: number | null;
         };
@@ -32791,6 +37088,23 @@ export interface components {
             attempts_total?: number | null;
         };
         /**
+         * AutoRecordPushRequest
+         * @description T2512-AUTO-PUSH — body for the input-level push endpoint.
+         */
+        AutoRecordPushRequest: {
+            /** Level Db */
+            level_db: number;
+        };
+        /**
+         * AutoRecordPushResponse
+         * @description T2512-AUTO-PUSH — push result envelope.
+         */
+        AutoRecordPushResponse: {
+            /** Fired */
+            fired: boolean;
+            status: components["schemas"]["LooperStatusResponse"];
+        };
+        /**
          * AutomationLaneCreate
          * @description Create automation lane request
          */
@@ -32868,6 +37182,280 @@ export interface components {
             last_run_at?: string | null;
             /** Error */
             error?: string | null;
+        };
+        /**
+         * AvbBindingCreate
+         * @description POST payload — authority assigns binding_id + timestamps + author.
+         */
+        AvbBindingCreate: {
+            /**
+             * Consumer Type
+             * @enum {string}
+             */
+            consumer_type: "avdecc_stream" | "tesira_preset" | "tesira_block" | "cluster_route" | "srp_reservation";
+            /** Consumer Id */
+            consumer_id: string;
+            /**
+             * Consumer Label
+             * @default
+             */
+            consumer_label: string;
+            /**
+             * Source Type
+             * @enum {string}
+             */
+            source_type: "avdecc_talker" | "avdecc_listener" | "tesira_subscription" | "engine_signal";
+            /** Source Descriptor */
+            source_descriptor?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Target Type
+             * @enum {string}
+             */
+            target_type: "avdecc_listener" | "tesira_apply" | "engine_sink" | "cluster_listener";
+            /** Target Descriptor */
+            target_descriptor?: {
+                [key: string]: unknown;
+            };
+            /** Stream Id */
+            stream_id?: string | null;
+            /** Stream Format */
+            stream_format?: string | null;
+            /** Srp Class */
+            srp_class?: ("A" | "B") | null;
+            /** Talker Node Id */
+            talker_node_id?: string | null;
+            /** Listener Node Id */
+            listener_node_id?: string | null;
+            /**
+             * Scope
+             * @default global
+             * @enum {string}
+             */
+            scope: "global" | "snapshot" | "node" | "cluster";
+            /** Scope Id */
+            scope_id?: string | null;
+            /**
+             * Enabled
+             * @default true
+             */
+            enabled: boolean;
+            /**
+             * Source
+             * @default manual
+             */
+            source: string;
+            /** Metadata */
+            metadata?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Created By
+             * @default unknown
+             */
+            created_by: string;
+        };
+        /**
+         * AvbBindingRead
+         * @description GET response — full binding record.
+         */
+        AvbBindingRead: {
+            /**
+             * Consumer Type
+             * @enum {string}
+             */
+            consumer_type: "avdecc_stream" | "tesira_preset" | "tesira_block" | "cluster_route" | "srp_reservation";
+            /** Consumer Id */
+            consumer_id: string;
+            /**
+             * Consumer Label
+             * @default
+             */
+            consumer_label: string;
+            /**
+             * Source Type
+             * @enum {string}
+             */
+            source_type: "avdecc_talker" | "avdecc_listener" | "tesira_subscription" | "engine_signal";
+            /** Source Descriptor */
+            source_descriptor?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Target Type
+             * @enum {string}
+             */
+            target_type: "avdecc_listener" | "tesira_apply" | "engine_sink" | "cluster_listener";
+            /** Target Descriptor */
+            target_descriptor?: {
+                [key: string]: unknown;
+            };
+            /** Stream Id */
+            stream_id?: string | null;
+            /** Stream Format */
+            stream_format?: string | null;
+            /** Srp Class */
+            srp_class?: ("A" | "B") | null;
+            /** Talker Node Id */
+            talker_node_id?: string | null;
+            /** Listener Node Id */
+            listener_node_id?: string | null;
+            /**
+             * Scope
+             * @default global
+             * @enum {string}
+             */
+            scope: "global" | "snapshot" | "node" | "cluster";
+            /** Scope Id */
+            scope_id?: string | null;
+            /**
+             * Enabled
+             * @default true
+             */
+            enabled: boolean;
+            /**
+             * Source
+             * @default manual
+             */
+            source: string;
+            /** Metadata */
+            metadata?: {
+                [key: string]: unknown;
+            };
+            /** Binding Id */
+            binding_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By */
+            created_by: string;
+            /**
+             * Modified At
+             * Format: date-time
+             */
+            modified_at: string;
+            /** Modified By */
+            modified_by: string;
+        };
+        /**
+         * AvbBindingUpdate
+         * @description PATCH payload — every field optional. Authority bumps modified_at +
+         *     modified_by on any successful write.
+         */
+        AvbBindingUpdate: {
+            /** Consumer Label */
+            consumer_label?: string | null;
+            /** Source Descriptor */
+            source_descriptor?: {
+                [key: string]: unknown;
+            } | null;
+            /** Target Descriptor */
+            target_descriptor?: {
+                [key: string]: unknown;
+            } | null;
+            /** Stream Id */
+            stream_id?: string | null;
+            /** Stream Format */
+            stream_format?: string | null;
+            /** Srp Class */
+            srp_class?: ("A" | "B") | null;
+            /** Talker Node Id */
+            talker_node_id?: string | null;
+            /** Listener Node Id */
+            listener_node_id?: string | null;
+            /** Scope */
+            scope?: ("global" | "snapshot" | "node" | "cluster") | null;
+            /** Scope Id */
+            scope_id?: string | null;
+            /** Enabled */
+            enabled?: boolean | null;
+            /** Source */
+            source?: string | null;
+            /** Metadata */
+            metadata?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Modified By
+             * @default unknown
+             */
+            modified_by: string;
+        };
+        /**
+         * AvbBindingsMatrixResponse
+         * @description T2490-2b — full source × consumer aggregation, plus the rows
+         *     themselves so the frontend can populate the Connections DataTable
+         *     in a single round-trip (replaces the iter-3 4-query fan-out across
+         *     global / snapshot / node / cluster scopes).
+         *
+         *     Mirrors `BindingsMatrixResponse` in app/services/midi/routes.py.
+         */
+        AvbBindingsMatrixResponse: {
+            /** Matrix */
+            matrix: {
+                [key: string]: {
+                    [key: string]: components["schemas"]["AvbMatrixCell"];
+                };
+            };
+            /** Total Bindings */
+            total_bindings: number;
+            /** Bindings */
+            bindings: components["schemas"]["AvbBindingRead"][];
+        };
+        /**
+         * AvbClusterBindingsMatrixResponse
+         * @description T2490-7 — cluster-wide aggregation. Local matrix kept under
+         *     `local`; per-peer matrices under `peers`; failed peers populate
+         *     `errors` keyed by node_id.
+         */
+        AvbClusterBindingsMatrixResponse: {
+            local: components["schemas"]["AvbBindingsMatrixResponse"];
+            /** Peers */
+            peers: components["schemas"]["AvbClusterPeerMatrix"][];
+            /** Errors */
+            errors: {
+                [key: string]: string;
+            };
+        };
+        /**
+         * AvbClusterPeerMatrix
+         * @description T2490-7 — one peer's matrix slice in the cluster response.
+         *
+         *     Mirrors `ClusterPeerMatrix` in app/services/midi/routes.py.
+         *     `health` is sourced from NodeHealthService and baked in so the
+         *     frontend doesn't need a second fetch.
+         */
+        AvbClusterPeerMatrix: {
+            /** Node Id */
+            node_id: string;
+            /** Hostname */
+            hostname: string;
+            /** Matrix */
+            matrix: {
+                [key: string]: {
+                    [key: string]: components["schemas"]["AvbMatrixCell"];
+                };
+            };
+            /** Total Bindings */
+            total_bindings: number;
+            /**
+             * Health
+             * @default offline
+             */
+            health: string;
+        };
+        /**
+         * AvbMatrixCell
+         * @description T2490-2b — one cell of the source × consumer routing matrix.
+         */
+        AvbMatrixCell: {
+            /** Count */
+            count: number;
+            /** Enabled Count */
+            enabled_count: number;
         };
         /**
          * BackupCreateRequest
@@ -32979,6 +37567,48 @@ export interface components {
             failed: number;
             /** Results */
             results: components["schemas"]["UploadResponse"][];
+        };
+        /** BindingFeedbackTestRequest */
+        BindingFeedbackTestRequest: {
+            /** Normalized Value */
+            normalized_value?: number | null;
+            /**
+             * Use Current Value
+             * @default false
+             */
+            use_current_value: boolean;
+        };
+        /** BindingFeedbackTestResponse */
+        BindingFeedbackTestResponse: {
+            /** Binding Id */
+            binding_id: string;
+            /** Channel */
+            channel: number;
+            /** Cc */
+            cc: number;
+            /** Normalized Value */
+            normalized_value: number;
+            /** Cc Value */
+            cc_value: number;
+            /** Source */
+            source: string;
+        };
+        /**
+         * BindingsMatrixResponse
+         * @description T2483-8 iter 162 — full source × consumer aggregation.
+         *
+         *     Shape: matrix[source_type][consumer_type] = MatrixCell.
+         *     Frontend `useRoutingMatrix` (iter 164) consumes this directly.
+         */
+        BindingsMatrixResponse: {
+            /** Matrix */
+            matrix: {
+                [key: string]: {
+                    [key: string]: components["schemas"]["MatrixCell"];
+                };
+            };
+            /** Total Bindings */
+            total_bindings: number;
         };
         /** Body_config_api_push_config_post_api_cluster_config_push */
         Body_config_api_push_config_post_api_cluster_config_push: {
@@ -33367,1093 +37997,6 @@ export interface components {
             /** Bpm */
             bpm: number;
         };
-        /** SequencerControllerAssignmentModel */
-        SequencerControllerAssignmentModel: {
-            /** Source */
-            source: string;
-            /** Target */
-            target: string;
-            /**
-             * Mode
-             * @default absolute
-             */
-            mode: string;
-            /**
-             * Enabled
-             * @default true
-             */
-            enabled: boolean;
-        };
-        /** SequencerControllerQualificationModel */
-        SequencerControllerQualificationModel: {
-            /**
-             * Scoped Instance Key
-             * @default workspace-default
-             */
-            scoped_instance_key: string;
-            /**
-             * Scope Binding Ready
-             * @default true
-             */
-            scope_binding_ready: boolean;
-            /**
-             * Tier A Runtime Locked
-             * @default true
-             */
-            tier_a_runtime_locked: boolean;
-            /**
-             * Controller Ready
-             * @default false
-             */
-            controller_ready: boolean;
-            /**
-             * Ready Surface Count
-             * @default 0
-             */
-            ready_surface_count: number;
-            keyboard?: components["schemas"]["SequencerKeyboardQualificationModel"];
-            triggers?: components["schemas"]["SequencerTriggerQualificationModel"];
-            sequence?: components["schemas"]["SequencerSequenceQualificationModel"];
-            routing?: components["schemas"]["SequencerRoutingQualificationModel"];
-            /**
-             * Summary
-             * @default
-             */
-            summary: string;
-            /** Issues */
-            issues?: string[];
-        };
-        /** SequencerDiagnosticsModel */
-        SequencerDiagnosticsModel: {
-            /**
-             * Sample Rate Hz
-             * @default 48000
-             */
-            sample_rate_hz: number;
-            /**
-             * Buffer Size Samples
-             * @default 128
-             */
-            buffer_size_samples: number;
-            /**
-             * Cpu Load Percent
-             * @default 8.5
-             */
-            cpu_load_percent: number;
-            /**
-             * Active Voices
-             * @default 0
-             */
-            active_voices: number;
-            /**
-             * Peak Voices
-             * @default 0
-             */
-            peak_voices: number;
-            /**
-             * Polyphony Headroom
-             * @default 96
-             */
-            polyphony_headroom: number;
-            /**
-             * Trigger Latency Ms
-             * @default 2.2
-             */
-            trigger_latency_ms: number;
-            /**
-             * Roundtrip Latency Ms
-             * @default 5.3
-             */
-            roundtrip_latency_ms: number;
-            /**
-             * Xruns
-             * @default 0
-             */
-            xruns: number;
-            /**
-             * Backend Mode
-             * @default hybrid
-             */
-            backend_mode: string;
-            /** Warnings */
-            warnings?: string[];
-            /** Last Import Source */
-            last_import_source?: string | null;
-            controller_qualification?: components["schemas"]["SequencerControllerQualificationModel"];
-            /** Updated At Iso */
-            updated_at_iso?: string;
-        };
-        /** SequencerInputsStateModel */
-        SequencerInputsStateModel: {
-            /** Keyboard Zones */
-            keyboard_zones?: components["schemas"]["SequencerKeyboardZoneModel"][];
-            /** Trigger Profiles */
-            trigger_profiles?: components["schemas"]["SequencerTriggerProfileModel"][];
-            /** Controller Assignments */
-            controller_assignments?: components["schemas"]["SequencerControllerAssignmentModel"][];
-        };
-        /** SequencerInputsModel */
-        SequencerInputsModel: {
-            inputs: components["schemas"]["SequencerInputsStateModel"];
-        };
-        /** SequencerKeyboardQualificationModel */
-        SequencerKeyboardQualificationModel: {
-            /**
-             * Ready
-             * @default false
-             */
-            ready: boolean;
-            /**
-             * Zone Count
-             * @default 0
-             */
-            zone_count: number;
-            /**
-             * Channel Count
-             * @default 0
-             */
-            channel_count: number;
-            /**
-             * Chromatic Slot Count
-             * @default 0
-             */
-            chromatic_slot_count: number;
-            /**
-             * Polyphony Capacity
-             * @default 0
-             */
-            polyphony_capacity: number;
-            /**
-             * Max Key Span
-             * @default 0
-             */
-            max_key_span: number;
-            /** Aftertouch Modes */
-            aftertouch_modes?: string[];
-            /**
-             * Summary
-             * @default
-             */
-            summary: string;
-            /** Issues */
-            issues?: string[];
-        };
-        /** SequencerKeyboardZoneModel */
-        SequencerKeyboardZoneModel: {
-            /** Zone Id */
-            zone_id: string;
-            /** Name */
-            name: string;
-            /**
-             * Midi Channel
-             * @default 1
-             */
-            midi_channel: number;
-            /**
-             * Key Low
-             * @default 0
-             */
-            key_low: number;
-            /**
-             * Key High
-             * @default 127
-             */
-            key_high: number;
-            /**
-             * Transpose
-             * @default 0
-             */
-            transpose: number;
-            /**
-             * Enabled
-             * @default true
-             */
-            enabled: boolean;
-            /**
-             * Aftertouch Mode
-             * @default channel
-             */
-            aftertouch_mode: string;
-        };
-        /** SequencerLayerModel */
-        SequencerLayerModel: {
-            /** Layer Id */
-            layer_id: string;
-            /** Name */
-            name: string;
-            /** Slot Indices */
-            slot_indices?: number[];
-            /**
-             * Key Low
-             * @default 0
-             */
-            key_low: number;
-            /**
-             * Key High
-             * @default 127
-             */
-            key_high: number;
-            /**
-             * Velocity Low
-             * @default 1
-             */
-            velocity_low: number;
-            /**
-             * Velocity High
-             * @default 127
-             */
-            velocity_high: number;
-            /**
-             * Polyphony
-             * @default 32
-             */
-            polyphony: number;
-            /**
-             * Scene Slot
-             * @default 0
-             */
-            scene_slot: number;
-            /**
-             * Enabled
-             * @default true
-             */
-            enabled: boolean;
-            /**
-             * Purpose
-             * @default layer
-             */
-            purpose: string;
-        };
-        /** SequencerLayersUpdateModel */
-        SequencerLayersUpdateModel: {
-            /** Layers */
-            layers?: components["schemas"]["SequencerLayerModel"][];
-        };
-        /** SequencerLibraryAssetModel */
-        SequencerLibraryAssetModel: {
-            /** Asset Id */
-            asset_id: string;
-            /** Name */
-            name: string;
-            /**
-             * Asset Type
-             * @enum {string}
-             */
-            asset_type: "soundfont" | "sfz" | "sample" | "kit" | "patch";
-            /** Source */
-            source: string;
-            /**
-             * Path
-             * @default
-             */
-            path: string;
-            /**
-             * Description
-             * @default
-             */
-            description: string;
-            /**
-             * Default Slot Mode
-             * @default chromatic
-             * @enum {string}
-             */
-            default_slot_mode: "chromatic" | "drum" | "hybrid";
-            /** Tags */
-            tags?: string[];
-        };
-        /** SequencerLibraryCollectionModel */
-        SequencerLibraryCollectionModel: {
-            /** Collection Id */
-            collection_id: string;
-            /** Label */
-            label: string;
-            /**
-             * Asset Count
-             * @default 0
-             */
-            asset_count: number;
-            /** Assets */
-            assets?: components["schemas"]["SequencerLibraryAssetModel"][];
-        };
-        /** SequencerLibraryStateModel */
-        SequencerLibraryStateModel: {
-            /** Collections */
-            collections?: components["schemas"]["SequencerLibraryCollectionModel"][];
-            /** Featured Assets */
-            featured_assets?: string[];
-            /**
-             * Last Scan Iso
-             * @default
-             */
-            last_scan_iso: string;
-        };
-        /** SequencerMasterSectionModel */
-        SequencerMasterSectionModel: {
-            /**
-             * Master Volume
-             * @default 0.82
-             */
-            master_volume: number;
-            /**
-             * Drive Db
-             * @default 0
-             */
-            drive_db: number;
-            /**
-             * Compressor Amount
-             * @default 0.2
-             */
-            compressor_amount: number;
-            /**
-             * Reverb Mix
-             * @default 0.18
-             */
-            reverb_mix: number;
-            /**
-             * Limiter Ceiling Db
-             * @default -0.5
-             */
-            limiter_ceiling_db: number;
-        };
-        /** SequencerMixerBusModel */
-        SequencerMixerBusModel: {
-            /** Bus Id */
-            bus_id: number;
-            /** Name */
-            name: string;
-            /**
-             * Level
-             * @default 1
-             */
-            level: number;
-            /**
-             * Pan
-             * @default 0
-             */
-            pan: number;
-            /**
-             * Mute
-             * @default false
-             */
-            mute: boolean;
-            /**
-             * Solo
-             * @default false
-             */
-            solo: boolean;
-            /**
-             * Output Pair
-             * @default 0
-             */
-            output_pair: number;
-            /**
-             * Reverb Send
-             * @default 0
-             */
-            reverb_send: number;
-        };
-        /** SequencerMixerStateModel */
-        SequencerMixerStateModel: {
-            /** Buses */
-            buses?: components["schemas"]["SequencerMixerBusModel"][];
-            master?: components["schemas"]["SequencerMasterSectionModel"];
-        };
-        /** SequencerInputsModel */
-        SequencerInputsModel: {
-            mixer: components["schemas"]["SequencerMixerStateModel"];
-        };
-        /** SequencerPatternSummaryModel */
-        SequencerPatternSummaryModel: {
-            /** Pattern Id */
-            pattern_id: number;
-            /** Name */
-            name: string;
-            /**
-             * Length
-             * @default 16
-             */
-            length: number;
-            /**
-             * Active Lane Count
-             * @default 0
-             */
-            active_lane_count: number;
-            /**
-             * Fill Enabled
-             * @default false
-             */
-            fill_enabled: boolean;
-            /**
-             * Variation Count
-             * @default 10
-             */
-            variation_count: number;
-            /**
-             * Summary
-             * @default
-             */
-            summary: string;
-        };
-        /** SequencerRoutingQualificationModel */
-        SequencerRoutingQualificationModel: {
-            /**
-             * Ready
-             * @default false
-             */
-            ready: boolean;
-            /**
-             * Used Bus Count
-             * @default 0
-             */
-            used_bus_count: number;
-            /**
-             * Output Pair Count
-             * @default 0
-             */
-            output_pair_count: number;
-            /**
-             * Reverb Bus Count
-             * @default 0
-             */
-            reverb_bus_count: number;
-            /**
-             * Controller Assignment Count
-             * @default 0
-             */
-            controller_assignment_count: number;
-            /**
-             * Summary
-             * @default
-             */
-            summary: string;
-            /** Issues */
-            issues?: string[];
-        };
-        /** SequencerSampleEditorStateModel */
-        SequencerSampleEditorStateModel: {
-            /**
-             * Slot Id
-             * @default 0
-             */
-            slot_id: number;
-            /**
-             * Asset Path
-             * @default
-             */
-            asset_path: string;
-            /**
-             * Waveform Available
-             * @default false
-             */
-            waveform_available: boolean;
-            /**
-             * Duration Seconds
-             * @default 0
-             */
-            duration_seconds: number;
-            /**
-             * Start Sample
-             * @default 0
-             */
-            start_sample: number;
-            /**
-             * End Sample
-             * @default 0
-             */
-            end_sample: number;
-            /**
-             * Normalize Target
-             * @default 0.99
-             */
-            normalize_target: number;
-            /**
-             * Reverse Enabled
-             * @default true
-             */
-            reverse_enabled: boolean;
-            /**
-             * Record Target Path
-             * @default
-             */
-            record_target_path: string;
-        };
-        /** SequencerSampleEditorUpdateModel */
-        SequencerSampleEditorUpdateModel: {
-            /** Slot Id */
-            slot_id: number;
-            /** Start Sample */
-            start_sample?: number | null;
-            /** End Sample */
-            end_sample?: number | null;
-            /** Normalize Target */
-            normalize_target?: number | null;
-        };
-        /** SequencerSequenceLaneSummaryModel */
-        SequencerSequenceLaneSummaryModel: {
-            /** Slot Id */
-            slot_id: number;
-            /** Name */
-            name: string;
-            /**
-             * Length
-             * @default 16
-             */
-            length: number;
-            /**
-             * Swing
-             * @default 0
-             */
-            swing: number;
-            /**
-             * Active Steps
-             * @default 0
-             */
-            active_steps: number;
-            /** Step Lock Targets */
-            step_lock_targets?: string[];
-        };
-        /** SequencerSequenceModel */
-        SequencerSequenceModel: {
-            /**
-             * Pattern Bank Size
-             * @default 128
-             */
-            pattern_bank_size: number;
-            /**
-             * Max Steps
-             * @default 64
-             */
-            max_steps: number;
-            /**
-             * Current Pattern
-             * @default 0
-             */
-            current_pattern: number;
-            /**
-             * Current Variation
-             * @default 0
-             */
-            current_variation: number;
-            /** Patterns */
-            patterns?: components["schemas"]["SequencerPatternSummaryModel"][];
-            /** Lanes */
-            lanes?: components["schemas"]["SequencerSequenceLaneSummaryModel"][];
-            /**
-             * Fill Mode
-             * @default manual
-             */
-            fill_mode: string;
-            /**
-             * Song Entry Count
-             * @default 0
-             */
-            song_entry_count: number;
-        };
-        /** SequencerSequenceQualificationModel */
-        SequencerSequenceQualificationModel: {
-            /**
-             * Ready
-             * @default false
-             */
-            ready: boolean;
-            /**
-             * Pattern Count
-             * @default 0
-             */
-            pattern_count: number;
-            /**
-             * Populated Pattern Count
-             * @default 0
-             */
-            populated_pattern_count: number;
-            /**
-             * Active Lane Count
-             * @default 0
-             */
-            active_lane_count: number;
-            /**
-             * Max Pattern Length
-             * @default 0
-             */
-            max_pattern_length: number;
-            /**
-             * Swing Lane Count
-             * @default 0
-             */
-            swing_lane_count: number;
-            /**
-             * Song Entry Count
-             * @default 0
-             */
-            song_entry_count: number;
-            /**
-             * Summary
-             * @default
-             */
-            summary: string;
-            /** Issues */
-            issues?: string[];
-        };
-        /** SequencerSequenceUpdateModel */
-        SequencerSequenceUpdateModel: {
-            sequence: components["schemas"]["SequencerSequenceModel"];
-        };
-        /** SequencerSlotModel */
-        SequencerSlotModel: {
-            /** Slot Id */
-            slot_id: number;
-            /** Name */
-            name: string;
-            /**
-             * Mode
-             * @default drum
-             * @enum {string}
-             */
-            mode: "chromatic" | "drum" | "hybrid";
-            /**
-             * Asset Type
-             * @default empty
-             * @enum {string}
-             */
-            asset_type: "soundfont" | "sfz" | "sample" | "kit" | "patch" | "empty";
-            /**
-             * Asset Path
-             * @default
-             */
-            asset_path: string;
-            /**
-             * Source Label
-             * @default
-             */
-            source_label: string;
-            /**
-             * Level
-             * @default 1
-             */
-            level: number;
-            /**
-             * Pan
-             * @default 0
-             */
-            pan: number;
-            /**
-             * Mute
-             * @default false
-             */
-            mute: boolean;
-            /**
-             * Solo
-             * @default false
-             */
-            solo: boolean;
-            /**
-             * Tune
-             * @default 0
-             */
-            tune: number;
-            /**
-             * Transpose
-             * @default 0
-             */
-            transpose: number;
-            /**
-             * Output Bus
-             * @default 0
-             */
-            output_bus: number;
-            /**
-             * Polyphony
-             * @default 16
-             */
-            polyphony: number;
-            /**
-             * Midi Channel
-             * @default 0
-             */
-            midi_channel: number;
-            /**
-             * Trigger Note
-             * @default 36
-             */
-            trigger_note: number;
-            /** Trigger Notes */
-            trigger_notes?: number[];
-            /**
-             * Key Low
-             * @default 0
-             */
-            key_low: number;
-            /**
-             * Key High
-             * @default 127
-             */
-            key_high: number;
-            /**
-             * Velocity Low
-             * @default 1
-             */
-            velocity_low: number;
-            /**
-             * Velocity High
-             * @default 127
-             */
-            velocity_high: number;
-            /**
-             * Choke Group
-             * @default 0
-             */
-            choke_group: number;
-            /**
-             * Articulation Group
-             * @default main
-             */
-            articulation_group: string;
-            /**
-             * Velocity Curve
-             * @default linear
-             */
-            velocity_curve: string;
-            /**
-             * Status
-             * @default ready
-             */
-            status: string;
-        };
-        /** SequencerSlotUpdateModel */
-        SequencerSlotUpdateModel: {
-            /** Name */
-            name?: string | null;
-            /** Mode */
-            mode?: ("chromatic" | "drum" | "hybrid") | null;
-            /** Asset Type */
-            asset_type?: ("soundfont" | "sfz" | "sample" | "kit" | "patch" | "empty") | null;
-            /** Asset Path */
-            asset_path?: string | null;
-            /** Source Label */
-            source_label?: string | null;
-            /** Level */
-            level?: number | null;
-            /** Pan */
-            pan?: number | null;
-            /** Mute */
-            mute?: boolean | null;
-            /** Solo */
-            solo?: boolean | null;
-            /** Tune */
-            tune?: number | null;
-            /** Transpose */
-            transpose?: number | null;
-            /** Output Bus */
-            output_bus?: number | null;
-            /** Polyphony */
-            polyphony?: number | null;
-            /** Midi Channel */
-            midi_channel?: number | null;
-            /** Trigger Note */
-            trigger_note?: number | null;
-            /** Trigger Notes */
-            trigger_notes?: number[] | null;
-            /** Key Low */
-            key_low?: number | null;
-            /** Key High */
-            key_high?: number | null;
-            /** Velocity Low */
-            velocity_low?: number | null;
-            /** Velocity High */
-            velocity_high?: number | null;
-            /** Choke Group */
-            choke_group?: number | null;
-            /** Articulation Group */
-            articulation_group?: string | null;
-            /** Velocity Curve */
-            velocity_curve?: string | null;
-            /** Status */
-            status?: string | null;
-        };
-        /** SequencerSnapshotIntegrationModel */
-        SequencerSnapshotIntegrationModel: {
-            /**
-             * Authority Model
-             * @default snapshot-first
-             * @constant
-             */
-            authority_model: "snapshot-first";
-            /** Snapshot Id */
-            snapshot_id?: number | null;
-            /** Snapshot Name */
-            snapshot_name?: string | null;
-            /**
-             * Committed State Id
-             * @default brain:committed:default
-             */
-            committed_state_id: string;
-            /**
-             * Desired State Id
-             * @default brain:desired:default
-             */
-            desired_state_id: string;
-            /**
-             * Observed State Id
-             * @default brain:observed:default
-             */
-            observed_state_id: string;
-        };
-        /** SequencerSongEntryModel */
-        SequencerSongEntryModel: {
-            /** Pattern Id */
-            pattern_id: number;
-            /**
-             * Variation
-             * @default 0
-             */
-            variation: number;
-            /**
-             * Repeat Count
-             * @default 1
-             */
-            repeat_count: number;
-            /**
-             * Label
-             * @default
-             */
-            label: string;
-        };
-        /** SequencerSongStateModel */
-        SequencerSongStateModel: {
-            /** Entries */
-            entries?: components["schemas"]["SequencerSongEntryModel"][];
-            /**
-             * Loop
-             * @default false
-             */
-            loop: boolean;
-        };
-        /** SequencerInputsModel */
-        SequencerInputsModel: {
-            song: components["schemas"]["SequencerSongStateModel"];
-        };
-        /** SequencerStateModel */
-        SequencerStateModel: {
-            /** Instance Id */
-            instance_id: string;
-            /**
-             * Product Name
-             * @default Sequencer
-             */
-            product_name: string;
-            /**
-             * Set Name
-             * @default Init Sequencer
-             */
-            set_name: string;
-            /**
-             * Active Slot
-             * @default 0
-             */
-            active_slot: number;
-            /**
-             * Active Layer Id
-             * @default main-stack
-             */
-            active_layer_id: string;
-            /**
-             * Active Section
-             * @default performance
-             * @enum {string}
-             */
-            active_section: "performance" | "console" | "step" | "split" | "perform" | "layers" | "sequence" | "routing" | "inputs" | "library" | "session_media" | "practice_coach" | "diagnostics";
-            transport?: components["schemas"]["SequencerTransportStateModel"];
-            /** Slots */
-            slots?: components["schemas"]["SequencerSlotModel"][];
-            /** Layers */
-            layers?: components["schemas"]["SequencerLayerModel"][];
-            sequence?: components["schemas"]["SequencerSequenceModel"];
-            song?: components["schemas"]["SequencerSongStateModel"];
-            mixer?: components["schemas"]["SequencerMixerStateModel"];
-            inputs?: components["schemas"]["SequencerInputsStateModel"];
-            library?: components["schemas"]["SequencerLibraryStateModel"];
-            sample_editor?: components["schemas"]["SequencerSampleEditorStateModel"];
-            diagnostics?: components["schemas"]["SequencerDiagnosticsModel"];
-            snapshot_integration?: components["schemas"]["SequencerSnapshotIntegrationModel"];
-        };
-        /** SequencerStateUpdateModel */
-        SequencerStateUpdateModel: {
-            /** Set Name */
-            set_name?: string | null;
-            /** Active Slot */
-            active_slot?: number | null;
-            /** Active Layer Id */
-            active_layer_id?: string | null;
-            /** Active Section */
-            active_section?: ("performance" | "console" | "step" | "split" | "perform" | "layers" | "sequence" | "routing" | "inputs" | "library" | "session_media" | "practice_coach" | "diagnostics") | null;
-        };
-        /** SequencerTransportStateModel */
-        SequencerTransportStateModel: {
-            /**
-             * Is Playing
-             * @default false
-             */
-            is_playing: boolean;
-            /**
-             * Bpm
-             * @default 120
-             */
-            bpm: number;
-            /**
-             * Swing
-             * @default 0
-             */
-            swing: number;
-            /**
-             * Pattern
-             * @default 0
-             */
-            pattern: number;
-            /**
-             * Variation
-             * @default 0
-             */
-            variation: number;
-            /**
-             * Step
-             * @default 0
-             */
-            step: number;
-            /**
-             * Bar
-             * @default 1
-             */
-            bar: number;
-            /**
-             * Beat
-             * @default 1
-             */
-            beat: number;
-            /**
-             * Pending Pattern
-             * @default -1
-             */
-            pending_pattern: number;
-            /**
-             * Switch Quantization Beats
-             * @default 4
-             */
-            switch_quantization_beats: number;
-        };
-        /** SequencerTransportUpdateModel */
-        SequencerTransportUpdateModel: {
-            /** Is Playing */
-            is_playing?: boolean | null;
-            /** Bpm */
-            bpm?: number | null;
-            /** Swing */
-            swing?: number | null;
-            /** Pattern */
-            pattern?: number | null;
-            /** Variation */
-            variation?: number | null;
-            /** Pending Pattern */
-            pending_pattern?: number | null;
-            /** Switch Quantization Beats */
-            switch_quantization_beats?: number | null;
-        };
-        /** SequencerTriggerProfileModel */
-        SequencerTriggerProfileModel: {
-            /** Profile Id */
-            profile_id: string;
-            /** Name */
-            name: string;
-            /**
-             * Pad Range Start
-             * @default 0
-             */
-            pad_range_start: number;
-            /**
-             * Pad Range End
-             * @default 15
-             */
-            pad_range_end: number;
-            /**
-             * Curve
-             * @default linear
-             */
-            curve: string;
-            /**
-             * Scan Time Ms
-             * @default 1.2
-             */
-            scan_time_ms: number;
-            /**
-             * Mask Time Ms
-             * @default 8
-             */
-            mask_time_ms: number;
-            /**
-             * Retrigger Cancel Ms
-             * @default 18
-             */
-            retrigger_cancel_ms: number;
-            /**
-             * Crosstalk Guard
-             * @default 0.4
-             */
-            crosstalk_guard: number;
-            /**
-             * Velocity Floor
-             * @default 1
-             */
-            velocity_floor: number;
-            /**
-             * Velocity Ceiling
-             * @default 127
-             */
-            velocity_ceiling: number;
-        };
-        /** SequencerTriggerQualificationModel */
-        SequencerTriggerQualificationModel: {
-            /**
-             * Ready
-             * @default false
-             */
-            ready: boolean;
-            /**
-             * Profile Count
-             * @default 0
-             */
-            profile_count: number;
-            /**
-             * Covered Pad Count
-             * @default 0
-             */
-            covered_pad_count: number;
-            /**
-             * Trigger Slot Count
-             * @default 0
-             */
-            trigger_slot_count: number;
-            /**
-             * Unique Trigger Notes
-             * @default 0
-             */
-            unique_trigger_notes: number;
-            /**
-             * Fastest Scan Time Ms
-             * @default 0
-             */
-            fastest_scan_time_ms: number;
-            /**
-             * Widest Mask Time Ms
-             * @default 0
-             */
-            widest_mask_time_ms: number;
-            /**
-             * Summary
-             * @default
-             */
-            summary: string;
-            /** Issues */
-            issues?: string[];
-        };
         /** BrandingCopy */
         BrandingCopy: {
             /** Welcomeheadline */
@@ -34565,10 +38108,29 @@ export interface components {
              */
             remove_tags: string[];
         };
+        /** BundledFirmwareEntry */
+        BundledFirmwareEntry: {
+            /** Name */
+            name: string;
+            /** Path */
+            path: string;
+            /** Size Bytes */
+            size_bytes: number;
+        };
+        /**
+         * BundledFirmwareResponse
+         * @description Listing of bundled `.dfu` binaries available for flashing.
+         */
+        BundledFirmwareResponse: {
+            /** Has Bundled Firmware */
+            has_bundled_firmware: boolean;
+            /** Firmwares */
+            firmwares?: components["schemas"]["BundledFirmwareEntry"][];
+            /** Bundle Dir */
+            bundle_dir: string;
+        };
         /** BypassRequest */
         BypassRequest: {
-            /** Instance Id */
-            instance_id: number;
             /** Bypass */
             bypass: boolean;
         };
@@ -34580,6 +38142,72 @@ export interface components {
             cabinet: boolean;
             /** Reverb */
             reverb: boolean;
+        };
+        /** CalibrationResult */
+        CalibrationResult: {
+            /** Latency Samples */
+            latency_samples: number;
+            /** Measured At */
+            measured_at: string;
+        };
+        /**
+         * CapabilitiesResponse
+         * @description Static device profile snapshot for the I/O Routing tab.
+         */
+        CapabilitiesResponse: {
+            /** Name */
+            name: string;
+            /** Manufacturer */
+            manufacturer: string;
+            /** Kernel Module */
+            kernel_module: string;
+            /** Input Channels */
+            input_channels: number;
+            /** Output Channels */
+            output_channels: number;
+            /** Format */
+            format: string;
+            /** Sample Rate */
+            sample_rate: number;
+            /** Buffer Size */
+            buffer_size: number;
+            /** Spdif Send Channels */
+            spdif_send_channels: number[];
+            /** Spdif Return Channels */
+            spdif_return_channels: number[];
+            /** Analog Send Channels */
+            analog_send_channels: number[];
+            /** Analog Return Channels */
+            analog_return_channels: number[];
+        };
+        /**
+         * ChainConfigUpsertRequest
+         * @description Request body for PUT /chain-configs/{chain_id} — upsert a chain's PC binding.
+         *
+         *     Optional fields default to None so a partial PUT preserves the stored value
+         *     on update (only fields explicitly sent are changed).
+         */
+        ChainConfigUpsertRequest: {
+            /**
+             * Program Number
+             * @description Program Change number 0-127
+             */
+            program_number: number;
+            /**
+             * Bank Msb
+             * @description Bank Select MSB (CC#0); omit to preserve
+             */
+            bank_msb?: number | null;
+            /**
+             * Bank Lsb
+             * @description Bank Select LSB (CC#32); omit to preserve
+             */
+            bank_lsb?: number | null;
+            /**
+             * Send Pc On Activate
+             * @description Send PC out when this chain is activated; omit to preserve
+             */
+            send_pc_on_activate?: boolean | null;
         };
         /** ChainCreate */
         ChainCreate: {
@@ -34725,6 +38353,17 @@ export interface components {
             /** Name */
             name: string;
         };
+        /** ChannelMapping */
+        ChannelMapping: {
+            /** Send Left */
+            send_left: number;
+            /** Send Right */
+            send_right: number;
+            /** Return Left */
+            return_left: number;
+            /** Return Right */
+            return_right: number;
+        };
         /**
          * ChorusParams
          * @description Chorus parameters
@@ -34775,6 +38414,11 @@ export interface components {
             /** Requested By */
             requested_by?: string | null;
         };
+        /** ClearMappingRequest */
+        ClearMappingRequest: {
+            /** Controller Key */
+            controller_key: string;
+        };
         /** ClockConfigRequest */
         ClockConfigRequest: {
             /** Bpm */
@@ -34795,6 +38439,40 @@ export interface components {
             tap_note?: number | null;
             /** Tap Cc */
             tap_cc?: number | null;
+        };
+        /** ClockSourceOption */
+        ClockSourceOption: {
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /** Description */
+            description: string;
+            /** Selectable */
+            selectable: boolean;
+        };
+        /**
+         * ClockSourceResponse
+         * @description T2515-6-CLOCK — clock source state for the Carbon Clock tab.
+         *
+         *     Tier-1 pins to ``internal_48k``; the other options are advertised as
+         *     selectable=False until the transactional clock-change endpoint ships.
+         */
+        ClockSourceResponse: {
+            /**
+             * Selected
+             * @description Currently-active clock source id.
+             */
+            selected: string;
+            /**
+             * Locked For Tier1
+             * @description True while tier-1 pins the device to 48 kHz / internal clock. Operators can't change the source until the change endpoint ships.
+             */
+            locked_for_tier1: boolean;
+            /** Sample Rate Hz */
+            sample_rate_hz: number;
+            /** Options */
+            options: components["schemas"]["ClockSourceOption"][];
         };
         /** CloneApplyResponse */
         CloneApplyResponse: {
@@ -34893,6 +38571,29 @@ export interface components {
             /** Connection Id */
             connection_id?: string | null;
         };
+        /**
+         * ClusterBindingsMatrixResponse
+         * @description T2484-1 iter 182 — cluster-wide aggregation for the iter-177
+         *     usePeerMatrix scaffold to consume.
+         *
+         *     Shape:
+         *       local: BindingsMatrixResponse  (the local node's matrix; unchanged
+         *         from the iter-162 endpoint shape so existing consumers keep working)
+         *       peers: list[ClusterPeerMatrix]  (per-peer matrix, EXCLUDES local
+         *         per the iter-181 plan D2)
+         *       errors: dict[node_id, error_message]  (peers that failed to respond
+         *         or returned malformed payloads — still listed so the UI can surface
+         *         partial-availability state)
+         */
+        ClusterBindingsMatrixResponse: {
+            local: components["schemas"]["BindingsMatrixResponse"];
+            /** Peers */
+            peers: components["schemas"]["ClusterPeerMatrix"][];
+            /** Errors */
+            errors: {
+                [key: string]: string;
+            };
+        };
         /** ClusterClockDriftMeasurementResponse */
         ClusterClockDriftMeasurementResponse: {
             /** Node Id */
@@ -34968,6 +38669,70 @@ export interface components {
             strategy: string;
             /** Manual Node Id */
             manual_node_id?: string | null;
+        };
+        /**
+         * ClusterDeviceRegistryPeer
+         * @description One peer's slice of the cluster device-meter registry.
+         *
+         *     Mirrors the AVB/SonoBus per-peer fan-out shape. ``health`` is sourced
+         *     from `NodeHealthService` and baked in so the frontend doesn't need a
+         *     second fetch.
+         */
+        ClusterDeviceRegistryPeer: {
+            /** Node Id */
+            node_id: string;
+            /** Hostname */
+            hostname: string;
+            /** Devices */
+            devices: components["schemas"]["DeviceRegistryEntry"][];
+            /**
+             * Health
+             * @default offline
+             */
+            health: string;
+        };
+        /**
+         * ClusterDeviceRegistryResponse
+         * @description Cluster-wide aggregation of every peer's
+         *     `GET /api/v1/devices/peak-meters/registry`. Local registry kept
+         *     under ``local``; per-peer slices under ``peers``; failed peers
+         *     populate ``errors`` keyed by ``node_id``.
+         *
+         *     Mirrors `AvbClusterBindingsMatrixResponse` /
+         *     `SonoBusClusterBindingsMatrixResponse`.
+         */
+        ClusterDeviceRegistryResponse: {
+            local: components["schemas"]["DeviceRegistryResponse"];
+            /** Peers */
+            peers: components["schemas"]["ClusterDeviceRegistryPeer"][];
+            /** Errors */
+            errors: {
+                [key: string]: string;
+            };
+        };
+        /**
+         * ClusterPeerMatrix
+         * @description T2484-1 iter 182 — one peer's matrix slice in the cluster response.
+         *     T2484-4 iter 195 — added `health` field sourced from NodeHealthService.
+         */
+        ClusterPeerMatrix: {
+            /** Node Id */
+            node_id: string;
+            /** Hostname */
+            hostname: string;
+            /** Matrix */
+            matrix: {
+                [key: string]: {
+                    [key: string]: components["schemas"]["MatrixCell"];
+                };
+            };
+            /** Total Bindings */
+            total_bindings: number;
+            /**
+             * Health
+             * @default offline
+             */
+            health: string;
         };
         /**
          * ClusterPresetBundle
@@ -35109,6 +38874,122 @@ export interface components {
             is_enabled?: boolean | null;
         };
         /**
+         * CommanderBindingResponse
+         * @description A single discovered binding from the override file.
+         */
+        CommanderBindingResponse: {
+            /** Control */
+            control: string;
+            /**
+             * Status
+             * @description Hex status byte, e.g. '0xB0'.
+             */
+            status: string;
+            /** Midino */
+            midino: number;
+            /** Channel */
+            channel: number;
+            /** Raw Value */
+            raw_value?: number | null;
+        };
+        /**
+         * CommanderOverrideResponse
+         * @description The full per-installation override, if one exists.
+         */
+        CommanderOverrideResponse: {
+            /**
+             * Has Override
+             * @description False when no override file exists. UI surfaces this as 'using device-pack defaults; no operator-specific bindings configured'.
+             */
+            has_override: boolean;
+            /** Captured At Utc */
+            captured_at_utc?: string | null;
+            /** Device Serial */
+            device_serial?: string | null;
+            /** Notes */
+            notes?: string | null;
+            /** Bindings */
+            bindings?: components["schemas"]["CommanderBindingResponse"][];
+            /** File Path */
+            file_path?: string | null;
+        };
+        /**
+         * CommanderStatusResponse
+         * @description Snapshot of the connected Commander's firmware + hardware identity.
+         */
+        CommanderStatusResponse: {
+            /**
+             * Firmware Kind
+             * @description One of: stock, custom, dfu_bootloader, unknown, not_present. stock = factory MeloAudio firmware (CC mappings depend on the current mode; use Discovery Wizard). custom = harvie256 community firmware (CC mappings configurable via SysEx; use Push MAP2 Canonical Config). dfu_bootloader = STM32 bootloader, ready to receive a flash. unknown = USB IDs match but the iProduct string doesn't match either known firmware. not_present = no Commander or DFU bootloader on the bus.
+             */
+            firmware_kind: string;
+            /**
+             * Is Present
+             * @description True when ANY device matching the Commander's identifiers is on the bus, including the DFU bootloader. UI uses this vs. the specific kind to distinguish 'no Commander connected' from 'Commander is mid-flash, finish it' states.
+             */
+            is_present: boolean;
+            /**
+             * Supports Discovery Wizard
+             * @description True when the Discovery Wizard can run.
+             */
+            supports_discovery_wizard: boolean;
+            /**
+             * Supports Canonical Config Push
+             * @description True when MAP2 can push a SysEx canonical config.
+             */
+            supports_canonical_config_push: boolean;
+            /** Vendor Id */
+            vendor_id?: number | null;
+            /** Product Id */
+            product_id?: number | null;
+            /** Product String */
+            product_string?: string | null;
+            /** Manufacturer String */
+            manufacturer_string?: string | null;
+            /** Serial */
+            serial?: string | null;
+            /** Sysfs Path */
+            sysfs_path?: string | null;
+            /** Bcd Device */
+            bcd_device?: string | null;
+        };
+        /** CommitRequest */
+        CommitRequest: {
+            /** Vendor */
+            vendor: string;
+            /** Model */
+            model: string;
+            /** Manifest Yaml */
+            manifest_yaml: string;
+            /** Mapping Xml */
+            mapping_xml: string;
+            /**
+             * Scripts Js
+             * @default
+             */
+            scripts_js: string;
+            /**
+             * Overwrite
+             * @default false
+             */
+            overwrite: boolean;
+        };
+        /** CommitResponse */
+        CommitResponse: {
+            /** Profile Key */
+            profile_key: string;
+            /** Pack Dir */
+            pack_dir: string;
+            /** Manifest Path */
+            manifest_path: string;
+            /** Mapping Path */
+            mapping_path: string;
+            /** Scripts Path */
+            scripts_path: string;
+            /** Runtime Packs Dir */
+            runtime_packs_dir: string;
+        };
+        /**
          * CommunityPresetInfo
          * @description Community preset summary for browsing.
          */
@@ -35210,6 +39091,14 @@ export interface components {
             chains?: {
                 [key: string]: unknown;
             }[];
+            /** Record Session Id */
+            record_session_id?: string | null;
+            /** Tap Matrix */
+            tap_matrix?: {
+                [key: string]: {
+                    [key: string]: boolean;
+                };
+            };
             /** Extensions */
             extensions?: {
                 [key: string]: unknown;
@@ -35289,6 +39178,45 @@ export interface components {
             config: {
                 [key: string]: unknown;
             };
+        };
+        /**
+         * ConfiguratorPackEntry
+         * @description Backend-supplied pack metadata. Frontend merges this with its
+         *     locally-registered descriptor library (by ``pack_id``). Pure data
+         *     only — function refs (fetchStatus, tabs) live on the frontend
+         *     descriptor.
+         */
+        ConfiguratorPackEntry: {
+            /**
+             * Pack Id
+             * @description Stable pack identifier; matches the frontend descriptor's packId.
+             */
+            pack_id: string;
+            /** Display Name */
+            display_name: string;
+            /** Vendor Name */
+            vendor_name?: string | null;
+            /**
+             * Summary
+             * @description One-line operator-facing summary; rendered under the picker tile title.
+             */
+            summary?: string | null;
+            /**
+             * Bespoke Route
+             * @description Frontend route for the pack's bespoke onboarding flow. Picking the pack in the framework picker navigates here. None if no bespoke route exists yet (the framework shell renders a generic detail view).
+             */
+            bespoke_route?: string | null;
+            /**
+             * Available
+             * @description Set False to hide a pack from production discovery while leaving the metadata in place (e.g. WIP packs gated on hardware bench).
+             * @default true
+             */
+            available: boolean;
+        };
+        /** ConfiguratorPacksResponse */
+        ConfiguratorPacksResponse: {
+            /** Packs */
+            packs: components["schemas"]["ConfiguratorPackEntry"][];
         };
         /**
          * CorePluginsStatus
@@ -35719,6 +39647,52 @@ export interface components {
             /** Device Id */
             device_id: string;
         };
+        /** DeviceBindingRequest */
+        DeviceBindingRequest: {
+            /**
+             * Consumer Type
+             * @description 'snapshot' today; reserved for future expansion.
+             */
+            consumer_type: string;
+            /**
+             * Consumer Id
+             * @description snapshot_id (as string), preset_id, etc.
+             */
+            consumer_id: string;
+            /**
+             * Consumer Name
+             * @description Display label.
+             */
+            consumer_name: string;
+            /**
+             * Source
+             * @description Who created the binding (e.g., 'brain-setup-task').
+             * @default manual
+             */
+            source: string;
+        };
+        /**
+         * DeviceConfigUpsertRequest
+         * @description Request body for POST /device-configs — upsert a persistent device config.
+         */
+        DeviceConfigUpsertRequest: {
+            /** Device Name */
+            device_name: string;
+            /**
+             * Device Type
+             * @description input or output
+             */
+            device_type?: string | null;
+            /** Is Enabled */
+            is_enabled?: boolean | null;
+            /** Auto Connect */
+            auto_connect?: boolean | null;
+            /**
+             * Channel Filter
+             * @description 0/None = all channels, 1-16 specific
+             */
+            channel_filter?: number | null;
+        };
         /**
          * DeviceMatch
          * @description Matched device specification.
@@ -35768,6 +39742,52 @@ export interface components {
             metadata?: {
                 [key: string]: unknown;
             };
+        };
+        /**
+         * DeviceRegistryEntry
+         * @description One row in the peak-meters registry enumeration.
+         */
+        DeviceRegistryEntry: {
+            /** Device Id */
+            device_id: string;
+            /** Input Channels */
+            input_channels: number;
+            /** Output Channels */
+            output_channels: number;
+            /** Has Engine Source */
+            has_engine_source: boolean;
+            /** @description Inline peak-meter snapshot. Only populated when the request includes ``include_snapshot=true``. */
+            snapshot?: components["schemas"]["DeviceRegistrySnapshot"] | null;
+        };
+        /**
+         * DeviceRegistryResponse
+         * @description Top-level shape for the registry enumeration route.
+         *
+         *     UIs that need to render every device's meter-source state at once
+         *     can call this single endpoint instead of polling per-device. The
+         *     ``devices`` list is alphabetically ordered for deterministic
+         *     enumeration.
+         */
+        DeviceRegistryResponse: {
+            /** Devices */
+            devices: components["schemas"]["DeviceRegistryEntry"][];
+        };
+        /**
+         * DeviceRegistrySnapshot
+         * @description Inline snapshot for ``include_snapshot=true`` requests.
+         *
+         *     Carries the same shape as ``GenericMeterPayload`` minus the echo
+         *     of ``device_id`` (the parent entry already has it).
+         */
+        DeviceRegistrySnapshot: {
+            /** Input Peak Db */
+            input_peak_db: number[];
+            /** Output Peak Db */
+            output_peak_db: number[];
+            /** Source */
+            source: string;
+            /** Captured At */
+            captured_at?: number | null;
         };
         /**
          * DeviceStatusResponse
@@ -35864,7 +39884,7 @@ export interface components {
         };
         /**
          * DownloadRequest
-         * @description Request to start SoundFont download.
+         * @description Request to start IR download.
          */
         DownloadRequest: {
             /** Sources */
@@ -35879,6 +39899,8 @@ export interface components {
              * @default true
              */
             skip_existing: boolean;
+            /** Limit */
+            limit?: number | null;
         };
         /** DrumBackingTrackSummaryModel */
         DrumBackingTrackSummaryModel: {
@@ -37837,6 +41859,32 @@ export interface components {
              */
             key_bits: number;
         };
+        /**
+         * GenericMeterPayload
+         * @description Per-channel peak dBFS for any registered device.
+         *
+         *     Channel indexing is device-specific — consumers should pair this
+         *     with the device's capabilities response to know which index is
+         *     analog vs. digital.
+         */
+        GenericMeterPayload: {
+            /** Device Id */
+            device_id: string;
+            /** Input Peak Db */
+            input_peak_db: number[];
+            /** Output Peak Db */
+            output_peak_db: number[];
+            /**
+             * Source
+             * @description How the values were obtained. One of: 'engine', 'placeholder'. Operators reading 'placeholder' should treat them as 'not yet measured'.
+             */
+            source: string;
+            /**
+             * Captured At
+             * @description Unix timestamp (seconds since epoch, float) when the source produced the snapshot. Backfilled by the registry when the underlying source does not stamp it. Order-2 of the eleventh Continue run handoff.
+             */
+            captured_at?: number | null;
+        };
         /** GpioSetRequest */
         GpioSetRequest: {
             /** State */
@@ -37956,6 +42004,18 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** HardwareUsageResponse */
+        HardwareUsageResponse: {
+            /** In Use */
+            in_use: components["schemas"]["HardwareUsageRow"][];
+        };
+        /** HardwareUsageRow */
+        HardwareUsageRow: {
+            /** Uri */
+            uri: string;
+            /** Chain Id */
+            chain_id: string;
         };
         /**
          * HealthCheckResponse
@@ -38213,6 +42273,58 @@ export interface components {
             /** Source Path */
             source_path?: string | null;
         };
+        /** InstanceConfigRequest */
+        InstanceConfigRequest: {
+            /**
+             * Interface Id
+             * @description device-pack `<vendor>.<model>` id
+             */
+            interface_id: string;
+            /**
+             * Connection Type
+             * @description aes_ebu | spdif_coax | spdif_optical
+             */
+            connection_type: string;
+            channel_mapping: components["schemas"]["ChannelMapping"];
+            /**
+             * Bypass
+             * @default false
+             */
+            bypass: boolean;
+        };
+        /** InstanceConfigResponse */
+        InstanceConfigResponse: {
+            /** Chain Id */
+            chain_id: string;
+            /** Interface Id */
+            interface_id: string;
+            /** Connection Type */
+            connection_type: string;
+            channel_mapping: components["schemas"]["ChannelMapping"];
+            /** Bypass */
+            bypass: boolean;
+            calibration?: components["schemas"]["CalibrationResult"] | null;
+        };
+        /** InterfaceCapabilitiesResponse */
+        InterfaceCapabilitiesResponse: {
+            /** Interfaces */
+            interfaces: components["schemas"]["InterfaceCapabilityRow"][];
+        };
+        /** InterfaceCapabilityRow */
+        InterfaceCapabilityRow: {
+            /** Interface Id */
+            interface_id: string;
+            /** Pack Id */
+            pack_id: string;
+            /** Model Id */
+            model_id: string;
+            /** Display Name */
+            display_name: string;
+            /** Capabilities */
+            capabilities: string[];
+            /** Hardware Id */
+            hardware_id: string;
+        };
         /**
          * LCDDisplayConfig
          * @description Per-LCD configuration block (13 fields + id + address).
@@ -38405,6 +42517,22 @@ export interface components {
             tempo_division: string;
         };
         /**
+         * LastCcResponse
+         * @description T2483-5 iter 172 — most-recently-observed CC for the
+         *     SourceDescriptorEditor Learn button. None if no CC has been
+         *     observed since service start.
+         */
+        LastCcResponse: {
+            /** Cc */
+            cc: number;
+            /** Channel */
+            channel: number | null;
+            /** Value */
+            value: number;
+            /** Observed At */
+            observed_at: number;
+        };
+        /**
          * LatencyCompensationRequest
          * @description Request to enable/disable compensation.
          */
@@ -38445,6 +42573,47 @@ export interface components {
             patch?: {
                 [key: string]: unknown;
             };
+        };
+        /** LearnAssignRequest */
+        LearnAssignRequest: {
+            /** Session Id */
+            session_id: string;
+            /** Target */
+            target?: string | null;
+            /** Script */
+            script?: string | null;
+            /** Action */
+            action?: string | null;
+            /**
+             * Fast Path
+             * @default false
+             */
+            fast_path: boolean;
+        };
+        /** LearnCaptureRequest */
+        LearnCaptureRequest: {
+            /** Session Id */
+            session_id: string;
+            /** Bytes */
+            bytes: number[];
+            /**
+             * Timestamp Ns
+             * @default 0
+             */
+            timestamp_ns: number;
+        };
+        /** LearnEventResponse */
+        LearnEventResponse: {
+            /** Pack Id */
+            pack_id: string;
+            /** Sequence */
+            sequence: number;
+            /** Observed At */
+            observed_at?: number | null;
+            /** Event */
+            event?: {
+                [key: string]: unknown;
+            } | null;
         };
         /** LearnModeRequest */
         LearnModeRequest: {
@@ -38743,6 +42912,28 @@ export interface components {
             /** Program */
             program: number;
         };
+        /** LookupRequest */
+        LookupRequest: {
+            /**
+             * Vid
+             * @description USB vendor id, hex string '0xNNNN'
+             */
+            vid: string;
+            /**
+             * Pid
+             * @description USB product id, hex string '0xNNNN'
+             */
+            pid: string;
+        };
+        /** LookupResponse */
+        LookupResponse: {
+            /** Vid */
+            vid: string;
+            /** Pid */
+            pid: string;
+            mixxx_match: components["schemas"]["MixxxMatchPayload"] | null;
+            usbif_match: components["schemas"]["UsbIfMatchPayload"] | null;
+        };
         /** LoopActivationRequest */
         LoopActivationRequest: {
             /**
@@ -38765,6 +42956,121 @@ export interface components {
             options?: {
                 [key: string]: unknown;
             };
+        };
+        /** LooperStatePayload */
+        "LooperStatePayload-Input": {
+            /**
+             * Schema Version
+             * @default 1
+             */
+            schema_version: number;
+            /** Tracks */
+            tracks: components["schemas"]["LooperStateTrackPayload"][];
+            /**
+             * Master Level Db
+             * @default 0
+             */
+            master_level_db: number;
+        };
+        /** LooperStatePayload */
+        "LooperStatePayload-Output": {
+            /**
+             * Schema Version
+             * @default 1
+             */
+            schema_version: number;
+            /** Tracks */
+            tracks: components["schemas"]["LooperStateTrackPayload"][];
+            /**
+             * Master Level Db
+             * @default 0
+             */
+            master_level_db: number;
+        };
+        /** LooperStateTrackPayload */
+        LooperStateTrackPayload: {
+            /**
+             * Locked
+             * @default false
+             */
+            locked: boolean;
+            /**
+             * One Shot
+             * @default false
+             */
+            one_shot: boolean;
+            /**
+             * Auto Armed
+             * @default false
+             */
+            auto_armed: boolean;
+            /**
+             * Auto Threshold Db
+             * @default -36
+             */
+            auto_threshold_db: number;
+            /**
+             * Stop Mode
+             * @default hard
+             */
+            stop_mode: string;
+            /**
+             * Fade Ms
+             * @default 250
+             */
+            fade_ms: number;
+            /**
+             * Sync Mode
+             * @default free
+             */
+            sync_mode: string;
+            /**
+             * Slices
+             * @default []
+             */
+            slices: components["schemas"]["TrackSliceResponse"][];
+            /**
+             * Quantize Division
+             * @default off
+             */
+            quantize_division: string;
+        };
+        /** LooperStatusResponse */
+        LooperStatusResponse: {
+            /** Tracks */
+            tracks: components["schemas"]["TrackStatusResponse"][];
+            /** Active Track Count */
+            active_track_count: number;
+            /** Sync Master */
+            sync_master: boolean;
+            /** Master Level Db */
+            master_level_db: number;
+            /**
+             * Master Muted
+             * @default false
+             */
+            master_muted: boolean;
+            /** Bpm */
+            bpm?: number | null;
+            /** Sync Master Track */
+            sync_master_track?: number | null;
+            /**
+             * Recent Activity
+             * @default []
+             */
+            recent_activity: components["schemas"]["ActivityEventResponse"][];
+            /**
+             * Metrics
+             * @default {}
+             */
+            metrics: {
+                [key: string]: number;
+            };
+            /**
+             * Preset Names
+             * @default []
+             */
+            preset_names: string[];
         };
         /** MIDICCMappingRequest */
         MIDICCMappingRequest: {
@@ -39046,6 +43352,16 @@ export interface components {
             /** Allow Kernel Detach */
             allow_kernel_detach?: boolean | null;
         };
+        /**
+         * MatrixCell
+         * @description T2483-8 iter 162 — one cell of the source × consumer routing matrix.
+         */
+        MatrixCell: {
+            /** Count */
+            count: number;
+            /** Enabled Count */
+            enabled_count: number;
+        };
         /** McuEventRequest */
         McuEventRequest: {
             /** Event */
@@ -39054,6 +43370,28 @@ export interface components {
             };
             /** Destination Port */
             destination_port?: string | null;
+        };
+        /** MeasureLatencyRequest */
+        MeasureLatencyRequest: {
+            /** Pack Id */
+            pack_id: string;
+            /** Model */
+            model: string;
+            /**
+             * Trials
+             * @default 3
+             */
+            trials: number;
+            /**
+             * Duration Ms
+             * @default 500
+             */
+            duration_ms: number;
+            /**
+             * Tail Ms
+             * @default 200
+             */
+            tail_ms: number;
         };
         /** MeasuredLatencyRequest */
         MeasuredLatencyRequest: {
@@ -39163,6 +43501,37 @@ export interface components {
              */
             curve: string;
         };
+        /**
+         * MeterPayload
+         * @description T2515-6-METERS — per-channel peak readout in dBFS.
+         *
+         *     Channel indexing follows the device-pack profile: indices 0-1 are the
+         *     analog L/R pair, 2-3 are the S/PDIF L/R pair. A live engine metering
+         *     hook is filed as **T2515-Follow-up-METER-WIRE**; until that lands the
+         *     sentinel value (-150.0) is returned per channel so the Carbon panel
+         *     renders the row with an em-dash instead of crashing.
+         */
+        MeterPayload: {
+            /** Input Peak Db */
+            input_peak_db: number[];
+            /** Output Peak Db */
+            output_peak_db: number[];
+            /**
+             * Source
+             * @description How the values were obtained. One of: 'engine', 'placeholder'. Operators reading 'placeholder' should treat them as 'not yet measured'.
+             */
+            source: string;
+        };
+        /**
+         * MetricsResponse
+         * @description T2512-METRICS — verb counter snapshot.
+         */
+        MetricsResponse: {
+            /** Counters */
+            counters: {
+                [key: string]: number;
+            };
+        };
         /** Midi2ConfigRequest */
         Midi2ConfigRequest: {
             /** Enabled */
@@ -39230,6 +43599,183 @@ export interface components {
         Midi2TranslateUmpRequest: {
             /** Words */
             words: number[];
+        };
+        /**
+         * MidiBindingCreate
+         * @description POST payload — authority assigns binding_id + timestamps + author.
+         */
+        MidiBindingCreate: {
+            /**
+             * Consumer Type
+             * @enum {string}
+             */
+            consumer_type: "snapshot" | "brain_slot" | "plugin_param" | "global_param" | "performance_preset" | "device_pack" | "transport" | "tesira_ttp" | "gpio" | "macro";
+            /** Consumer Id */
+            consumer_id: string;
+            /**
+             * Consumer Label
+             * @default
+             */
+            consumer_label: string;
+            /**
+             * Source Type
+             * @enum {string}
+             */
+            source_type: "midi_cc" | "midi_note" | "midi_pc" | "midi_nrpn" | "midi_sysex" | "midi_clock" | "midi_aftertouch" | "midi_pitchbend" | "midi_channel_pressure" | "ttp_subscription" | "gpio_input" | "string_command";
+            /** Source Descriptor */
+            source_descriptor?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Target Type
+             * @enum {string}
+             */
+            target_type: "engine_param" | "engine_command" | "snapshot_action" | "brain_slot" | "device_command" | "macro" | "gpio_output";
+            /** Target Descriptor */
+            target_descriptor?: {
+                [key: string]: unknown;
+            };
+            /** Device Id */
+            device_id?: string | null;
+            /**
+             * Scope
+             * @default global
+             * @enum {string}
+             */
+            scope: "global" | "snapshot" | "node" | "cluster";
+            /** Scope Id */
+            scope_id?: string | null;
+            /**
+             * Enabled
+             * @default true
+             */
+            enabled: boolean;
+            /**
+             * Source
+             * @default manual
+             */
+            source: string;
+            /** Metadata */
+            metadata?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Created By
+             * @default unknown
+             */
+            created_by: string;
+        };
+        /**
+         * MidiBindingRead
+         * @description GET response — full binding record.
+         */
+        MidiBindingRead: {
+            /**
+             * Consumer Type
+             * @enum {string}
+             */
+            consumer_type: "snapshot" | "brain_slot" | "plugin_param" | "global_param" | "performance_preset" | "device_pack" | "transport" | "tesira_ttp" | "gpio" | "macro";
+            /** Consumer Id */
+            consumer_id: string;
+            /**
+             * Consumer Label
+             * @default
+             */
+            consumer_label: string;
+            /**
+             * Source Type
+             * @enum {string}
+             */
+            source_type: "midi_cc" | "midi_note" | "midi_pc" | "midi_nrpn" | "midi_sysex" | "midi_clock" | "midi_aftertouch" | "midi_pitchbend" | "midi_channel_pressure" | "ttp_subscription" | "gpio_input" | "string_command";
+            /** Source Descriptor */
+            source_descriptor?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Target Type
+             * @enum {string}
+             */
+            target_type: "engine_param" | "engine_command" | "snapshot_action" | "brain_slot" | "device_command" | "macro" | "gpio_output";
+            /** Target Descriptor */
+            target_descriptor?: {
+                [key: string]: unknown;
+            };
+            /** Device Id */
+            device_id?: string | null;
+            /**
+             * Scope
+             * @default global
+             * @enum {string}
+             */
+            scope: "global" | "snapshot" | "node" | "cluster";
+            /** Scope Id */
+            scope_id?: string | null;
+            /**
+             * Enabled
+             * @default true
+             */
+            enabled: boolean;
+            /**
+             * Source
+             * @default manual
+             */
+            source: string;
+            /** Metadata */
+            metadata?: {
+                [key: string]: unknown;
+            };
+            /** Binding Id */
+            binding_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By */
+            created_by: string;
+            /**
+             * Modified At
+             * Format: date-time
+             */
+            modified_at: string;
+            /** Modified By */
+            modified_by: string;
+        };
+        /**
+         * MidiBindingUpdate
+         * @description PATCH payload — every field optional. Authority bumps modified_at +
+         *     modified_by on any successful write.
+         */
+        MidiBindingUpdate: {
+            /** Consumer Label */
+            consumer_label?: string | null;
+            /** Source Descriptor */
+            source_descriptor?: {
+                [key: string]: unknown;
+            } | null;
+            /** Target Descriptor */
+            target_descriptor?: {
+                [key: string]: unknown;
+            } | null;
+            /** Device Id */
+            device_id?: string | null;
+            /** Scope */
+            scope?: ("global" | "snapshot" | "node" | "cluster") | null;
+            /** Scope Id */
+            scope_id?: string | null;
+            /** Enabled */
+            enabled?: boolean | null;
+            /** Source */
+            source?: string | null;
+            /** Metadata */
+            metadata?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Modified By
+             * @default unknown
+             */
+            modified_by: string;
         };
         /** MidiCapabilitiesResponse */
         MidiCapabilitiesResponse: {
@@ -39456,6 +44002,20 @@ export interface components {
                 [key: string]: unknown;
             }[];
         };
+        /** MidiClusterSettingsResponse */
+        MidiClusterSettingsResponse: {
+            /** Enabled */
+            enabled: boolean;
+            /** Auto Connect */
+            auto_connect: boolean;
+        };
+        /** MidiClusterSettingsUpdate */
+        MidiClusterSettingsUpdate: {
+            /** Enabled */
+            enabled?: boolean | null;
+            /** Auto Connect */
+            auto_connect?: boolean | null;
+        };
         /** MidiClusterSummaryResponse */
         MidiClusterSummaryResponse: {
             /**
@@ -39503,7 +44063,7 @@ export interface components {
             output_port_index?: number | null;
             /**
              * Name Hint
-             * @default intelfx
+             * @default mpx
              */
             name_hint: string;
         };
@@ -39565,23 +44125,14 @@ export interface components {
         };
         /** MidiMapRequest */
         MidiMapRequest: {
-            /** Id */
-            id?: string | null;
-            /** Name */
-            name: string;
-            /** Description */
-            description?: string | null;
-            /**
-             * Active
-             * @default false
-             */
-            active: boolean;
-            /** Mappings */
-            mappings?: components["schemas"]["MidiMappingRequest"][];
+            /** Entries */
+            entries?: {
+                [key: string]: unknown;
+            }[];
         };
         /** MidiMapSaveRequest */
         MidiMapSaveRequest: {
-            midi_map: components["schemas"]["MidiMapRequest"];
+            midi_map: components["schemas"]["app__routes__intelfx__MidiMapRequest"];
             /**
              * Make Active
              * @default false
@@ -39686,6 +44237,34 @@ export interface components {
             cabinet: number;
             /** Reverb */
             reverb: number;
+        };
+        /** MixxxImportRequest */
+        MixxxImportRequest: {
+            /** Pack Id */
+            pack_id: string;
+            /** Xml Body */
+            xml_body: string;
+            /** Alias Table */
+            alias_table?: {
+                [key: string]: string;
+            } | null;
+        };
+        /** MixxxMatchPayload */
+        MixxxMatchPayload: {
+            /** Vid */
+            vid: string;
+            /** Pid */
+            pid: string;
+            /** Device Name */
+            device_name: string;
+            /** Mapping File */
+            mapping_file: string;
+            /** Script Files */
+            script_files: string[];
+            /** Protocol */
+            protocol: string;
+            /** Upstream Commit */
+            upstream_commit: string;
         };
         /** ModMatrixRouteModel */
         ModMatrixRouteModel: {
@@ -39992,6 +44571,16 @@ export interface components {
              */
             audio_latency_ms: number;
             services?: components["schemas"]["NodeServices"];
+            /** Latency Pressure Score */
+            latency_pressure_score?: number | null;
+            /** Latency Pressure Percent */
+            latency_pressure_percent?: number | null;
+            /**
+             * Latency Pressure Status
+             * @default waiting
+             * @enum {string}
+             */
+            latency_pressure_status: "waiting" | "offline" | "stable" | "watch" | "critical";
         };
         /** NodeIdentity */
         NodeIdentity: {
@@ -40072,6 +44661,16 @@ export interface components {
              */
             audio_latency_ms: number;
             services?: components["schemas"]["NodeServices"];
+            /** Latency Pressure Score */
+            latency_pressure_score?: number | null;
+            /** Latency Pressure Percent */
+            latency_pressure_percent?: number | null;
+            /**
+             * Latency Pressure Status
+             * @default waiting
+             * @enum {string}
+             */
+            latency_pressure_status: "waiting" | "offline" | "stable" | "watch" | "critical";
             /** Hostname */
             hostname: string;
             /** Display Label */
@@ -40136,6 +44735,41 @@ export interface components {
         OscServerRequest: {
             /** Listen Port */
             listen_port: number;
+        };
+        /** OverridesDeleteResponse */
+        OverridesDeleteResponse: {
+            /** Pack Id */
+            pack_id: string;
+            /** Deleted */
+            deleted: boolean;
+        };
+        /** OverridesResponse */
+        OverridesResponse: {
+            /** Pack Id */
+            pack_id: string;
+            /** Path */
+            path: string;
+            /** Payload */
+            payload?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** OverridesWriteRequest */
+        OverridesWriteRequest: {
+            /**
+             * Payload
+             * @description YAML override payload. The route auto-fills ``schema_version`` and ``device`` if not present so the frontend doesn't need to know the pack's schema constants.
+             */
+            payload: {
+                [key: string]: unknown;
+            };
+        };
+        /** OverridesWriteResponse */
+        OverridesWriteResponse: {
+            /** Pack Id */
+            pack_id: string;
+            /** Path */
+            path: string;
         };
         /**
          * PageConfigUpdateRequest
@@ -40778,6 +45412,40 @@ export interface components {
              */
             legato: boolean;
         };
+        /** PersistConnectionRequest */
+        PersistConnectionRequest: {
+            /**
+             * Stream Id
+             * @description AVTP stream id, hex-encoded
+             */
+            stream_id: string;
+            /** Talker Entity Id */
+            talker_entity_id: string;
+            /** Talker Unique Id */
+            talker_unique_id: number;
+            /** Listener Entity Id */
+            listener_entity_id: string;
+            /** Listener Unique Id */
+            listener_unique_id: number;
+            /** Stream Format */
+            stream_format?: string | null;
+            /** Label */
+            label?: string | null;
+            /**
+             * Operator
+             * @default unknown
+             */
+            operator: string;
+        };
+        /** PersistConnectionResponse */
+        PersistConnectionResponse: {
+            /** Binding Id */
+            binding_id: string;
+            /** Persisted At */
+            persisted_at: string;
+            /** Replay Pending */
+            replay_pending: boolean;
+        };
         /**
          * PhaserParams
          * @description Phaser parameters
@@ -40813,6 +45481,11 @@ export interface components {
              * @description Bypass effect
              */
             bypass?: boolean | null;
+        };
+        /** PinRequest */
+        PinRequest: {
+            /** Profile Key */
+            profile_key: string;
         };
         /**
          * PitchShifterParams
@@ -41071,6 +45744,41 @@ export interface components {
                 [key: string]: unknown;
             };
         };
+        /** PluginDescriptorResponse */
+        PluginDescriptorResponse: {
+            /** Uri */
+            uri: string;
+            /** Name */
+            name: string;
+            /** Vendor */
+            vendor: string;
+            /** Category */
+            category: string;
+            format: components["schemas"]["PluginFormat"];
+            /** Audio Inputs */
+            audio_inputs: number;
+            /** Audio Outputs */
+            audio_outputs: number;
+            /**
+             * Is Instrument
+             * @default false
+             */
+            is_instrument: boolean;
+        };
+        /**
+         * PluginFormat
+         * @enum {string}
+         */
+        PluginFormat: "lv2" | "native";
+        /** PluginInventoryResponse */
+        PluginInventoryResponse: {
+            /** Plugins */
+            plugins: components["schemas"]["PluginDescriptorResponse"][];
+            /** Last Scan At */
+            last_scan_at?: number | null;
+            /** Size */
+            size: number;
+        };
         /** PluginMetadataRequest */
         PluginMetadataRequest: {
             /** Tags */
@@ -41311,6 +46019,16 @@ export interface components {
             tesira_preset_index: number;
             /** Created At */
             created_at: string;
+        };
+        /**
+         * PresetNamesResponse
+         * @description T2512-PRESET — current named-preset roster (insertion order).
+         */
+        PresetNamesResponse: {
+            /** Names */
+            names: string[];
+            /** Cap */
+            cap: number;
         };
         /** PreviewSnapshotRequest */
         PreviewSnapshotRequest: {
@@ -41654,16 +46372,17 @@ export interface components {
             /** Message */
             message: string;
         };
-        /** ReadinessResponse */
+        /**
+         * ReadinessResponse
+         * @description Readiness checklist response
+         */
         ReadinessResponse: {
-            /** Candidate Id */
-            candidate_id: string;
-            /** Status */
-            status: string;
-            /** Checks */
-            checks?: components["schemas"]["AdoptionCheckResponse"][];
-            /** Computed At */
-            computed_at: string;
+            /** Mode */
+            mode: string;
+            /** Ready */
+            ready: boolean;
+            /** Items */
+            items: components["schemas"]["ReadinessItem"][];
         };
         /** ReadinessSummaryResponse */
         ReadinessSummaryResponse: {
@@ -41721,12 +46440,78 @@ export interface components {
              */
             speed: number;
         };
+        /**
+         * RecorderSessionListResponse
+         * @description GET /api/v1/recorder/sessions response body.
+         */
+        RecorderSessionListResponse: {
+            /** Sessions */
+            sessions: components["schemas"]["RecorderSessionStatusResponse"][];
+            /** Count */
+            count: number;
+        };
+        /**
+         * RecorderSessionStatusResponse
+         * @description Frozen projection of an in-flight or just-completed session.
+         */
+        RecorderSessionStatusResponse: {
+            /** Session Id */
+            session_id: string;
+            /** Snapshot Id */
+            snapshot_id: number;
+            /** State */
+            state: string;
+            /** Armed */
+            armed: boolean;
+            /** Rolling */
+            rolling: boolean;
+            /** Started At */
+            started_at: string | null;
+            /** Rolling At */
+            rolling_at: string | null;
+            /** Stopped At */
+            stopped_at: string | null;
+            /** Tap Matrix */
+            tap_matrix: {
+                [key: string]: {
+                    [key: string]: boolean;
+                };
+            };
+            /** Participating Nodes */
+            participating_nodes: string[];
+        };
         /** RecorderStartRequest */
         RecorderStartRequest: {
             /** Session Id */
             session_id: string;
             /** Name */
             name?: string | null;
+        };
+        /** RecordingListResponse */
+        RecordingListResponse: {
+            /** Recordings */
+            recordings: components["schemas"]["RecordingSummary"][];
+            /** Count */
+            count: number;
+        };
+        /**
+         * RecordingSummary
+         * @description One row in the recordings list. Mirrors the StateAuthorityAsset
+         *     table verbatim so the operator sees the canonical registry shape.
+         */
+        RecordingSummary: {
+            /** Asset Hash */
+            asset_hash: string;
+            /** File Name */
+            file_name: string;
+            /** Size Bytes */
+            size_bytes: number;
+            /** Source Path */
+            source_path: string;
+            /** Created At */
+            created_at: string;
+            /** Updated At */
+            updated_at: string;
         };
         /** RecoveryRequest */
         RecoveryRequest: {
@@ -41847,6 +46632,31 @@ export interface components {
             /** Package Type */
             package_type: string;
         };
+        /**
+         * RenamePresetRequest
+         * @description T2512-PRESET-RENAME — change a saved preset's label.
+         *
+         *     The path carries the existing name; ``new_name`` is the desired
+         *     label. Both are normalized service-side (whitespace trim + length
+         *     cap), so an operator passing `"new"` and `"new  "` end up
+         *     targeting the same preset slot.
+         */
+        RenamePresetRequest: {
+            /** New Name */
+            new_name: string;
+        };
+        /**
+         * RenameSliceRequest
+         * @description T2512-SLICE-RENAME — replace a slice's label without changing
+         *     its frame range. Empty/whitespace label clears the existing one.
+         */
+        RenameSliceRequest: {
+            /**
+             * Label
+             * @default
+             */
+            label: string;
+        };
         /** RenderRequest */
         RenderRequest: {
             /** Output Path */
@@ -41857,10 +46667,31 @@ export interface components {
              */
             duration_ms: number;
         };
+        /**
+         * ReorderPresetsRequest
+         * @description T2512-PRESET-DRAG-REORDER — set the explicit preset order.
+         *
+         *     ``names`` must be a permutation of the current preset names. The
+         *     service raises 400 ``invalid_preset_order`` for any non-permutation
+         *     so the caller can detect a stale local view.
+         */
+        ReorderPresetsRequest: {
+            /** Names */
+            names: string[];
+        };
         /** ReorderRequest */
         ReorderRequest: {
             /** Order */
             order: number[];
+        };
+        /** ResetResponse */
+        ResetResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Operational Path */
+            operational_path?: string | null;
         };
         /**
          * ReverbParametersRequest
@@ -42076,6 +46907,34 @@ export interface components {
              */
             create_backup: boolean;
         };
+        /** SavedConnectionPayload */
+        SavedConnectionPayload: {
+            /** Binding Id */
+            binding_id: string;
+            /** Stream Id */
+            stream_id: string | null;
+            /** Stream Format */
+            stream_format: string | null;
+            /** Talker Entity Id */
+            talker_entity_id: string | null;
+            /** Talker Unique Id */
+            talker_unique_id: number | null;
+            /** Listener Entity Id */
+            listener_entity_id: string | null;
+            /** Listener Unique Id */
+            listener_unique_id: number | null;
+            /** Persisted At */
+            persisted_at: string | null;
+            /** Replay Pending */
+            replay_pending: boolean;
+        };
+        /** SavedConnectionsResponse */
+        SavedConnectionsResponse: {
+            /** Count */
+            count: number;
+            /** Connections */
+            connections: components["schemas"]["SavedConnectionPayload"][];
+        };
         /** ScalaTuningRequest */
         ScalaTuningRequest: {
             /** Scala Path */
@@ -42116,8 +46975,6 @@ export interface components {
         SceneCaptureRequest: {
             /** Name */
             name: string;
-            /** Tags */
-            tags?: string[];
         };
         /** SceneUpdateRequest */
         SceneUpdateRequest: {
@@ -42248,6 +47105,1118 @@ export interface components {
             /** Program */
             program: number;
         };
+        /** SequencerAssetAuthoredWithResponse */
+        SequencerAssetAuthoredWithResponse: {
+            /** Asset Id */
+            asset_id: string;
+            /** Authored With Devices */
+            authored_with_devices: string[];
+            /** Saved At */
+            saved_at: number;
+        };
+        /** SequencerAssetAuthoredWithUpdate */
+        SequencerAssetAuthoredWithUpdate: {
+            /** Profile Keys */
+            profile_keys?: string[];
+        };
+        /** SequencerAssetsForDeviceResponse */
+        SequencerAssetsForDeviceResponse: {
+            /** Profile Key */
+            profile_key: string;
+            /** Asset Count */
+            asset_count: number;
+            /** Asset Ids */
+            asset_ids: string[];
+        };
+        /** SequencerControllerAssignmentModel */
+        SequencerControllerAssignmentModel: {
+            /** Source */
+            source: string;
+            /** Target */
+            target: string;
+            /**
+             * Mode
+             * @default absolute
+             */
+            mode: string;
+            /**
+             * Enabled
+             * @default true
+             */
+            enabled: boolean;
+        };
+        /** SequencerControllerQualificationModel */
+        SequencerControllerQualificationModel: {
+            /**
+             * Scoped Instance Key
+             * @default workspace-default
+             */
+            scoped_instance_key: string;
+            /**
+             * Scope Binding Ready
+             * @default true
+             */
+            scope_binding_ready: boolean;
+            /**
+             * Tier A Runtime Locked
+             * @default true
+             */
+            tier_a_runtime_locked: boolean;
+            /**
+             * Controller Ready
+             * @default false
+             */
+            controller_ready: boolean;
+            /**
+             * Ready Surface Count
+             * @default 0
+             */
+            ready_surface_count: number;
+            keyboard?: components["schemas"]["SequencerKeyboardQualificationModel"];
+            triggers?: components["schemas"]["SequencerTriggerQualificationModel"];
+            sequence?: components["schemas"]["SequencerSequenceQualificationModel"];
+            routing?: components["schemas"]["SequencerRoutingQualificationModel"];
+            /**
+             * Summary
+             * @default
+             */
+            summary: string;
+            /** Issues */
+            issues?: string[];
+        };
+        /** SequencerDiagnosticsModel */
+        SequencerDiagnosticsModel: {
+            /**
+             * Sample Rate Hz
+             * @default 48000
+             */
+            sample_rate_hz: number;
+            /**
+             * Buffer Size Samples
+             * @default 128
+             */
+            buffer_size_samples: number;
+            /**
+             * Cpu Load Percent
+             * @default 8.5
+             */
+            cpu_load_percent: number;
+            /**
+             * Active Voices
+             * @default 0
+             */
+            active_voices: number;
+            /**
+             * Peak Voices
+             * @default 0
+             */
+            peak_voices: number;
+            /**
+             * Polyphony Headroom
+             * @default 96
+             */
+            polyphony_headroom: number;
+            /**
+             * Trigger Latency Ms
+             * @default 2.2
+             */
+            trigger_latency_ms: number;
+            /**
+             * Roundtrip Latency Ms
+             * @default 5.3
+             */
+            roundtrip_latency_ms: number;
+            /**
+             * Xruns
+             * @default 0
+             */
+            xruns: number;
+            /**
+             * Backend Mode
+             * @default hybrid
+             */
+            backend_mode: string;
+            /** Warnings */
+            warnings?: string[];
+            /** Last Import Source */
+            last_import_source?: string | null;
+            controller_qualification?: components["schemas"]["SequencerControllerQualificationModel"];
+            /** Updated At Iso */
+            updated_at_iso?: string;
+        };
+        /** SequencerInputsStateModel */
+        SequencerInputsStateModel: {
+            /** Keyboard Zones */
+            keyboard_zones?: components["schemas"]["SequencerKeyboardZoneModel"][];
+            /** Trigger Profiles */
+            trigger_profiles?: components["schemas"]["SequencerTriggerProfileModel"][];
+            /** Controller Assignments */
+            controller_assignments?: components["schemas"]["SequencerControllerAssignmentModel"][];
+        };
+        /** SequencerInputsUpdateModel */
+        SequencerInputsUpdateModel: {
+            inputs: components["schemas"]["SequencerInputsStateModel"];
+        };
+        /** SequencerKeyboardQualificationModel */
+        SequencerKeyboardQualificationModel: {
+            /**
+             * Ready
+             * @default false
+             */
+            ready: boolean;
+            /**
+             * Zone Count
+             * @default 0
+             */
+            zone_count: number;
+            /**
+             * Channel Count
+             * @default 0
+             */
+            channel_count: number;
+            /**
+             * Chromatic Slot Count
+             * @default 0
+             */
+            chromatic_slot_count: number;
+            /**
+             * Polyphony Capacity
+             * @default 0
+             */
+            polyphony_capacity: number;
+            /**
+             * Max Key Span
+             * @default 0
+             */
+            max_key_span: number;
+            /** Aftertouch Modes */
+            aftertouch_modes?: string[];
+            /**
+             * Summary
+             * @default
+             */
+            summary: string;
+            /** Issues */
+            issues?: string[];
+        };
+        /** SequencerKeyboardZoneModel */
+        SequencerKeyboardZoneModel: {
+            /** Zone Id */
+            zone_id: string;
+            /** Name */
+            name: string;
+            /**
+             * Midi Channel
+             * @default 1
+             */
+            midi_channel: number;
+            /**
+             * Key Low
+             * @default 0
+             */
+            key_low: number;
+            /**
+             * Key High
+             * @default 127
+             */
+            key_high: number;
+            /**
+             * Transpose
+             * @default 0
+             */
+            transpose: number;
+            /**
+             * Enabled
+             * @default true
+             */
+            enabled: boolean;
+            /**
+             * Aftertouch Mode
+             * @default channel
+             */
+            aftertouch_mode: string;
+        };
+        /** SequencerLayerModel */
+        SequencerLayerModel: {
+            /** Layer Id */
+            layer_id: string;
+            /** Name */
+            name: string;
+            /** Slot Indices */
+            slot_indices?: number[];
+            /**
+             * Key Low
+             * @default 0
+             */
+            key_low: number;
+            /**
+             * Key High
+             * @default 127
+             */
+            key_high: number;
+            /**
+             * Velocity Low
+             * @default 1
+             */
+            velocity_low: number;
+            /**
+             * Velocity High
+             * @default 127
+             */
+            velocity_high: number;
+            /**
+             * Polyphony
+             * @default 32
+             */
+            polyphony: number;
+            /**
+             * Scene Slot
+             * @default 0
+             */
+            scene_slot: number;
+            /**
+             * Enabled
+             * @default true
+             */
+            enabled: boolean;
+            /**
+             * Purpose
+             * @default layer
+             */
+            purpose: string;
+        };
+        /** SequencerLayersUpdateModel */
+        SequencerLayersUpdateModel: {
+            /** Layers */
+            layers?: components["schemas"]["SequencerLayerModel"][];
+        };
+        /** SequencerLibraryAssetModel */
+        SequencerLibraryAssetModel: {
+            /** Asset Id */
+            asset_id: string;
+            /** Name */
+            name: string;
+            /**
+             * Asset Type
+             * @enum {string}
+             */
+            asset_type: "soundfont" | "sfz" | "sample" | "kit" | "patch";
+            /** Source */
+            source: string;
+            /**
+             * Path
+             * @default
+             */
+            path: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Default Slot Mode
+             * @default chromatic
+             * @enum {string}
+             */
+            default_slot_mode: "chromatic" | "drum" | "hybrid";
+            /** Tags */
+            tags?: string[];
+            /** Authored With Devices */
+            authored_with_devices?: string[];
+        };
+        /** SequencerLibraryCollectionModel */
+        SequencerLibraryCollectionModel: {
+            /** Collection Id */
+            collection_id: string;
+            /** Label */
+            label: string;
+            /**
+             * Asset Count
+             * @default 0
+             */
+            asset_count: number;
+            /** Assets */
+            assets?: components["schemas"]["SequencerLibraryAssetModel"][];
+        };
+        /** SequencerLibraryStateModel */
+        SequencerLibraryStateModel: {
+            /** Collections */
+            collections?: components["schemas"]["SequencerLibraryCollectionModel"][];
+            /** Featured Assets */
+            featured_assets?: string[];
+            /**
+             * Last Scan Iso
+             * @default
+             */
+            last_scan_iso: string;
+        };
+        /** SequencerMasterSectionModel */
+        SequencerMasterSectionModel: {
+            /**
+             * Master Volume
+             * @default 0.82
+             */
+            master_volume: number;
+            /**
+             * Drive Db
+             * @default 0
+             */
+            drive_db: number;
+            /**
+             * Compressor Amount
+             * @default 0.2
+             */
+            compressor_amount: number;
+            /**
+             * Reverb Mix
+             * @default 0.18
+             */
+            reverb_mix: number;
+            /**
+             * Limiter Ceiling Db
+             * @default -0.5
+             */
+            limiter_ceiling_db: number;
+        };
+        /** SequencerMixerBusModel */
+        SequencerMixerBusModel: {
+            /** Bus Id */
+            bus_id: number;
+            /** Name */
+            name: string;
+            /**
+             * Level
+             * @default 1
+             */
+            level: number;
+            /**
+             * Pan
+             * @default 0
+             */
+            pan: number;
+            /**
+             * Mute
+             * @default false
+             */
+            mute: boolean;
+            /**
+             * Solo
+             * @default false
+             */
+            solo: boolean;
+            /**
+             * Output Pair
+             * @default 0
+             */
+            output_pair: number;
+            /**
+             * Reverb Send
+             * @default 0
+             */
+            reverb_send: number;
+        };
+        /** SequencerMixerStateModel */
+        SequencerMixerStateModel: {
+            /** Buses */
+            buses?: components["schemas"]["SequencerMixerBusModel"][];
+            master?: components["schemas"]["SequencerMasterSectionModel"];
+        };
+        /** SequencerMixerUpdateModel */
+        SequencerMixerUpdateModel: {
+            mixer: components["schemas"]["SequencerMixerStateModel"];
+        };
+        /** SequencerPatternSummaryModel */
+        SequencerPatternSummaryModel: {
+            /** Pattern Id */
+            pattern_id: number;
+            /** Name */
+            name: string;
+            /**
+             * Length
+             * @default 16
+             */
+            length: number;
+            /**
+             * Active Lane Count
+             * @default 0
+             */
+            active_lane_count: number;
+            /**
+             * Fill Enabled
+             * @default false
+             */
+            fill_enabled: boolean;
+            /**
+             * Variation Count
+             * @default 10
+             */
+            variation_count: number;
+            /**
+             * Summary
+             * @default
+             */
+            summary: string;
+        };
+        /** SequencerRoutingQualificationModel */
+        SequencerRoutingQualificationModel: {
+            /**
+             * Ready
+             * @default false
+             */
+            ready: boolean;
+            /**
+             * Used Bus Count
+             * @default 0
+             */
+            used_bus_count: number;
+            /**
+             * Output Pair Count
+             * @default 0
+             */
+            output_pair_count: number;
+            /**
+             * Reverb Bus Count
+             * @default 0
+             */
+            reverb_bus_count: number;
+            /**
+             * Controller Assignment Count
+             * @default 0
+             */
+            controller_assignment_count: number;
+            /**
+             * Summary
+             * @default
+             */
+            summary: string;
+            /** Issues */
+            issues?: string[];
+        };
+        /** SequencerSampleEditorStateModel */
+        SequencerSampleEditorStateModel: {
+            /**
+             * Slot Id
+             * @default 0
+             */
+            slot_id: number;
+            /**
+             * Asset Path
+             * @default
+             */
+            asset_path: string;
+            /**
+             * Waveform Available
+             * @default false
+             */
+            waveform_available: boolean;
+            /**
+             * Duration Seconds
+             * @default 0
+             */
+            duration_seconds: number;
+            /**
+             * Start Sample
+             * @default 0
+             */
+            start_sample: number;
+            /**
+             * End Sample
+             * @default 0
+             */
+            end_sample: number;
+            /**
+             * Normalize Target
+             * @default 0.99
+             */
+            normalize_target: number;
+            /**
+             * Reverse Enabled
+             * @default true
+             */
+            reverse_enabled: boolean;
+            /**
+             * Record Target Path
+             * @default
+             */
+            record_target_path: string;
+        };
+        /** SequencerSampleEditorUpdateModel */
+        SequencerSampleEditorUpdateModel: {
+            /** Slot Id */
+            slot_id: number;
+            /** Start Sample */
+            start_sample?: number | null;
+            /** End Sample */
+            end_sample?: number | null;
+            /** Normalize Target */
+            normalize_target?: number | null;
+        };
+        /** SequencerSequenceLaneSummaryModel */
+        SequencerSequenceLaneSummaryModel: {
+            /** Slot Id */
+            slot_id: number;
+            /** Name */
+            name: string;
+            /**
+             * Length
+             * @default 16
+             */
+            length: number;
+            /**
+             * Swing
+             * @default 0
+             */
+            swing: number;
+            /**
+             * Active Steps
+             * @default 0
+             */
+            active_steps: number;
+            /** Step Lock Targets */
+            step_lock_targets?: string[];
+        };
+        /** SequencerSequenceModel */
+        SequencerSequenceModel: {
+            /**
+             * Pattern Bank Size
+             * @default 128
+             */
+            pattern_bank_size: number;
+            /**
+             * Max Steps
+             * @default 64
+             */
+            max_steps: number;
+            /**
+             * Current Pattern
+             * @default 0
+             */
+            current_pattern: number;
+            /**
+             * Current Variation
+             * @default 0
+             */
+            current_variation: number;
+            /** Patterns */
+            patterns?: components["schemas"]["SequencerPatternSummaryModel"][];
+            /** Lanes */
+            lanes?: components["schemas"]["SequencerSequenceLaneSummaryModel"][];
+            /**
+             * Fill Mode
+             * @default manual
+             */
+            fill_mode: string;
+            /**
+             * Song Entry Count
+             * @default 0
+             */
+            song_entry_count: number;
+        };
+        /** SequencerSequenceQualificationModel */
+        SequencerSequenceQualificationModel: {
+            /**
+             * Ready
+             * @default false
+             */
+            ready: boolean;
+            /**
+             * Pattern Count
+             * @default 0
+             */
+            pattern_count: number;
+            /**
+             * Populated Pattern Count
+             * @default 0
+             */
+            populated_pattern_count: number;
+            /**
+             * Active Lane Count
+             * @default 0
+             */
+            active_lane_count: number;
+            /**
+             * Max Pattern Length
+             * @default 0
+             */
+            max_pattern_length: number;
+            /**
+             * Swing Lane Count
+             * @default 0
+             */
+            swing_lane_count: number;
+            /**
+             * Song Entry Count
+             * @default 0
+             */
+            song_entry_count: number;
+            /**
+             * Summary
+             * @default
+             */
+            summary: string;
+            /** Issues */
+            issues?: string[];
+        };
+        /** SequencerSequenceUpdateModel */
+        SequencerSequenceUpdateModel: {
+            sequence: components["schemas"]["SequencerSequenceModel"];
+        };
+        /** SequencerSlotModel */
+        SequencerSlotModel: {
+            /** Slot Id */
+            slot_id: number;
+            /** Name */
+            name: string;
+            /**
+             * Mode
+             * @default drum
+             * @enum {string}
+             */
+            mode: "chromatic" | "drum" | "hybrid";
+            /**
+             * Asset Type
+             * @default empty
+             * @enum {string}
+             */
+            asset_type: "soundfont" | "sfz" | "sample" | "kit" | "patch" | "empty";
+            /**
+             * Asset Path
+             * @default
+             */
+            asset_path: string;
+            /**
+             * Source Label
+             * @default
+             */
+            source_label: string;
+            /**
+             * Level
+             * @default 1
+             */
+            level: number;
+            /**
+             * Pan
+             * @default 0
+             */
+            pan: number;
+            /**
+             * Mute
+             * @default false
+             */
+            mute: boolean;
+            /**
+             * Solo
+             * @default false
+             */
+            solo: boolean;
+            /**
+             * Tune
+             * @default 0
+             */
+            tune: number;
+            /**
+             * Transpose
+             * @default 0
+             */
+            transpose: number;
+            /**
+             * Output Bus
+             * @default 0
+             */
+            output_bus: number;
+            /**
+             * Polyphony
+             * @default 16
+             */
+            polyphony: number;
+            /**
+             * Midi Channel
+             * @default 0
+             */
+            midi_channel: number;
+            /**
+             * Trigger Note
+             * @default 36
+             */
+            trigger_note: number;
+            /** Trigger Notes */
+            trigger_notes?: number[];
+            /**
+             * Key Low
+             * @default 0
+             */
+            key_low: number;
+            /**
+             * Key High
+             * @default 127
+             */
+            key_high: number;
+            /**
+             * Velocity Low
+             * @default 1
+             */
+            velocity_low: number;
+            /**
+             * Velocity High
+             * @default 127
+             */
+            velocity_high: number;
+            /**
+             * Choke Group
+             * @default 0
+             */
+            choke_group: number;
+            /**
+             * Articulation Group
+             * @default main
+             */
+            articulation_group: string;
+            /**
+             * Velocity Curve
+             * @default linear
+             */
+            velocity_curve: string;
+            /**
+             * Status
+             * @default ready
+             */
+            status: string;
+        };
+        /** SequencerSlotUpdateModel */
+        SequencerSlotUpdateModel: {
+            /** Name */
+            name?: string | null;
+            /** Mode */
+            mode?: ("chromatic" | "drum" | "hybrid") | null;
+            /** Asset Type */
+            asset_type?: ("soundfont" | "sfz" | "sample" | "kit" | "patch" | "empty") | null;
+            /** Asset Path */
+            asset_path?: string | null;
+            /** Source Label */
+            source_label?: string | null;
+            /** Level */
+            level?: number | null;
+            /** Pan */
+            pan?: number | null;
+            /** Mute */
+            mute?: boolean | null;
+            /** Solo */
+            solo?: boolean | null;
+            /** Tune */
+            tune?: number | null;
+            /** Transpose */
+            transpose?: number | null;
+            /** Output Bus */
+            output_bus?: number | null;
+            /** Polyphony */
+            polyphony?: number | null;
+            /** Midi Channel */
+            midi_channel?: number | null;
+            /** Trigger Note */
+            trigger_note?: number | null;
+            /** Trigger Notes */
+            trigger_notes?: number[] | null;
+            /** Key Low */
+            key_low?: number | null;
+            /** Key High */
+            key_high?: number | null;
+            /** Velocity Low */
+            velocity_low?: number | null;
+            /** Velocity High */
+            velocity_high?: number | null;
+            /** Choke Group */
+            choke_group?: number | null;
+            /** Articulation Group */
+            articulation_group?: string | null;
+            /** Velocity Curve */
+            velocity_curve?: string | null;
+            /** Status */
+            status?: string | null;
+        };
+        /** SequencerSnapshotIntegrationModel */
+        SequencerSnapshotIntegrationModel: {
+            /**
+             * Authority Model
+             * @default snapshot-first
+             * @constant
+             */
+            authority_model: "snapshot-first";
+            /** Snapshot Id */
+            snapshot_id?: number | null;
+            /** Snapshot Name */
+            snapshot_name?: string | null;
+            /**
+             * Committed State Id
+             * @default brain:committed:default
+             */
+            committed_state_id: string;
+            /**
+             * Desired State Id
+             * @default brain:desired:default
+             */
+            desired_state_id: string;
+            /**
+             * Observed State Id
+             * @default brain:observed:default
+             */
+            observed_state_id: string;
+        };
+        /** SequencerSongEntryModel */
+        SequencerSongEntryModel: {
+            /** Pattern Id */
+            pattern_id: number;
+            /**
+             * Variation
+             * @default 0
+             */
+            variation: number;
+            /**
+             * Repeat Count
+             * @default 1
+             */
+            repeat_count: number;
+            /**
+             * Label
+             * @default
+             */
+            label: string;
+        };
+        /** SequencerSongStateModel */
+        SequencerSongStateModel: {
+            /** Entries */
+            entries?: components["schemas"]["SequencerSongEntryModel"][];
+            /**
+             * Loop
+             * @default false
+             */
+            loop: boolean;
+        };
+        /** SequencerSongUpdateModel */
+        SequencerSongUpdateModel: {
+            song: components["schemas"]["SequencerSongStateModel"];
+        };
+        /** SequencerStateModel */
+        SequencerStateModel: {
+            /** Instance Id */
+            instance_id: string;
+            /**
+             * Product Name
+             * @default Sequencer
+             */
+            product_name: string;
+            /**
+             * Set Name
+             * @default Init Sequencer
+             */
+            set_name: string;
+            /**
+             * Active Slot
+             * @default 0
+             */
+            active_slot: number;
+            /**
+             * Active Layer Id
+             * @default main-stack
+             */
+            active_layer_id: string;
+            /**
+             * Active Section
+             * @default performance
+             * @enum {string}
+             */
+            active_section: "performance" | "console" | "step" | "split" | "perform" | "layers" | "sequence" | "routing" | "inputs" | "library" | "session_media" | "practice_coach" | "diagnostics";
+            transport?: components["schemas"]["SequencerTransportStateModel"];
+            /** Slots */
+            slots?: components["schemas"]["SequencerSlotModel"][];
+            /** Layers */
+            layers?: components["schemas"]["SequencerLayerModel"][];
+            sequence?: components["schemas"]["SequencerSequenceModel"];
+            song?: components["schemas"]["SequencerSongStateModel"];
+            mixer?: components["schemas"]["SequencerMixerStateModel"];
+            inputs?: components["schemas"]["SequencerInputsStateModel"];
+            library?: components["schemas"]["SequencerLibraryStateModel"];
+            sample_editor?: components["schemas"]["SequencerSampleEditorStateModel"];
+            diagnostics?: components["schemas"]["SequencerDiagnosticsModel"];
+            snapshot_integration?: components["schemas"]["SequencerSnapshotIntegrationModel"];
+        };
+        /** SequencerStateUpdateModel */
+        SequencerStateUpdateModel: {
+            /** Set Name */
+            set_name?: string | null;
+            /** Active Slot */
+            active_slot?: number | null;
+            /** Active Layer Id */
+            active_layer_id?: string | null;
+            /** Active Section */
+            active_section?: ("performance" | "console" | "step" | "split" | "perform" | "layers" | "sequence" | "routing" | "inputs" | "library" | "session_media" | "practice_coach" | "diagnostics") | null;
+        };
+        /** SequencerTransportStateModel */
+        SequencerTransportStateModel: {
+            /**
+             * Is Playing
+             * @default false
+             */
+            is_playing: boolean;
+            /**
+             * Bpm
+             * @default 120
+             */
+            bpm: number;
+            /**
+             * Swing
+             * @default 0
+             */
+            swing: number;
+            /**
+             * Pattern
+             * @default 0
+             */
+            pattern: number;
+            /**
+             * Variation
+             * @default 0
+             */
+            variation: number;
+            /**
+             * Step
+             * @default 0
+             */
+            step: number;
+            /**
+             * Bar
+             * @default 1
+             */
+            bar: number;
+            /**
+             * Beat
+             * @default 1
+             */
+            beat: number;
+            /**
+             * Pending Pattern
+             * @default -1
+             */
+            pending_pattern: number;
+            /**
+             * Switch Quantization Beats
+             * @default 4
+             */
+            switch_quantization_beats: number;
+        };
+        /** SequencerTransportUpdateModel */
+        SequencerTransportUpdateModel: {
+            /** Is Playing */
+            is_playing?: boolean | null;
+            /** Bpm */
+            bpm?: number | null;
+            /** Swing */
+            swing?: number | null;
+            /** Pattern */
+            pattern?: number | null;
+            /** Variation */
+            variation?: number | null;
+            /** Pending Pattern */
+            pending_pattern?: number | null;
+            /** Switch Quantization Beats */
+            switch_quantization_beats?: number | null;
+        };
+        /** SequencerTriggerProfileModel */
+        SequencerTriggerProfileModel: {
+            /** Profile Id */
+            profile_id: string;
+            /** Name */
+            name: string;
+            /**
+             * Pad Range Start
+             * @default 0
+             */
+            pad_range_start: number;
+            /**
+             * Pad Range End
+             * @default 15
+             */
+            pad_range_end: number;
+            /**
+             * Curve
+             * @default linear
+             */
+            curve: string;
+            /**
+             * Scan Time Ms
+             * @default 1.2
+             */
+            scan_time_ms: number;
+            /**
+             * Mask Time Ms
+             * @default 8
+             */
+            mask_time_ms: number;
+            /**
+             * Retrigger Cancel Ms
+             * @default 18
+             */
+            retrigger_cancel_ms: number;
+            /**
+             * Crosstalk Guard
+             * @default 0.4
+             */
+            crosstalk_guard: number;
+            /**
+             * Velocity Floor
+             * @default 1
+             */
+            velocity_floor: number;
+            /**
+             * Velocity Ceiling
+             * @default 127
+             */
+            velocity_ceiling: number;
+        };
+        /** SequencerTriggerQualificationModel */
+        SequencerTriggerQualificationModel: {
+            /**
+             * Ready
+             * @default false
+             */
+            ready: boolean;
+            /**
+             * Profile Count
+             * @default 0
+             */
+            profile_count: number;
+            /**
+             * Covered Pad Count
+             * @default 0
+             */
+            covered_pad_count: number;
+            /**
+             * Trigger Slot Count
+             * @default 0
+             */
+            trigger_slot_count: number;
+            /**
+             * Unique Trigger Notes
+             * @default 0
+             */
+            unique_trigger_notes: number;
+            /**
+             * Fastest Scan Time Ms
+             * @default 0
+             */
+            fastest_scan_time_ms: number;
+            /**
+             * Widest Mask Time Ms
+             * @default 0
+             */
+            widest_mask_time_ms: number;
+            /**
+             * Summary
+             * @default
+             */
+            summary: string;
+            /** Issues */
+            issues?: string[];
+        };
         /** ServiceAction */
         ServiceAction: {
             /** Service */
@@ -42321,6 +48290,20 @@ export interface components {
              * @description A/B blend (0=A, 1=B)
              */
             blend: number;
+        };
+        /**
+         * SetAutoThresholdRequest
+         * @description T2512-AUTO — auto-record threshold setter. Same -90..0 dB clamp
+         *     as the service-side ``set_auto_threshold_db``.
+         */
+        SetAutoThresholdRequest: {
+            /** Db */
+            db: number;
+        };
+        /** SetBoolRequest */
+        SetBoolRequest: {
+            /** Value */
+            value: boolean;
         };
         /** SetBranchLevelRequest */
         SetBranchLevelRequest: {
@@ -42397,13 +48380,18 @@ export interface components {
              */
             q: number;
         };
+        /**
+         * SetFadeMsRequest
+         * @description T2512-FADE — fade-out duration in ms (clamped 0..5000).
+         */
+        SetFadeMsRequest: {
+            /** Fade Ms */
+            fade_ms: number;
+        };
         /** SetLevelRequest */
         SetLevelRequest: {
-            /**
-             * Level Db
-             * @description Gain in dB
-             */
-            level_db: number;
+            /** Db */
+            db: number;
         };
         /**
          * SetModeRequest
@@ -42415,10 +48403,31 @@ export interface components {
         };
         /** SetMuteRequest */
         SetMuteRequest: {
-            /** Node Id */
-            node_id: number;
-            /** Mute */
-            mute: boolean;
+            /** Muted */
+            muted: boolean;
+        };
+        /**
+         * SetOneShotPassesRequest
+         * @description T2512-OS-COUNT — multi-pass one-shot setter. Service-side
+         *     clamps to 1..32; FastAPI's validator enforces the same bounds
+         *     so an out-of-range value returns 422 rather than being silently
+         *     clamped at the route boundary.
+         */
+        SetOneShotPassesRequest: {
+            /** Passes */
+            passes: number;
+        };
+        /**
+         * SetQuantizeDivisionRequest
+         * @description T2512-QUANT-WIRE — quantize division setter.
+         *
+         *     Pattern intentionally permissive — the service layer validates
+         *     against the full allowlist (including 1/N aliases) so the error
+         *     message stays useful when an unknown name slips through.
+         */
+        SetQuantizeDivisionRequest: {
+            /** Division */
+            division: string;
         };
         /** SetQuantumRequest */
         SetQuantumRequest: {
@@ -42435,6 +48444,27 @@ export interface components {
              * @description 0 = auto, or valid sample rate
              */
             rate: number;
+        };
+        /**
+         * SetStopModeRequest
+         * @description T2512-FADE — stop mode setter.
+         */
+        SetStopModeRequest: {
+            /** Mode */
+            mode: string;
+        };
+        /**
+         * SetSyncModeRequest
+         * @description T2512-SYNC — sync mode setter.
+         */
+        SetSyncModeRequest: {
+            /** Mode */
+            mode: string;
+        };
+        /** SetSystemUniqueIdRequest */
+        SetSystemUniqueIdRequest: {
+            /** Value */
+            value: number;
         };
         /** SetVolumeRequest */
         SetVolumeRequest: {
@@ -42695,6 +48725,10 @@ export interface components {
             }[];
             /** Monitoring Output Index */
             monitoring_output_index?: number | null;
+            /** Input Interface Id */
+            input_interface_id?: string | null;
+            /** Output Interface Id */
+            output_interface_id?: string | null;
             /** Maschine Encoder Map */
             maschine_encoder_map?: {
                 [key: string]: unknown;
@@ -42777,6 +48811,10 @@ export interface components {
             input_device?: string | null;
             /** Output Device */
             output_device?: string | null;
+            /** Input Interface Id */
+            input_interface_id?: string | null;
+            /** Output Interface Id */
+            output_interface_id?: string | null;
             /** Monitoring Output Index */
             monitoring_output_index?: number | null;
         };
@@ -42994,6 +49032,528 @@ export interface components {
                 [key: string]: unknown;
             } | null;
         };
+        /**
+         * SonoBusBindingCreate
+         * @description POST payload — authority assigns binding_id + timestamps + author.
+         */
+        SonoBusBindingCreate: {
+            /**
+             * Consumer Type
+             * @enum {string}
+             */
+            consumer_type: "sonobus_peer" | "sonobus_group" | "sonobus_stream" | "sonobus_client_session" | "cluster_route";
+            /** Consumer Id */
+            consumer_id: string;
+            /**
+             * Consumer Label
+             * @default
+             */
+            consumer_label: string;
+            /**
+             * Binding Kind
+             * @default stream
+             * @enum {string}
+             */
+            binding_kind: "peer" | "group" | "stream" | "client_session";
+            /**
+             * Source Type
+             * @enum {string}
+             */
+            source_type: "aoo_source" | "aoo_sink" | "peer_endpoint" | "engine_signal";
+            /** Source Descriptor */
+            source_descriptor?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Target Type
+             * @enum {string}
+             */
+            target_type: "aoo_sink" | "aoo_source" | "peer_endpoint" | "engine_sink";
+            /** Target Descriptor */
+            target_descriptor?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Stream Format
+             * @default pcm_s24_48000
+             */
+            stream_format: string | null;
+            /**
+             * Codec Profile
+             * @default pcm
+             */
+            codec_profile: ("pcm" | "opus_lowlatency" | "opus_voip") | null;
+            /**
+             * Jitter Buffer Ms
+             * @default 4
+             */
+            jitter_buffer_ms: number | null;
+            /**
+             * Resend Policy
+             * @default burst_loss_only
+             */
+            resend_policy: ("off" | "burst_loss_only" | "full") | null;
+            /**
+             * Latency Target Ms
+             * @default 8
+             */
+            latency_target_ms: number | null;
+            /**
+             * Channel Count
+             * @default 1
+             */
+            channel_count: number;
+            /** Group Id */
+            group_id?: string | null;
+            /** Session Label */
+            session_label?: string | null;
+            /**
+             * Transport Protocol
+             * @default udp
+             * @enum {string}
+             */
+            transport_protocol: "udp" | "udp_tls";
+            /** Bind Interface */
+            bind_interface?: string | null;
+            /** Bind Port Local */
+            bind_port_local?: number | null;
+            /** Server Endpoint */
+            server_endpoint?: string | null;
+            /** Talker Node Id */
+            talker_node_id?: string | null;
+            /** Listener Node Id */
+            listener_node_id?: string | null;
+            /**
+             * Listener Capability
+             * @default map2
+             */
+            listener_capability: ("map2" | "sonobus_native" | "aoo_native") | null;
+            /** Cluster Role */
+            cluster_role?: ("primary" | "fallback" | "peer") | null;
+            /**
+             * Transport Priority
+             * @default avb_preferred
+             * @enum {string}
+             */
+            transport_priority: "avb_preferred" | "sonobus_preferred" | "sonobus_only";
+            /**
+             * Scope
+             * @default global
+             * @enum {string}
+             */
+            scope: "global" | "snapshot" | "node" | "cluster";
+            /** Scope Id */
+            scope_id?: string | null;
+            /**
+             * Enabled
+             * @default true
+             */
+            enabled: boolean;
+            /**
+             * Source
+             * @default manual
+             */
+            source: string;
+            /** Metadata */
+            metadata?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Created By
+             * @default unknown
+             */
+            created_by: string;
+        };
+        /**
+         * SonoBusBindingRead
+         * @description GET response — full binding record.
+         */
+        SonoBusBindingRead: {
+            /**
+             * Consumer Type
+             * @enum {string}
+             */
+            consumer_type: "sonobus_peer" | "sonobus_group" | "sonobus_stream" | "sonobus_client_session" | "cluster_route";
+            /** Consumer Id */
+            consumer_id: string;
+            /**
+             * Consumer Label
+             * @default
+             */
+            consumer_label: string;
+            /**
+             * Binding Kind
+             * @default stream
+             * @enum {string}
+             */
+            binding_kind: "peer" | "group" | "stream" | "client_session";
+            /**
+             * Source Type
+             * @enum {string}
+             */
+            source_type: "aoo_source" | "aoo_sink" | "peer_endpoint" | "engine_signal";
+            /** Source Descriptor */
+            source_descriptor?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Target Type
+             * @enum {string}
+             */
+            target_type: "aoo_sink" | "aoo_source" | "peer_endpoint" | "engine_sink";
+            /** Target Descriptor */
+            target_descriptor?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Stream Format
+             * @default pcm_s24_48000
+             */
+            stream_format: string | null;
+            /**
+             * Codec Profile
+             * @default pcm
+             */
+            codec_profile: ("pcm" | "opus_lowlatency" | "opus_voip") | null;
+            /**
+             * Jitter Buffer Ms
+             * @default 4
+             */
+            jitter_buffer_ms: number | null;
+            /**
+             * Resend Policy
+             * @default burst_loss_only
+             */
+            resend_policy: ("off" | "burst_loss_only" | "full") | null;
+            /**
+             * Latency Target Ms
+             * @default 8
+             */
+            latency_target_ms: number | null;
+            /**
+             * Channel Count
+             * @default 1
+             */
+            channel_count: number;
+            /** Group Id */
+            group_id?: string | null;
+            /** Session Label */
+            session_label?: string | null;
+            /**
+             * Transport Protocol
+             * @default udp
+             * @enum {string}
+             */
+            transport_protocol: "udp" | "udp_tls";
+            /** Bind Interface */
+            bind_interface?: string | null;
+            /** Bind Port Local */
+            bind_port_local?: number | null;
+            /** Server Endpoint */
+            server_endpoint?: string | null;
+            /** Talker Node Id */
+            talker_node_id?: string | null;
+            /** Listener Node Id */
+            listener_node_id?: string | null;
+            /**
+             * Listener Capability
+             * @default map2
+             */
+            listener_capability: ("map2" | "sonobus_native" | "aoo_native") | null;
+            /** Cluster Role */
+            cluster_role?: ("primary" | "fallback" | "peer") | null;
+            /**
+             * Transport Priority
+             * @default avb_preferred
+             * @enum {string}
+             */
+            transport_priority: "avb_preferred" | "sonobus_preferred" | "sonobus_only";
+            /**
+             * Scope
+             * @default global
+             * @enum {string}
+             */
+            scope: "global" | "snapshot" | "node" | "cluster";
+            /** Scope Id */
+            scope_id?: string | null;
+            /**
+             * Enabled
+             * @default true
+             */
+            enabled: boolean;
+            /**
+             * Source
+             * @default manual
+             */
+            source: string;
+            /** Metadata */
+            metadata?: {
+                [key: string]: unknown;
+            };
+            /** Binding Id */
+            binding_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By */
+            created_by: string;
+            /**
+             * Modified At
+             * Format: date-time
+             */
+            modified_at: string;
+            /** Modified By */
+            modified_by: string;
+        };
+        /**
+         * SonoBusBindingUpdate
+         * @description PATCH payload — every field optional. Authority bumps modified_at +
+         *     modified_by on any successful write.
+         */
+        SonoBusBindingUpdate: {
+            /** Consumer Label */
+            consumer_label?: string | null;
+            /** Binding Kind */
+            binding_kind?: ("peer" | "group" | "stream" | "client_session") | null;
+            /** Source Descriptor */
+            source_descriptor?: {
+                [key: string]: unknown;
+            } | null;
+            /** Target Descriptor */
+            target_descriptor?: {
+                [key: string]: unknown;
+            } | null;
+            /** Stream Format */
+            stream_format?: string | null;
+            /** Codec Profile */
+            codec_profile?: ("pcm" | "opus_lowlatency" | "opus_voip") | null;
+            /** Jitter Buffer Ms */
+            jitter_buffer_ms?: number | null;
+            /** Resend Policy */
+            resend_policy?: ("off" | "burst_loss_only" | "full") | null;
+            /** Latency Target Ms */
+            latency_target_ms?: number | null;
+            /** Channel Count */
+            channel_count?: number | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Session Label */
+            session_label?: string | null;
+            /** Transport Protocol */
+            transport_protocol?: ("udp" | "udp_tls") | null;
+            /** Bind Interface */
+            bind_interface?: string | null;
+            /** Bind Port Local */
+            bind_port_local?: number | null;
+            /** Server Endpoint */
+            server_endpoint?: string | null;
+            /** Talker Node Id */
+            talker_node_id?: string | null;
+            /** Listener Node Id */
+            listener_node_id?: string | null;
+            /** Listener Capability */
+            listener_capability?: ("map2" | "sonobus_native" | "aoo_native") | null;
+            /** Cluster Role */
+            cluster_role?: ("primary" | "fallback" | "peer") | null;
+            /** Transport Priority */
+            transport_priority?: ("avb_preferred" | "sonobus_preferred" | "sonobus_only") | null;
+            /** Scope */
+            scope?: ("global" | "snapshot" | "node" | "cluster") | null;
+            /** Scope Id */
+            scope_id?: string | null;
+            /** Enabled */
+            enabled?: boolean | null;
+            /** Source */
+            source?: string | null;
+            /** Metadata */
+            metadata?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Modified By
+             * @default unknown
+             */
+            modified_by: string;
+        };
+        /**
+         * SonoBusBindingsMatrixResponse
+         * @description Server-side aggregation of every SonoBusBinding plus the rows
+         *     themselves so the frontend can populate the Connections DataTable
+         *     in a single round-trip. Mirrors `AvbBindingsMatrixResponse`.
+         */
+        SonoBusBindingsMatrixResponse: {
+            /** Matrix */
+            matrix: {
+                [key: string]: {
+                    [key: string]: components["schemas"]["SonoBusMatrixCell"];
+                };
+            };
+            /** Total Bindings */
+            total_bindings: number;
+            /** Bindings */
+            bindings: components["schemas"]["SonoBusBindingRead"][];
+        };
+        /**
+         * SonoBusClusterBindingsMatrixResponse
+         * @description Cluster-wide aggregation of every peer's
+         *     `GET /api/sonobus/bindings/matrix`. Local matrix kept under `local`;
+         *     per-peer matrices under `peers`; failed peers populate `errors`
+         *     keyed by node_id.
+         *
+         *     Mirrors `AvbClusterBindingsMatrixResponse`.
+         */
+        SonoBusClusterBindingsMatrixResponse: {
+            local: components["schemas"]["SonoBusBindingsMatrixResponse"];
+            /** Peers */
+            peers: components["schemas"]["SonoBusClusterPeerMatrix"][];
+            /** Errors */
+            errors: {
+                [key: string]: string;
+            };
+        };
+        /**
+         * SonoBusClusterPeerMatrix
+         * @description One peer's matrix slice in the cluster response.
+         *
+         *     Mirrors `AvbClusterPeerMatrix`. `health` is sourced from
+         *     `NodeHealthService` and baked in so the frontend doesn't need a
+         *     second fetch.
+         */
+        SonoBusClusterPeerMatrix: {
+            /** Node Id */
+            node_id: string;
+            /** Hostname */
+            hostname: string;
+            /** Matrix */
+            matrix: {
+                [key: string]: {
+                    [key: string]: components["schemas"]["SonoBusMatrixCell"];
+                };
+            };
+            /** Total Bindings */
+            total_bindings: number;
+            /**
+             * Health
+             * @default offline
+             */
+            health: string;
+        };
+        /**
+         * SonoBusGroupSummary
+         * @description Aggregated group view derived from bindings.
+         */
+        SonoBusGroupSummary: {
+            /** Group Id */
+            group_id: string;
+            /** Session Label */
+            session_label: string | null;
+            /** Binding Count */
+            binding_count: number;
+            /** Enabled Binding Count */
+            enabled_binding_count: number;
+            /** Channel Count Total */
+            channel_count_total: number;
+        };
+        /**
+         * SonoBusMatrixCell
+         * @description One cell of the binding-kind × consumer-type aggregation.
+         */
+        SonoBusMatrixCell: {
+            /** Count */
+            count: number;
+            /** Enabled Count */
+            enabled_count: number;
+        };
+        /**
+         * SonoBusPeerSummary
+         * @description Aggregated peer view derived from bindings.
+         *
+         *     Until the T2521-4 daemon ships its own peer-discovery table, the
+         *     peer view is computed from binding rows: each unique (listener_node_id
+         *     or listener_peer_endpoint, listener_capability) tuple is a peer.
+         */
+        SonoBusPeerSummary: {
+            /** Peer Id */
+            peer_id: string;
+            /** Listener Node Id */
+            listener_node_id: string | null;
+            /** Listener Endpoint */
+            listener_endpoint: string | null;
+            /** Listener Capability */
+            listener_capability: string | null;
+            /** Binding Count */
+            binding_count: number;
+            /** Enabled Binding Count */
+            enabled_binding_count: number;
+        };
+        /**
+         * SonoBusProfilePreset
+         * @description A built-in codec + jitter + resend posture preset.
+         *
+         *     The set of presets reflects the T2521 locked decisions (Q7/Q8/Q9).
+         *     Operator-defined custom profiles ride alongside the daemon-side
+         *     profile table once T2521-4 ships.
+         */
+        SonoBusProfilePreset: {
+            /** Profile Id */
+            profile_id: string;
+            /** Label */
+            label: string;
+            /** Codec Profile */
+            codec_profile: string;
+            /** Stream Format */
+            stream_format: string;
+            /** Jitter Buffer Ms */
+            jitter_buffer_ms: number;
+            /** Resend Policy */
+            resend_policy: string;
+            /** Latency Target Ms */
+            latency_target_ms: number;
+            /** Description */
+            description: string;
+        };
+        /**
+         * SonoBusStatusResponse
+         * @description High-level health summary the /sonobus Overview page uses.
+         *
+         *     The daemon/runtime side ships in T2521-4; until then the daemon
+         *     fields stay at their stub defaults. The authority/database side is
+         *     real from this slice on.
+         */
+        SonoBusStatusResponse: {
+            /** Authority Ok */
+            authority_ok: boolean;
+            /** Table Present */
+            table_present: boolean;
+            /** Binding Count */
+            binding_count: number;
+            /** Enabled Binding Count */
+            enabled_binding_count: number;
+            /**
+             * Daemon Running
+             * @default false
+             */
+            daemon_running: boolean;
+            /** Daemon Endpoint */
+            daemon_endpoint?: string | null;
+            /**
+             * Connection Server Enabled
+             * @default true
+             */
+            connection_server_enabled: boolean;
+            /**
+             * Connection Server Running
+             * @default false
+             */
+            connection_server_running: boolean;
+            /**
+             * Default Transport Priority
+             * @default avb_preferred
+             */
+            default_transport_priority: string;
+        };
         /** SoundFontLoadRequest */
         SoundFontLoadRequest: {
             /** Part Index */
@@ -43078,6 +49638,8 @@ export interface components {
              * @enum {string}
              */
             "snapshot_editor.node_shape": "square" | "rounded" | "hex";
+            /** Snapshot Preload Pins */
+            snapshot_preload_pins?: number[];
             /** Last Active Node */
             last_active_node?: string | null;
             /**
@@ -43129,6 +49691,8 @@ export interface components {
              * @enum {string}
              */
             "snapshot_editor.node_shape": "square" | "rounded" | "hex";
+            /** Snapshot Preload Pins */
+            snapshot_preload_pins?: number[];
             /** Last Active Node */
             last_active_node?: string | null;
         };
@@ -43151,6 +49715,57 @@ export interface components {
          * @enum {string}
          */
         StatusEnum: "success" | "error" | "warning";
+        /**
+         * StatusResponse
+         * @description Operational state for the Devices panel header banner.
+         */
+        StatusResponse: {
+            /**
+             * Module Loaded
+             * @description Whether snd-usb-us144mkii is in /proc/modules.
+             */
+            module_loaded: boolean;
+            /**
+             * Enumeration Stage
+             * @description One of: disconnected, boot_mode, operational.
+             */
+            enumeration_stage: string;
+            /**
+             * Operational Path
+             * @description /sys/bus/usb/devices path when operational.
+             */
+            operational_path?: string | null;
+            /**
+             * Remediation Hint
+             * @description Operator-readable one-liner when not operational.
+             */
+            remediation_hint?: string | null;
+            /**
+             * Vid Pid
+             * @description Canonical operational VID:PID pair.
+             */
+            vid_pid: string;
+            /**
+             * Boot Vid Pid
+             * @description Transient boot/loader VID:PID pair.
+             */
+            boot_vid_pid: string;
+            /**
+             * Canonical Name
+             * @description Display name across the platform.
+             */
+            canonical_name: string;
+            /**
+             * Tier1 Sample Rate Hz
+             * @description Pinned tier-1 sample rate.
+             */
+            tier1_sample_rate_hz: number;
+            /**
+             * Tier1 Buffer Samples
+             * @description Pinned tier-1 buffer size.
+             */
+            tier1_buffer_samples: number;
+        };
         /**
          * StreamConnectionRequest
          * @description Request to connect an AVTP stream between talker and listener.
@@ -43302,6 +49917,52 @@ export interface components {
              */
             dry_run: boolean;
         };
+        /** SynthesizeRequest */
+        SynthesizeRequest: {
+            /** Vid */
+            vid: string;
+            /** Pid */
+            pid: string;
+            /**
+             * Alsa Name
+             * @default
+             */
+            alsa_name: string;
+            /**
+             * Usb Manufacturer
+             * @default
+             */
+            usb_manufacturer: string;
+            /**
+             * Usb Product
+             * @default
+             */
+            usb_product: string;
+            /**
+             * Operator Choice
+             * @default auto
+             */
+            operator_choice: string;
+        };
+        /** SynthesizeResponse */
+        SynthesizeResponse: {
+            /** Manifest Yaml */
+            manifest_yaml: string;
+            /** Mapping Xml */
+            mapping_xml: string;
+            /** Scripts Js */
+            scripts_js: string;
+            /** Suggested Vendor */
+            suggested_vendor: string;
+            /** Suggested Model */
+            suggested_model: string;
+            /** Used Mixxx Template */
+            used_mixxx_template: boolean;
+            /** Mixxx Template Path */
+            mixxx_template_path: string | null;
+            /** Mixxx Upstream Commit */
+            mixxx_upstream_commit: string | null;
+        };
         /** TagsResponse */
         TagsResponse: {
             /**
@@ -43316,6 +49977,23 @@ export interface components {
              * @description Flat list of all tags
              */
             all_tags: string[];
+        };
+        /**
+         * TapConfig
+         * @description Per-chain pre/post-FX capture flags. Aligned with the T2506
+         *     snapshot graph ``recording.tap_matrix`` shape.
+         */
+        TapConfig: {
+            /**
+             * Pre Fx
+             * @default false
+             */
+            pre_fx: boolean;
+            /**
+             * Post Fx
+             * @default false
+             */
+            post_fx: boolean;
         };
         /**
          * TapTempoRequest
@@ -43729,6 +50407,106 @@ export interface components {
              */
             assignments: components["schemas"]["TouchscreenStompAssignment"][];
         };
+        /**
+         * TrackSliceResponse
+         * @description T2512-SLICE — non-destructive slice metadata.
+         */
+        TrackSliceResponse: {
+            /** Start Frame */
+            start_frame: number;
+            /** End Frame */
+            end_frame: number;
+            /**
+             * Label
+             * @default
+             */
+            label: string;
+        };
+        /** TrackStatusResponse */
+        TrackStatusResponse: {
+            /** Track */
+            track: number;
+            /** State */
+            state: number;
+            /** State Label */
+            state_label: string;
+            /** Loop Length Frames */
+            loop_length_frames: number;
+            /** Playhead Frames */
+            playhead_frames: number;
+            /** Layer Count */
+            layer_count: number;
+            /** Level Db */
+            level_db: number;
+            /** Muted */
+            muted: boolean;
+            /** Soloed */
+            soloed: boolean;
+            /** Reverse */
+            reverse: boolean;
+            /** Half Speed */
+            half_speed: boolean;
+            /**
+             * Locked
+             * @default false
+             */
+            locked: boolean;
+            /**
+             * One Shot
+             * @default false
+             */
+            one_shot: boolean;
+            /**
+             * One Shot Passes
+             * @default 1
+             */
+            one_shot_passes: number;
+            /**
+             * Auto Armed
+             * @default false
+             */
+            auto_armed: boolean;
+            /**
+             * Auto Threshold Db
+             * @default -36
+             */
+            auto_threshold_db: number;
+            /**
+             * Auto Last Level Db
+             * @default -150
+             */
+            auto_last_level_db: number;
+            /**
+             * Auto Peak Db
+             * @default -150
+             */
+            auto_peak_db: number;
+            /**
+             * Stop Mode
+             * @default hard
+             */
+            stop_mode: string;
+            /**
+             * Fade Ms
+             * @default 250
+             */
+            fade_ms: number;
+            /**
+             * Sync Mode
+             * @default free
+             */
+            sync_mode: string;
+            /**
+             * Slices
+             * @default []
+             */
+            slices: components["schemas"]["TrackSliceResponse"][];
+            /**
+             * Quantize Division
+             * @default off
+             */
+            quantize_division: string;
+        };
         /** TrafficExportRequest */
         TrafficExportRequest: {
             /**
@@ -44050,6 +50828,17 @@ export interface components {
             canonical: string;
             entry?: components["schemas"]["UriCatalogEntryResponse"] | null;
         };
+        /** UsbIfMatchPayload */
+        UsbIfMatchPayload: {
+            /** Vid */
+            vid: string;
+            /** Pid */
+            pid: string | null;
+            /** Vendor Name */
+            vendor_name: string | null;
+            /** Product Name */
+            product_name: string | null;
+        };
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -44176,6 +50965,124 @@ export interface components {
             /** Client Id */
             client_id: string;
         };
+        /** _BindingsRequest */
+        _BindingsRequest: {
+            /** Controls */
+            controls?: {
+                [key: string]: unknown;
+            }[] | null;
+            /** Outputs */
+            outputs?: {
+                [key: string]: unknown;
+            }[] | null;
+        };
+        /** _CaptureStartRequest */
+        _CaptureStartRequest: {
+            /** Slot Id */
+            slot_id: number;
+            /**
+             * Duration S
+             * @default 5
+             */
+            duration_s: number;
+        };
+        /** _Envelope */
+        _Envelope: {
+            /** Available */
+            available: boolean;
+            /**
+             * Source
+             * @default la_avdecc
+             */
+            source: string;
+            /** Data */
+            data?: {
+                [key: string]: unknown;
+            } | null;
+            /** Error */
+            error?: string | null;
+        };
+        /**
+         * _MixxxAliasResolveRequest
+         * @description Body for POST /api/devices/profiles/{...}/resolve-alias.
+         *
+         *     The wizard sends Mixxx-native form (``[Channel1].volume``) plus the
+         *     target profile_key so we can read its ``mixxx_alias_table`` and
+         *     apply per-pack overrides.
+         */
+        _MixxxAliasResolveRequest: {
+            /** Group */
+            group: string;
+            /** Key */
+            key: string;
+        };
+        /**
+         * _SequencerActionDispatchRequest
+         * @description T2461-A4 dispatch request — the binding writer fires this when
+         *     a bound MIDI control fires.
+         *
+         *     `action_id` matches an entry from /api/engine/sequencer/actions.
+         *     `value` is the normalised CC / button value (0..127 for triggers,
+         *     0/1 for toggles, 0..1 for continuous).
+         */
+        _SequencerActionDispatchRequest: {
+            /** Action Id */
+            action_id: string;
+            /**
+             * Value
+             * @default 1
+             */
+            value: number;
+        };
+        /** _SlotBindingRequest */
+        _SlotBindingRequest: {
+            /** Slot Id */
+            slot_id: number;
+            /** Profile Key */
+            profile_key: string;
+        };
+        /** _SyncMixxxRequest */
+        _SyncMixxxRequest: {
+            /** Mixxx Clone Path */
+            mixxx_clone_path: string;
+            /**
+             * Checksum Only
+             * @default false
+             */
+            checksum_only: boolean;
+        };
+        /** _UmpCapabilitiesEnvelope */
+        _UmpCapabilitiesEnvelope: {
+            /** Available */
+            available: boolean;
+            /**
+             * Source
+             * @default controller_host
+             */
+            source: string;
+            /** Data */
+            data?: {
+                [key: string]: unknown;
+            } | null;
+            /** Error */
+            error?: string | null;
+        };
+        /** _UndoRequest */
+        _UndoRequest: {
+            /** Undo Token */
+            undo_token: string;
+        };
+        /** ReadinessResponse */
+        app__routes__adoption__ReadinessResponse: {
+            /** Candidate Id */
+            candidate_id: string;
+            /** Status */
+            status: string;
+            /** Checks */
+            checks?: components["schemas"]["AdoptionCheckResponse"][];
+            /** Computed At */
+            computed_at: string;
+        };
         /**
          * HealthCheckResponse
          * @description Health check result.
@@ -44190,37 +51097,49 @@ export interface components {
             /** Severity */
             severity: number;
         };
-        /**
-         * ReadinessResponse
-         * @description Readiness checklist response
-         */
-        app__routes__deployment_health__ReadinessResponse: {
-            /** Mode */
-            mode: string;
-            /** Ready */
-            ready: boolean;
-            /** Items */
-            items: components["schemas"]["ReadinessItem"][];
+        /** LearnStartRequest */
+        app__routes__devices__LearnStartRequest: {
+            /** Controller Key */
+            controller_key: string;
+            /** Pack Id */
+            pack_id: string;
+            /** Model */
+            model: string;
         };
-        /**
-         * DownloadRequest
-         * @description Request to start IR download.
-         */
-        app__routes__impulse_response__DownloadRequest: {
-            /** Sources */
-            sources?: string[] | null;
+        /** BypassRequest */
+        app__routes__engine__BypassRequest: {
+            /** Instance Id */
+            instance_id: number;
+            /** Bypass */
+            bypass: boolean;
+        };
+        /** MidiConnectRequest */
+        app__routes__intelfx__MidiConnectRequest: {
+            /** Input Port Index */
+            input_port_index?: number | null;
+            /** Output Port Index */
+            output_port_index?: number | null;
             /**
-             * Parallel
-             * @default 4
+             * Name Hint
+             * @default intelfx
              */
-            parallel: number;
+            name_hint: string;
+        };
+        /** MidiMapRequest */
+        app__routes__intelfx__MidiMapRequest: {
+            /** Id */
+            id?: string | null;
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
             /**
-             * Skip Existing
-             * @default true
+             * Active
+             * @default false
              */
-            skip_existing: boolean;
-            /** Limit */
-            limit?: number | null;
+            active: boolean;
+            /** Mappings */
+            mappings?: components["schemas"]["MidiMappingRequest"][];
         };
         /** SceneCaptureRequest */
         app__routes__intelfx__SceneCaptureRequest: {
@@ -44256,18 +51175,6 @@ export interface components {
             /** Tap Cc */
             tap_cc?: number | null;
         };
-        /** MidiConnectRequest */
-        app__routes__mpx1__MidiConnectRequest: {
-            /** Input Port Index */
-            input_port_index?: number | null;
-            /** Output Port Index */
-            output_port_index?: number | null;
-            /**
-             * Name Hint
-             * @default mpx
-             */
-            name_hint: string;
-        };
         /** MidiMapRequest */
         app__routes__mpx1__MidiMapRequest: {
             /** Id */
@@ -44294,21 +51201,44 @@ export interface components {
             make_active: boolean;
         };
         /** SceneCaptureRequest */
-        app__routes__tesira__SceneCaptureRequest: {
+        app__routes__mpx1__SceneCaptureRequest: {
             /** Name */
             name: string;
+            /** Tags */
+            tags?: string[];
         };
         /** SetMuteRequest */
-        app__routes__tesira__SetMuteRequest: {
-            /** Muted */
-            muted: boolean;
+        app__routes__pipewire__SetMuteRequest: {
+            /** Node Id */
+            node_id: number;
+            /** Mute */
+            mute: boolean;
         };
-        /** MidiMapRequest */
-        app__routes__unified_snapshots__MidiMapRequest: {
-            /** Entries */
-            entries?: {
-                [key: string]: unknown;
-            }[];
+        /**
+         * DownloadRequest
+         * @description Request to start SoundFont download.
+         */
+        app__routes__soundfonts__DownloadRequest: {
+            /** Sources */
+            sources?: string[] | null;
+            /**
+             * Parallel
+             * @default 4
+             */
+            parallel: number;
+            /**
+             * Skip Existing
+             * @default true
+             */
+            skip_existing: boolean;
+        };
+        /** SetLevelRequest */
+        app__routes__tesira__SetLevelRequest: {
+            /**
+             * Level Db
+             * @description Gain in dB
+             */
+            level_db: number;
         };
         /** ApiError */
         ApiError: {
@@ -46665,6 +53595,46 @@ export interface operations {
             };
         };
     };
+    interfaces_list_audio_interfaces_get_api_audio_interfaces: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     audio_state_get_audio_state_authority_status_get_api_audio_state_status: {
         parameters: {
             query?: never;
@@ -47023,7 +53993,7 @@ export interface operations {
             };
         };
     };
-    audio_state_sync_brain_into_audio_state_post_api_audio_state_brain_sync: {
+    audio_state_sync_sequencer_into_audio_state_post_api_audio_state_sequencer_sync: {
         parameters: {
             query?: {
                 instance_id?: string | null;
@@ -49366,6 +56336,235 @@ export interface operations {
             };
         };
     };
+    midi_v2_list_chain_configs_get_api_v2_midi_chain_configs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    midi_v2_upsert_chain_config_put_api_v2_midi_chain_configs_chain_id: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chain_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChainConfigUpsertRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    midi_v2_delete_chain_config_delete_api_v2_midi_chain_configs_chain_id: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chain_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    midi_v2_list_device_configs_get_api_v2_midi_device_configs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    midi_v2_upsert_device_config_post_api_v2_midi_device_configs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeviceConfigUpsertRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     midi_v2_start_learn_post_api_v2_midi_learn_start: {
         parameters: {
             query?: never;
@@ -51329,6 +58528,84 @@ export interface operations {
             };
         };
     };
+    _midi_v1_retirement_get_midi_legacy_retirement_status_get_api_v2_midi_legacy_retirement_status: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    midi_ump_capabilities_get_ump_capabilities_get_api_v2_midi_ump_capabilities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["_UmpCapabilitiesEnvelope"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     midi_hub_get_hub_status_get_api_midi_hub_status: {
         parameters: {
             query?: never;
@@ -51754,6 +59031,217 @@ export interface operations {
             header?: never;
             path: {
                 port_name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    midi_hub_list_device_bindings_get_api_midi_hub_devices_device_id_bindings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                device_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    midi_hub_add_device_binding_post_api_midi_hub_devices_device_id_bindings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                device_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeviceBindingRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    midi_hub_remove_device_binding_delete_api_midi_hub_devices_device_id_bindings_consumer_type_consumer_id: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                device_id: string;
+                consumer_type: string;
+                consumer_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    midi_hub_list_consumer_devices_get_api_midi_hub_consumers_consumer_type_consumer_id_devices: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                consumer_type: string;
+                consumer_id: string;
             };
             cookie?: never;
         };
@@ -59803,14 +67291,11 @@ export interface operations {
             };
         };
     };
-    midi_cluster_proxy_proxy_midi_hub_delete_get_options_patch_post_put_api_midi_cluster_proxy_nodes_node_id_hub_path: {
+    midi_cluster_get_cluster_settings_get_api_midi_cluster_settings: {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                node_id: string;
-                path: string;
-            };
+            path?: never;
             cookie?: never;
         };
         requestBody?: never;
@@ -59821,7 +67306,49 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["MidiClusterSettingsResponse"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    midi_cluster_update_cluster_settings_patch_api_midi_cluster_settings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MidiClusterSettingsUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MidiClusterSettingsResponse"];
                 };
             };
             /** @description Validation Error */
@@ -59853,14 +67380,13 @@ export interface operations {
             };
         };
     };
-    midi_cluster_proxy_proxy_midi_hub_delete_get_options_patch_post_put_api_midi_cluster_proxy_nodes_node_id_hub_path: {
+    midi_learn_start_learn_post_api_midi_learn_learn_start: {
         parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                node_id: string;
-                path: string;
+            query: {
+                parameter_id: string;
             };
+            header?: never;
+            path?: never;
             cookie?: never;
         };
         requestBody?: never;
@@ -59871,7 +67397,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -59903,14 +67431,11 @@ export interface operations {
             };
         };
     };
-    midi_cluster_proxy_proxy_midi_hub_delete_get_options_patch_post_put_api_midi_cluster_proxy_nodes_node_id_hub_path: {
+    midi_learn_stop_learn_post_api_midi_learn_learn_stop: {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                node_id: string;
-                path: string;
-            };
+            path?: never;
             cookie?: never;
         };
         requestBody?: never;
@@ -59921,7 +67446,133 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    midi_learn_get_learn_status_get_api_midi_learn_learn_status: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    midi_learn_list_mappings_get_api_midi_learn_mappings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    midi_learn_create_mapping_post_api_midi_learn_mappings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateMappingRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -59953,13 +67604,12 @@ export interface operations {
             };
         };
     };
-    midi_cluster_proxy_proxy_midi_hub_delete_get_options_patch_post_put_api_midi_cluster_proxy_nodes_node_id_hub_path: {
+    midi_learn_get_mapping_get_api_midi_learn_mappings_parameter_id: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                node_id: string;
-                path: string;
+                parameter_id: string;
             };
             cookie?: never;
         };
@@ -59971,7 +67621,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -60003,13 +67655,12 @@ export interface operations {
             };
         };
     };
-    midi_cluster_proxy_proxy_midi_hub_delete_get_options_patch_post_put_api_midi_cluster_proxy_nodes_node_id_hub_path: {
+    midi_learn_delete_mapping_delete_api_midi_learn_mappings_parameter_id: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                node_id: string;
-                path: string;
+                parameter_id: string;
             };
             cookie?: never;
         };
@@ -60021,7 +67672,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": {
+                        [key: string]: string;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -60053,13 +67706,14 @@ export interface operations {
             };
         };
     };
-    midi_cluster_proxy_proxy_midi_hub_delete_get_options_patch_post_put_api_midi_cluster_proxy_nodes_node_id_hub_path: {
+    midi_learn_get_mappings_for_cc_get_api_midi_learn_mappings_cc_cc_number: {
         parameters: {
-            query?: never;
+            query?: {
+                channel?: number | null;
+            };
             header?: never;
             path: {
-                node_id: string;
-                path: string;
+                cc_number: number;
             };
             cookie?: never;
         };
@@ -60071,7 +67725,641 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    midi_learn_process_midi_cc_post_api_midi_learn_process: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProcessCCRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    midi_learn_clear_mappings_post_api_midi_learn_clear: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    midi_learn_export_mappings_get_api_midi_learn_export: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    midi_learn_import_mappings_post_api_midi_learn_import: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                }[];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    midi_learn_create_template_post_api_midi_learn_templates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TemplateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    midi_learn_apply_template_post_api_midi_learn_templates_apply: {
+        parameters: {
+            query?: {
+                clear_existing?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    midi_commander_surface_get_midi_commander_status_get_api_midi_commander_status: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    midi_commander_surface_get_midi_commander_projection_get_api_midi_commander_projection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    midi_commander_surface_patch_live_midi_commander_mapping_post_api_midi_commander_mapping: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MidiCommanderMappingPatchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    enriched_midi_physical_surfaces_get_enriched_midi_physical_surfaces_summary_get_api_enriched_midi_physical_surfaces_summary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    enriched_midi_physical_surfaces_get_enriched_midi_physical_surface_unit_get_api_enriched_midi_physical_surfaces_units_unit_id: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                unit_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    enriched_midi_physical_surfaces_update_enriched_midi_physical_surface_view_put_api_enriched_midi_physical_surfaces_units_unit_id_view: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                unit_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnrichedPhysicalSurfaceViewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    enriched_midi_physical_surfaces_update_enriched_midi_physical_surface_recent_target_put_api_enriched_midi_physical_surfaces_units_unit_id_recent_target: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                unit_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnrichedPhysicalSurfaceRecentTargetRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -65556,7 +73844,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        [key: string]: string[];
+                        [key: string]: unknown;
                     };
                 };
             };
@@ -66724,683 +75012,6 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-            /** @description Internal server error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-            /** @description Service unavailable or dependency not ready */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    midi_learn_start_learn_post_api_midi_learn_learn_start: {
-        parameters: {
-            query: {
-                parameter_id: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-            /** @description Internal server error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-            /** @description Service unavailable or dependency not ready */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    midi_learn_stop_learn_post_api_midi_learn_learn_stop: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: string;
-                    };
-                };
-            };
-            /** @description Internal server error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-            /** @description Service unavailable or dependency not ready */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    midi_learn_get_learn_status_get_api_midi_learn_learn_status: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Internal server error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-            /** @description Service unavailable or dependency not ready */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    midi_learn_list_mappings_get_api_midi_learn_mappings: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Internal server error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-            /** @description Service unavailable or dependency not ready */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    midi_learn_create_mapping_post_api_midi_learn_mappings: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateMappingRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-            /** @description Internal server error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-            /** @description Service unavailable or dependency not ready */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    midi_learn_get_mapping_get_api_midi_learn_mappings_parameter_id: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                parameter_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-            /** @description Internal server error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-            /** @description Service unavailable or dependency not ready */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    midi_learn_delete_mapping_delete_api_midi_learn_mappings_parameter_id: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                parameter_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: string;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-            /** @description Internal server error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-            /** @description Service unavailable or dependency not ready */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    midi_learn_get_mappings_for_cc_get_api_midi_learn_mappings_cc_cc_number: {
-        parameters: {
-            query?: {
-                channel?: number | null;
-            };
-            header?: never;
-            path: {
-                cc_number: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-            /** @description Internal server error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-            /** @description Service unavailable or dependency not ready */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    midi_learn_process_midi_cc_post_api_midi_learn_process: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ProcessCCRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-            /** @description Internal server error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-            /** @description Service unavailable or dependency not ready */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    midi_learn_clear_mappings_post_api_midi_learn_clear: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: string;
-                    };
-                };
-            };
-            /** @description Internal server error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-            /** @description Service unavailable or dependency not ready */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    midi_learn_export_mappings_get_api_midi_learn_export: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Internal server error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-            /** @description Service unavailable or dependency not ready */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    midi_learn_import_mappings_post_api_midi_learn_import: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    [key: string]: unknown;
-                }[];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-            /** @description Internal server error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-            /** @description Service unavailable or dependency not ready */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    midi_learn_create_template_post_api_midi_learn_templates: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TemplateRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-            /** @description Internal server error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-            /** @description Service unavailable or dependency not ready */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    midi_learn_apply_template_post_api_midi_learn_templates_apply: {
-        parameters: {
-            query?: {
-                clear_existing?: boolean;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
-            };
-        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -72261,7 +79872,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__routes__impulse_response__DownloadRequest"];
+                "application/json": components["schemas"]["DownloadRequest"];
             };
         };
         responses: {
@@ -76643,7 +84254,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["BypassRequest"];
+                "application/json": components["schemas"]["app__routes__engine__BypassRequest"];
             };
         };
         responses: {
@@ -79872,6 +87483,46 @@ export interface operations {
             };
         };
     };
+    unified_snapshots_get_snapshot_preload_status_get_api_snapshots_preload_status: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     unified_snapshots_list_templates_get_api_templates: {
         parameters: {
             query?: {
@@ -81476,6 +89127,57 @@ export interface operations {
             };
         };
     };
+    unified_snapshots_preload_snapshot_post_api_snapshots_snapshot_id_preload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                snapshot_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     unified_snapshots_activate_snapshot_by_program_post_api_snapshots_program_change_program_number_activate: {
         parameters: {
             query?: never;
@@ -82250,7 +89952,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__routes__unified_snapshots__MidiMapRequest"];
+                "application/json": components["schemas"]["MidiMapRequest"];
             };
         };
         responses: {
@@ -84561,7 +92263,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DownloadRequest"];
+                "application/json": components["schemas"]["app__routes__soundfonts__DownloadRequest"];
             };
         };
         responses: {
@@ -87270,7 +94972,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__routes__mpx1__MidiConnectRequest"];
+                "application/json": components["schemas"]["MidiConnectRequest"];
             };
         };
         responses: {
@@ -88242,7 +95944,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SceneCaptureRequest"];
+                "application/json": components["schemas"]["app__routes__mpx1__SceneCaptureRequest"];
             };
         };
         responses: {
@@ -98092,7 +105794,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ReadinessResponse"];
+                    "application/json": components["schemas"]["app__routes__adoption__ReadinessResponse"];
                 };
             };
             /** @description Validation Error */
@@ -103145,139 +110847,6 @@ export interface operations {
             };
         };
     };
-    midi_commander_surface_get_midi_commander_status_get_api_midi_commander_status: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Internal server error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-            /** @description Service unavailable or dependency not ready */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    midi_commander_surface_get_midi_commander_projection_get_api_midi_commander_projection: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Internal server error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-            /** @description Service unavailable or dependency not ready */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    midi_commander_surface_patch_live_midi_commander_mapping_post_api_midi_commander_mapping: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MidiCommanderMappingPatchRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-            /** @description Internal server error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-            /** @description Service unavailable or dependency not ready */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
     transport_get_transport_state_get_api_transport_state: {
         parameters: {
             query?: never;
@@ -103422,7 +110991,7 @@ export interface operations {
             };
         };
     };
-    brain_get_brain_state_get_api_engine_brain_state: {
+    sequencer_get_brain_state_get_api_engine_sequencer_state: {
         parameters: {
             query?: {
                 instance_id?: string | null;
@@ -103472,7 +111041,7 @@ export interface operations {
             };
         };
     };
-    brain_update_brain_state_post_api_engine_brain_state: {
+    sequencer_update_brain_state_post_api_engine_sequencer_state: {
         parameters: {
             query?: {
                 instance_id?: string | null;
@@ -103526,7 +111095,7 @@ export interface operations {
             };
         };
     };
-    brain_get_brain_transport_get_api_engine_brain_transport: {
+    sequencer_get_brain_transport_get_api_engine_sequencer_transport: {
         parameters: {
             query?: {
                 instance_id?: string | null;
@@ -103576,7 +111145,7 @@ export interface operations {
             };
         };
     };
-    brain_update_brain_transport_post_api_engine_brain_transport: {
+    sequencer_update_brain_transport_post_api_engine_sequencer_transport: {
         parameters: {
             query?: {
                 instance_id?: string | null;
@@ -103630,7 +111199,7 @@ export interface operations {
             };
         };
     };
-    brain_list_brain_slots_get_api_engine_brain_slots: {
+    sequencer_list_brain_slots_get_api_engine_sequencer_slots: {
         parameters: {
             query?: {
                 instance_id?: string | null;
@@ -103680,7 +111249,7 @@ export interface operations {
             };
         };
     };
-    brain_update_brain_slot_patch_api_engine_brain_slots_slot_id: {
+    sequencer_update_brain_slot_patch_api_engine_sequencer_slots_slot_id: {
         parameters: {
             query?: {
                 instance_id?: string | null;
@@ -103736,7 +111305,7 @@ export interface operations {
             };
         };
     };
-    brain_get_brain_layers_get_api_engine_brain_layers: {
+    sequencer_get_brain_layers_get_api_engine_sequencer_layers: {
         parameters: {
             query?: {
                 instance_id?: string | null;
@@ -103788,7 +111357,7 @@ export interface operations {
             };
         };
     };
-    brain_update_brain_layers_post_api_engine_brain_layers: {
+    sequencer_update_brain_layers_post_api_engine_sequencer_layers: {
         parameters: {
             query?: {
                 instance_id?: string | null;
@@ -103844,7 +111413,7 @@ export interface operations {
             };
         };
     };
-    brain_get_brain_sequence_get_api_engine_brain_sequence: {
+    sequencer_get_brain_sequence_get_api_engine_sequencer_sequence: {
         parameters: {
             query?: {
                 instance_id?: string | null;
@@ -103894,7 +111463,7 @@ export interface operations {
             };
         };
     };
-    brain_update_brain_sequence_post_api_engine_brain_sequence: {
+    sequencer_update_brain_sequence_post_api_engine_sequencer_sequence: {
         parameters: {
             query?: {
                 instance_id?: string | null;
@@ -103948,7 +111517,7 @@ export interface operations {
             };
         };
     };
-    brain_get_brain_song_get_api_engine_brain_song: {
+    sequencer_get_brain_song_get_api_engine_sequencer_song: {
         parameters: {
             query?: {
                 instance_id?: string | null;
@@ -103998,7 +111567,7 @@ export interface operations {
             };
         };
     };
-    brain_update_brain_song_post_api_engine_brain_song: {
+    sequencer_update_brain_song_post_api_engine_sequencer_song: {
         parameters: {
             query?: {
                 instance_id?: string | null;
@@ -104010,7 +111579,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SequencerInputsModel"];
+                "application/json": components["schemas"]["SequencerSongUpdateModel"];
             };
         };
         responses: {
@@ -104052,7 +111621,7 @@ export interface operations {
             };
         };
     };
-    brain_get_brain_mixer_get_api_engine_brain_mixer: {
+    sequencer_get_brain_mixer_get_api_engine_sequencer_mixer: {
         parameters: {
             query?: {
                 instance_id?: string | null;
@@ -104102,7 +111671,7 @@ export interface operations {
             };
         };
     };
-    brain_update_brain_mixer_post_api_engine_brain_mixer: {
+    sequencer_update_brain_mixer_post_api_engine_sequencer_mixer: {
         parameters: {
             query?: {
                 instance_id?: string | null;
@@ -104114,7 +111683,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SequencerInputsModel"];
+                "application/json": components["schemas"]["SequencerMixerUpdateModel"];
             };
         };
         responses: {
@@ -104156,7 +111725,7 @@ export interface operations {
             };
         };
     };
-    brain_get_brain_inputs_get_api_engine_brain_inputs: {
+    sequencer_get_brain_inputs_get_api_engine_sequencer_inputs: {
         parameters: {
             query?: {
                 instance_id?: string | null;
@@ -104206,7 +111775,7 @@ export interface operations {
             };
         };
     };
-    brain_update_brain_inputs_post_api_engine_brain_inputs: {
+    sequencer_update_brain_inputs_post_api_engine_sequencer_inputs: {
         parameters: {
             query?: {
                 instance_id?: string | null;
@@ -104218,7 +111787,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SequencerInputsModel"];
+                "application/json": components["schemas"]["SequencerInputsUpdateModel"];
             };
         };
         responses: {
@@ -104260,7 +111829,7 @@ export interface operations {
             };
         };
     };
-    brain_get_brain_library_get_api_engine_brain_library: {
+    sequencer_get_brain_library_get_api_engine_sequencer_library: {
         parameters: {
             query?: {
                 instance_id?: string | null;
@@ -104310,7 +111879,109 @@ export interface operations {
             };
         };
     };
-    brain_get_brain_sample_editor_get_api_engine_brain_sample_editor: {
+    sequencer_set_brain_asset_authored_with_post_api_engine_sequencer_library_assets_asset_id_authored_with: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                asset_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SequencerAssetAuthoredWithUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SequencerAssetAuthoredWithResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    sequencer_list_brain_assets_for_device_get_api_engine_sequencer_library_by_device_profile_key: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                profile_key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SequencerAssetsForDeviceResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    sequencer_get_brain_sample_editor_get_api_engine_sequencer_sample_editor: {
         parameters: {
             query?: {
                 instance_id?: string | null;
@@ -104361,7 +112032,7 @@ export interface operations {
             };
         };
     };
-    brain_update_brain_sample_editor_post_api_engine_brain_sample_editor: {
+    sequencer_update_brain_sample_editor_post_api_engine_sequencer_sample_editor: {
         parameters: {
             query?: {
                 instance_id?: string | null;
@@ -104415,7 +112086,7 @@ export interface operations {
             };
         };
     };
-    brain_get_brain_diagnostics_get_api_engine_brain_diagnostics: {
+    sequencer_get_brain_diagnostics_get_api_engine_sequencer_diagnostics: {
         parameters: {
             query?: {
                 instance_id?: string | null;
@@ -104465,7 +112136,47 @@ export interface operations {
             };
         };
     };
-    brain_import_brain_from_drums_post_api_engine_brain_import_drums: {
+    sequencer_get_sequencer_metering_get_api_engine_sequencer_metering: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    sequencer_import_brain_from_drums_post_api_engine_sequencer_import_drums: {
         parameters: {
             query?: {
                 instance_id?: string | null;
@@ -104515,7 +112226,7 @@ export interface operations {
             };
         };
     };
-    brain_import_brain_from_synthforge_post_api_engine_brain_import_synthforge: {
+    sequencer_import_brain_from_synthforge_post_api_engine_sequencer_import_synthforge: {
         parameters: {
             query?: {
                 instance_id?: string | null;
@@ -104534,6 +112245,243 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SequencerStateModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    sequencer_dispatch_sequencer_action_post_api_engine_sequencer_actions_dispatch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["_SequencerActionDispatchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    sequencer_list_sequencer_actions_get_api_engine_sequencer_actions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    sequencer_sequencer_capture_start_post_api_engine_sequencer_capture_start: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["_CaptureStartRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    sequencer_sequencer_capture_stop_post_api_engine_sequencer_capture_stop: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    sequencer_sequencer_capture_get_get_api_engine_sequencer_capture_session_id: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -108856,7 +116804,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SetMuteRequest"];
+                "application/json": components["schemas"]["app__routes__pipewire__SetMuteRequest"];
             };
         };
         responses: {
@@ -112075,7 +120023,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["MidiConnectRequest"];
+                "application/json": components["schemas"]["app__routes__intelfx__MidiConnectRequest"];
             };
         };
         responses: {
@@ -114402,207 +122350,6 @@ export interface operations {
             };
         };
     };
-    enriched_midi_physical_surfaces_get_enriched_midi_physical_surfaces_summary_get_api_enriched_midi_physical_surfaces_summary: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Internal server error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-            /** @description Service unavailable or dependency not ready */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    enriched_midi_physical_surfaces_get_enriched_midi_physical_surface_unit_get_api_enriched_midi_physical_surfaces_units_unit_id: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                unit_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-            /** @description Internal server error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-            /** @description Service unavailable or dependency not ready */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    enriched_midi_physical_surfaces_update_enriched_midi_physical_surface_view_put_api_enriched_midi_physical_surfaces_units_unit_id_view: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                unit_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["EnrichedPhysicalSurfaceViewRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-            /** @description Internal server error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-            /** @description Service unavailable or dependency not ready */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
-    enriched_midi_physical_surfaces_update_enriched_midi_physical_surface_recent_target_put_api_enriched_midi_physical_surfaces_units_unit_id_recent_target: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                unit_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["EnrichedPhysicalSurfaceRecentTargetRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-            /** @description Internal server error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-            /** @description Service unavailable or dependency not ready */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiError"];
-                };
-            };
-        };
-    };
     get_node_identity: {
         parameters: {
             query?: never;
@@ -115898,6 +123645,3454 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    devices_meloaudio_commander_get_commander_status_get_api_devices_meloaudio_commander_status: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommanderStatusResponse"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    devices_meloaudio_commander_get_commander_override_get_api_devices_meloaudio_commander_override: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommanderOverrideResponse"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    devices_meloaudio_commander_delete_commander_override_delete_api_devices_meloaudio_commander_override: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    devices_meloaudio_commander_get_bundled_firmware_get_api_devices_meloaudio_commander_firmware_bundled: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BundledFirmwareResponse"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    midi_visualization_get_graph_get_api_midi_visualization_graph: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: {
+                            [key: string]: unknown;
+                        }[];
+                    };
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    recorder_list_sessions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecorderSessionListResponse"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    recorder_arm_session: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ArmSessionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecorderSessionStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    recorder_start_rolling: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecorderSessionStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    recorder_stop_session: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecorderSessionStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    recorder_get_session_status: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecorderSessionStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    recorder_disarm_session: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    recordings_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingListResponse"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    recordings_get_metadata: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                asset_hash: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    recordings_stream_wav: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                asset_hash: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    recordings_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                asset_hash: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    looper_get_status: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LooperStatusResponse"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    looper_record_stomp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                track: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LooperStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    looper_stop_stomp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                track: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LooperStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    looper_clear_stomp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                track: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LooperStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    looper_undo_stomp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                track: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LooperStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    looper_redo_stomp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                track: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LooperStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    looper_set_track_level: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                track: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetLevelRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LooperStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    looper_set_track_muted: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                track: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetBoolRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LooperStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    looper_set_track_soloed: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                track: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetBoolRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LooperStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    looper_set_track_reverse: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                track: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetBoolRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LooperStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    looper_set_track_half_speed: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                track: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetBoolRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LooperStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    looper_set_master_level: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetLevelRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LooperStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    looper_set_master_muted: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetBoolRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LooperStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    looper_set_track_locked: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                track: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetBoolRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LooperStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    looper_set_track_one_shot: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                track: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetBoolRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LooperStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    looper_set_track_one_shot_passes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                track: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetOneShotPassesRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LooperStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    looper_set_track_auto_armed: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                track: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetBoolRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LooperStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    looper_set_track_auto_threshold: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                track: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetAutoThresholdRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LooperStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    looper_auto_record_push: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                track: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AutoRecordPushRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutoRecordPushResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    looper_reset_auto_peak: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                track: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LooperStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    looper_set_track_stop_mode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                track: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetStopModeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LooperStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    looper_set_track_fade_ms: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                track: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetFadeMsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LooperStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    looper_set_track_sync_mode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                track: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetSyncModeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LooperStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    looper_add_track_slice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                track: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddSliceRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LooperStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    looper_clear_track_slices: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                track: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LooperStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    looper_add_slice_at_playhead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                track: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddSliceAtPlayheadRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LooperStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    looper_delete_track_slice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                track: number;
+                start_frame: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LooperStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    looper_rename_track_slice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                track: number;
+                start_frame: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RenameSliceRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LooperStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    looper_set_track_quantize_division: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                track: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetQuantizeDivisionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LooperStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    looper_export_state: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LooperStatePayload-Output"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    looper_apply_state: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LooperStatePayload-Input"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LooperStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    looper_get_activity: {
+        parameters: {
+            query?: {
+                /** @description T2512-ACTIVITY-FILTER — case-sensitive exact-match filter on the verb field. Multiple comma-separated values OR-match (e.g. ?verb=record,stop). Unknown verbs match nothing. */
+                verb?: string | null;
+                /** @description T2512-ACTIVITY-FILTER — exact-match filter on the track field. Events with track=null (e.g. reset_state) are excluded when this filter is set. */
+                track?: number | null;
+                /** @description T2512-ACTIVITY-FILTER — return only the most recent N events after verb/track filtering. Applied last so a low limit on a big log doesn't drop matching events from the head. */
+                limit?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityLogResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    looper_clear_activity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityLogResponse"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    looper_get_metrics: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MetricsResponse"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    looper_reset_metrics: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MetricsResponse"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    looper_reset_state: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LooperStatusResponse"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    looper_list_presets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PresetNamesResponse"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    looper_clear_presets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LooperStatusResponse"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    looper_reorder_presets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReorderPresetsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LooperStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    looper_save_preset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LooperStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    looper_delete_preset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LooperStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    looper_rename_preset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RenamePresetRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LooperStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    looper_apply_preset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LooperStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    tascam_us144mkii_get_status_get_api_v1_devices_tascam_us144mkii_status: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatusResponse"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    tascam_us144mkii_get_capabilities_get_api_v1_devices_tascam_us144mkii_capabilities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CapabilitiesResponse"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    tascam_us144mkii_get_meters_get_api_v1_devices_tascam_us144mkii_meters: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeterPayload"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    tascam_us144mkii_get_clock_source_get_api_v1_devices_tascam_us144mkii_clock_source: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClockSourceResponse"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    tascam_us144mkii_reset_device_post_api_v1_devices_tascam_us144mkii_reset: {
+        parameters: {
+            query?: {
+                /** @description Must be true. Reset is destructive — it issues a USB-port reset which stops audio I/O for ~1 second. */
+                confirm?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResetResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    mpx1_effects_block_get_hardware_usage_get_api_v1_chains_hardware_usage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HardwareUsageResponse"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    mpx1_effects_block_get_interface_capabilities_get_api_v1_interfaces_capabilities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InterfaceCapabilitiesResponse"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    mpx1_effects_block_get_mpx1_instance_get_api_v1_effects_mpx1_instance_chain_id: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chain_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstanceConfigResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    mpx1_effects_block_upsert_mpx1_instance_post_api_v1_effects_mpx1_instance_chain_id: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chain_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InstanceConfigRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstanceConfigResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    mpx1_effects_block_delete_mpx1_instance_delete_api_v1_effects_mpx1_instance_chain_id: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chain_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    mpx1_effects_block_set_mpx1_bypass_post_api_v1_effects_mpx1_instance_chain_id_bypass: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chain_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BypassRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstanceConfigResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    mpx1_effects_block_calibrate_mpx1_post_api_v1_effects_mpx1_instance_chain_id_calibrate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chain_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstanceConfigResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    device_meters_get_peak_meters_registry_get_api_v1_devices_peak_meters_registry: {
+        parameters: {
+            query?: {
+                /** @description When true, inline the current peak-meter snapshot for every device so a one-shot enumeration covers both the wire-up state and the latest reading. */
+                include_snapshot?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeviceRegistryResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    device_meters_get_device_peak_meters_get_api_v1_devices_device_id_peak_meters: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                device_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenericMeterPayload"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    device_meters_get_cluster_peak_meters_registry_get_api_v1_devices_peak_meters_cluster_registry: {
+        parameters: {
+            query?: {
+                /** @description When true, propagate include_snapshot=true to every peer fetch so the response carries inline snapshots for every device across the cluster. Wallclock stays close to the slowest single peer because all peer fetches run concurrently. */
+                include_snapshot?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClusterDeviceRegistryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -117784,6 +128979,2374 @@ export interface operations {
             };
         };
     };
+    routes_count_bindings_get_api_midi_bindings_count: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": number;
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    routes_get_last_observed_cc_get_api_midi_bindings_learn_last_cc: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LastCcResponse"] | null;
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    routes_get_cluster_bindings_matrix_get_api_midi_cluster_bindings_matrix: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClusterBindingsMatrixResponse"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    routes_get_bindings_matrix_get_api_midi_bindings_matrix: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BindingsMatrixResponse"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    routes_legacy_table_rowcounts_get_api_midi_legacy_table_rowcounts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: number;
+                    };
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    routes_list_bindings_get_api_midi_bindings: {
+        parameters: {
+            query?: {
+                consumer_type?: ("snapshot" | "brain_slot" | "plugin_param" | "global_param" | "performance_preset" | "device_pack" | "transport" | "tesira_ttp" | "gpio" | "macro") | null;
+                consumer_id?: string | null;
+                device_id?: string | null;
+                scope?: ("global" | "snapshot" | "node" | "cluster") | null;
+                scope_id?: string | null;
+                enabled_only?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MidiBindingRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    routes_create_binding_post_api_midi_bindings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MidiBindingCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MidiBindingRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    routes_get_binding_get_api_midi_bindings_binding_id: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                binding_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MidiBindingRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    routes_delete_binding_delete_api_midi_bindings_binding_id: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                binding_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    routes_update_binding_patch_api_midi_bindings_binding_id: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                binding_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MidiBindingUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MidiBindingRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    routes_send_binding_feedback_test_post_api_midi_bindings_binding_id_test: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                binding_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BindingFeedbackTestRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BindingFeedbackTestResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    routes_disable_binding_post_api_midi_bindings_binding_id_disable: {
+        parameters: {
+            query?: {
+                modified_by?: string;
+            };
+            header?: never;
+            path: {
+                binding_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MidiBindingRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    routes_enable_binding_post_api_midi_bindings_binding_id_enable: {
+        parameters: {
+            query?: {
+                modified_by?: string;
+            };
+            header?: never;
+            path: {
+                binding_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MidiBindingRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    binding_routes_count_bindings_get_api_avb_bindings_count: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": number;
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    binding_routes_get_router_projection_get_api_avb_router_projection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AvbBindingRead"][];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    binding_routes_get_bindings_matrix_get_api_avb_bindings_matrix: {
+        parameters: {
+            query?: {
+                /** @description T2490-3a — when true, fold the live AvbRouter projection into the bindings list so the Connections DataTable shows active router state alongside durable authority rows. */
+                include_router?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AvbBindingsMatrixResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    binding_routes_get_cluster_bindings_matrix_get_api_avb_cluster_bindings_matrix: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AvbClusterBindingsMatrixResponse"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    binding_routes_list_bindings_get_api_avb_bindings: {
+        parameters: {
+            query?: {
+                consumer_type?: ("avdecc_stream" | "tesira_preset" | "tesira_block" | "cluster_route" | "srp_reservation") | null;
+                consumer_id?: string | null;
+                stream_id?: string | null;
+                talker_node_id?: string | null;
+                listener_node_id?: string | null;
+                scope?: ("global" | "snapshot" | "node" | "cluster") | null;
+                scope_id?: string | null;
+                enabled_only?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AvbBindingRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    binding_routes_create_binding_post_api_avb_bindings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AvbBindingCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AvbBindingRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    binding_routes_get_binding_get_api_avb_bindings_binding_id: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                binding_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AvbBindingRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    binding_routes_delete_binding_delete_api_avb_bindings_binding_id: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                binding_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    binding_routes_update_binding_patch_api_avb_bindings_binding_id: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                binding_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AvbBindingUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AvbBindingRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    binding_routes_disable_binding_post_api_avb_bindings_binding_id_disable: {
+        parameters: {
+            query?: {
+                modified_by?: string;
+            };
+            header?: never;
+            path: {
+                binding_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AvbBindingRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    binding_routes_enable_binding_post_api_avb_bindings_binding_id_enable: {
+        parameters: {
+            query?: {
+                modified_by?: string;
+            };
+            header?: never;
+            path: {
+                binding_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AvbBindingRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    binding_routes_get_status_get_api_sonobus_status: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SonoBusStatusResponse"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    binding_routes_count_bindings_get_api_sonobus_bindings_count: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": number;
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    binding_routes_get_bindings_matrix_get_api_sonobus_bindings_matrix: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SonoBusBindingsMatrixResponse"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    binding_routes_get_cluster_bindings_matrix_get_api_sonobus_cluster_bindings_matrix: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SonoBusClusterBindingsMatrixResponse"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    binding_routes_list_profiles_get_api_sonobus_profiles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SonoBusProfilePreset"][];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    binding_routes_get_profile_get_api_sonobus_profiles_profile_id: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SonoBusProfilePreset"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    binding_routes_list_peers_get_api_sonobus_peers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SonoBusPeerSummary"][];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    binding_routes_list_groups_get_api_sonobus_groups: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SonoBusGroupSummary"][];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    binding_routes_list_sessions_get_api_sonobus_sessions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SonoBusBindingRead"][];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    binding_routes_list_bindings_get_api_sonobus_bindings: {
+        parameters: {
+            query?: {
+                consumer_type?: ("sonobus_peer" | "sonobus_group" | "sonobus_stream" | "sonobus_client_session" | "cluster_route") | null;
+                consumer_id?: string | null;
+                binding_kind?: ("peer" | "group" | "stream" | "client_session") | null;
+                group_id?: string | null;
+                talker_node_id?: string | null;
+                listener_node_id?: string | null;
+                scope?: ("global" | "snapshot" | "node" | "cluster") | null;
+                scope_id?: string | null;
+                enabled_only?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SonoBusBindingRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    binding_routes_create_binding_post_api_sonobus_bindings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SonoBusBindingCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SonoBusBindingRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    binding_routes_get_binding_get_api_sonobus_bindings_binding_id: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                binding_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SonoBusBindingRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    binding_routes_delete_binding_delete_api_sonobus_bindings_binding_id: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                binding_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    binding_routes_update_binding_patch_api_sonobus_bindings_binding_id: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                binding_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SonoBusBindingUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SonoBusBindingRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    binding_routes_disable_binding_post_api_sonobus_bindings_binding_id_disable: {
+        parameters: {
+            query?: {
+                modified_by?: string;
+            };
+            header?: never;
+            path: {
+                binding_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SonoBusBindingRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    binding_routes_enable_binding_post_api_sonobus_bindings_binding_id_enable: {
+        parameters: {
+            query?: {
+                modified_by?: string;
+            };
+            header?: never;
+            path: {
+                binding_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SonoBusBindingRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    device_pack_auto_gen_auto_generate_lookup_post_api_midi_devices_auto_generate_lookup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LookupRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LookupResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    device_pack_auto_gen_auto_generate_synthesize_post_api_midi_devices_auto_generate_synthesize: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SynthesizeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SynthesizeResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    device_pack_auto_gen_auto_generate_commit_post_api_midi_devices_auto_generate_commit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommitRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommitResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    device_pack_auto_gen_auto_generate_diagnostics_get_api_midi_devices_auto_generate_diagnostics: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    configurator_packs_list_configurator_packs_get_api_midi_configurator_packs: {
+        parameters: {
+            query?: {
+                include_unavailable?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfiguratorPacksResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    plugin_inventory_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PluginInventoryResponse"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    plugin_inventory_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                uri: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PluginDescriptorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    configurator_devices_get_overrides_get_api_devices_configurator_pack_id_overrides: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Stable pack identifier */
+                pack_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OverridesResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    configurator_devices_put_overrides_put_api_devices_configurator_pack_id_overrides: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Stable pack identifier */
+                pack_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OverridesWriteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OverridesWriteResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    configurator_devices_delete_overrides_delete_api_devices_configurator_pack_id_overrides: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Stable pack identifier */
+                pack_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OverridesDeleteResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    configurator_devices_get_last_learn_event_get_api_devices_configurator_pack_id_learn_last_event: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Stable pack identifier */
+                pack_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LearnEventResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     monitoring_get_database_pool_stats_get_api_monitoring_database_pool_stats: {
         parameters: {
             query?: never;
@@ -119255,7 +132818,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__routes__deployment_health__ReadinessResponse"];
+                    "application/json": components["schemas"]["ReadinessResponse"];
                 };
             };
             /** @description Internal server error */
@@ -121051,6 +134614,46 @@ export interface operations {
             };
         };
     };
+    avb_get_avdecc_substrate_state_get_api_avb_avdecc_substrate_state: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
     avb_get_avdecc_entities_get_api_avb_avdecc_entities: {
         parameters: {
             query?: never;
@@ -121251,6 +134854,437 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    counters_get_stream_counters_get_api_avb_streams_stream_id_counters: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                stream_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    counters_get_grandmaster_change_log_get_api_avb_ptp_grandmaster_changes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    counters_get_interface_counters_get_api_avb_interfaces_ifname_counters: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ifname: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    saved_connections_persist_connection_post_api_avb_connections_persist: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PersistConnectionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersistConnectionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    saved_connections_list_saved_connections_get_api_avb_connections_saved: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedConnectionsResponse"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    milan_get_milan_info_get_api_avb_milan_entity_id_info: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entity_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["_Envelope"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    milan_get_system_unique_id_get_api_avb_milan_entity_id_system_unique_id: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entity_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["_Envelope"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    milan_set_system_unique_id_post_api_avb_milan_entity_id_system_unique_id: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entity_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetSystemUniqueIdRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["_Envelope"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    milan_get_media_clock_reference_info_get_api_avb_milan_entity_id_media_clock_reference_info: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entity_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["_Envelope"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
             /** @description Internal server error */
@@ -121801,7 +135835,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SetLevelRequest"];
+                "application/json": components["schemas"]["app__routes__tesira__SetLevelRequest"];
             };
         };
         responses: {
@@ -121907,7 +135941,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__routes__tesira__SetMuteRequest"];
+                "application/json": components["schemas"]["SetMuteRequest"];
             };
         };
         responses: {
@@ -123250,7 +137284,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__routes__tesira__SceneCaptureRequest"];
+                "application/json": components["schemas"]["SceneCaptureRequest"];
             };
         };
         responses: {
@@ -125006,6 +139040,1830 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    devices_list_packs_get_api_devices_packs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    devices_list_profiles_get_api_devices_profiles: {
+        parameters: {
+            query?: {
+                kind?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    devices_get_profile_get_api_devices_profiles_pack_id_model_kind: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pack_id: string;
+                model: string;
+                kind: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    devices_reload_pack_post_api_devices_profiles_reload_pack_id: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pack_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    devices_resolve_get_api_devices_resolve: {
+        parameters: {
+            query?: {
+                hardware_id?: string | null;
+                alsa_card?: string | null;
+                alsa_client?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    devices_list_active_mappings_get_api_devices_mappings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    devices_assign_mapping_post_api_devices_mappings_assign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssignMappingRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    devices_clear_mapping_post_api_devices_mappings_clear: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClearMappingRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    devices_list_assets_get_api_devices_pack_id_model_assets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pack_id: string;
+                model: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    devices_serve_asset_get_api_devices_pack_id_model_asset_filename: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pack_id: string;
+                model: string;
+                filename: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    devices_refresh_metadata_post_api_devices_pack_id_refresh_metadata: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pack_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    devices_import_mixxx_xml_post_api_devices_mixxx_import: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MixxxImportRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    devices_export_mixxx_xml_get_api_devices_mixxx_export_pack_id_model: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pack_id: string;
+                model: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    devices_learn_start_post_api_devices_learn_start: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["app__routes__devices__LearnStartRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    devices_learn_capture_post_api_devices_learn_capture: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LearnCaptureRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    devices_learn_assign_post_api_devices_learn_assign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LearnAssignRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    devices_learn_cancel_post_api_devices_learn_cancel_session_id: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    devices_measure_latency_post_api_devices_measure_latency: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MeasureLatencyRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    devices_measure_latency_history_get_api_devices_measure_latency_history: {
+        parameters: {
+            query: {
+                pack_id: string;
+                model: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    devices_list_connected_devices_get_api_devices_connected: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    devices_list_recently_disconnected_get_api_devices_recently_disconnected: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    devices_list_known_devices_get_api_devices_known: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    devices_pin_device_post_api_devices_pin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PinRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    devices_unpin_device_post_api_devices_unpin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PinRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    devices_list_diagnostics_get_api_devices_diagnostics: {
+        parameters: {
+            query?: {
+                severity?: string | null;
+                source?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    devices_list_sequencer_monitor_candidates_get_api_devices_sequencer_monitor_candidates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    devices_list_slot_bindings_get_api_devices_slot_bindings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    devices_bind_slot_to_profile_post_api_devices_slot_bindings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["_SlotBindingRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    devices_unbind_slot_delete_api_devices_slot_bindings_by_slot_slot_id: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slot_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    devices_unbind_profile_delete_api_devices_slot_bindings_by_profile: {
+        parameters: {
+            query: {
+                profile_key: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    devices_snapshot_keys_get_api_devices_snapshot_keys: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    devices_list_pack_sources_get_api_devices_packs_sources: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    devices_list_mixxx_checksums_get_api_devices_sources_mixxx_checksums: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    devices_sync_mixxx_post_api_devices_sources_sync_mixxx: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["_SyncMixxxRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    devices_resolve_mixxx_alias_post_api_devices_profiles_pack_id_model_kind_resolve_alias: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pack_id: string;
+                model: string;
+                kind: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["_MixxxAliasResolveRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    devices_write_bindings_post_api_devices_profiles_pack_id_model_kind_bindings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pack_id: string;
+                model: string;
+                kind: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["_BindingsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    devices_undo_bindings_post_api_devices_profiles_pack_id_model_kind_bindings_undo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pack_id: string;
+                model: string;
+                kind: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["_UndoRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
