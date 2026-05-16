@@ -1198,7 +1198,7 @@ Last updated: 2026-05-10 EDT - Claude: UI swap shipped; framework shell at `/mid
 ---
 
 ID: T2500-MV
-Status: [>] In Progress
+Status: [✓] Done
 Parent: —
 Title: MIDI Connections Visualization — live three-tier React Flow graph at /midi/connections/visualization
 Description:
@@ -1255,7 +1255,9 @@ Subtasks:
   - `[✓]` `T2500-MV-F2` — Frontend smoke test (`MidiServicesConnectionsVisualizationPage.test.tsx`, `useMidiVisualizationGraph.test.tsx`).
   - `[✓]` `T2500-MV-F3` — Definition of Done verification: 54 backend pytest + 23 jest green; `npm run build` clean (21.17s); `systemctl restart map2-backend` green; `curl /api/midi/visualization/graph` 200 with 4 registered targets; WS handshake replay frame received; preview server on :3000 serves new `MidiServicesConnectionsVisualizationPage-CVSlEm6a.js` and `/midi/connections/visualization` returns 200.
 Assigned to: Claude
-Last updated: 2026-05-10 EDT - Claude: T2500-MV CLOSED. All 18 subtasks shipped in one autonomous bundle.
+Last updated: 2026-05-16 EDT - Claude (worklist hygiene): status flipped from `[>] In Progress` → `[✓] Done` to reflect the prior closeout note. All 18 subtasks shipped 2026-05-10; entry stayed `[>]` due to a missed status flip in that commit.
+
+Prior — 2026-05-10 EDT - Claude: T2500-MV CLOSED. All 18 subtasks shipped in one autonomous bundle.
 
 
 ---
@@ -4762,7 +4764,7 @@ Last updated: 2026-04-20 11:55 EDT - Codex
 ## T2518 — Snapshot interface binding, world-class picker (filed 2026-05-12)
 
 ID: T2518
-Status: [>] In Progress
+Status: [✓] Done
 Title: Snapshot publish — unified audio interface picker with stable IDs
 
 Problem statement:
@@ -4793,6 +4795,8 @@ Definition of Done:
 5. Manual browser verification: SnapshotPublishPage Devices section lists ≥ 1 real interface card beyond "Use rig default".
 6. Worklist updated.
 7. Committed on master and dual-pushed to origin + gitlab.
+
+Closeout note: 2026-05-16 — Claude (worklist hygiene). All eight subtasks shipped previously; status flipped from `[>] In Progress` → `[✓] Done` to reflect actual state. Verified at HEAD: `app/services/audio_interface_registry.py` (643 LOC), `app/routes/audio/interfaces.py`, `web/src/app/components/snapshots/SnapshotInterfacePicker.{tsx,test.tsx,css}`, `app/services/snapshot/snapshot_editor.py` + `snapshot_persistence.py` carry `input_interface_id` / `output_interface_id` propagation, `web/src/app/pages/SnapshotPublishPage.tsx` imports SnapshotInterfacePicker. Backend tests green: `pytest tests/test_audio_interface_registry.py tests/test_audio_interfaces_route.py` → 9/9. Frontend tests green: `npx jest --testPathPatterns=SnapshotInterfacePicker` → 6/6.
 
 ---
 
