@@ -37,8 +37,17 @@ from app.services.devices import (
 )
 from app.services.devices._meter_source import get_registry
 from app.services.devices._meter_ws_schema import (
+    CLUSTER_REGISTRY_FRAME_TYPE,
     ClusterMeterRegistryFrame,
+    ClusterPeerSlice,
+    DeviceMeterRegistryData,
     DeviceMeterRegistryFrame,
+    DeviceMeterRow,
+    MeterSnapshotPayload,
+    REGISTRY_FRAME_TYPE,
+    SCHEMA_VERSION,
+    build_cluster_registry_frame,
+    build_registry_frame,
 )
 
 
@@ -531,9 +540,14 @@ async def stream_peak_meters(websocket: WebSocket) -> None:
     device_filter = _parse_device_ids_query(raw_filter)
 
     async def _snapshot_frame() -> dict:
+        # Run-13i pick #1 follow-on (2026-05-16): emit through
+        # build_registry_frame() so the canonical Pydantic model in
+        # _meter_ws_schema.py is the single source of truth for the
+        # frame shape. Drift in either direction (route handler or
+        # canonical schema) now fails CI via the registry-frame tests.
         registry = get_registry()
         rows = registry.list_devices()
-        device_payloads: list[dict] = []
+        device_rows: list[DeviceMeterRow] = []
         for row in rows:
             if device_filter is not None and row.device_id not in device_filter:
                 continue
@@ -546,25 +560,21 @@ async def stream_peak_meters(websocket: WebSocket) -> None:
                     exc,
                 )
                 continue
-            device_payloads.append(
-                {
-                    "device_id": row.device_id,
-                    "input_channels": row.input_channels,
-                    "output_channels": row.output_channels,
-                    "has_engine_source": row.has_engine_source,
-                    "snapshot": {
-                        "input_peak_db": list(snap.input_peak_db),
-                        "output_peak_db": list(snap.output_peak_db),
-                        "source": snap.source,
-                        "captured_at": snap.captured_at,
-                    },
-                }
+            device_rows.append(
+                DeviceMeterRow(
+                    device_id=row.device_id,
+                    input_channels=row.input_channels,
+                    output_channels=row.output_channels,
+                    has_engine_source=row.has_engine_source,
+                    snapshot=MeterSnapshotPayload(
+                        input_peak_db=list(snap.input_peak_db),
+                        output_peak_db=list(snap.output_peak_db),
+                        source=snap.source,
+                        captured_at=snap.captured_at,
+                    ),
+                )
             )
-        return {
-            "type": "device_peak_meters:registry",
-            "schema_version": 1,
-            "data": {"devices": device_payloads},
-        }
+        return build_registry_frame(device_rows)
 
     try:
         # Initial state immediately on connect — the consumer never has
@@ -635,6 +645,17 @@ async def stream_cluster_peak_meters(websocket: WebSocket) -> None:
     include_local = node_filter is None or "local" in node_filter
 
     async def _snapshot_frame() -> dict:
+        # Run-13i pick #1 follow-on (2026-05-16): wrap the cluster
+        # frame construction in build_cluster_registry_frame() so the
+        # canonical envelope schema (`type` + `schema_version`) lives
+        # in exactly one place. The peer-side data still flows through
+        # the existing get_cluster_peak_meters_registry projection
+        # (which itself pre-dates the schema module); only the outer
+        # envelope is canonicalized here. A future cycle can lift the
+        # inner peer data through ClusterPeerSlice as well — for now
+        # we keep the dict pass-through to preserve the rich peer
+        # fields (health, hostname-fallback, etc.) the existing
+        # projection emits that aren't yet on the slice model.
         try:
             payload = await get_cluster_peak_meters_registry(
                 include_snapshot=include_snapshot,
@@ -656,24 +677,27 @@ async def stream_cluster_peak_meters(websocket: WebSocket) -> None:
                     for node_id, err in data.get("errors", {}).items()
                     if node_id in node_filter or node_id == "@local"
                 }
+            # Build the envelope using the canonical type+version
+            # constants from the schema module. We pass the inner data
+            # through as a plain dict (instead of strict ClusterMeterRegistryData
+            # model construction) so the projection's extra peer fields
+            # — health, hostname-fallback, etc. — survive unchanged.
+            # The envelope-level invariants (`type`, `schema_version`)
+            # are pinned via REGISTRY_FRAME_TYPE / SCHEMA_VERSION;
+            # tests/test_device_meters_ws_schema.py validates the
+            # full shape against the canonical Pydantic models.
             return {
-                "type": "device_peak_meters:cluster_registry",
-                "schema_version": 1,
+                "type": CLUSTER_REGISTRY_FRAME_TYPE,
+                "schema_version": SCHEMA_VERSION,
                 "data": data,
             }
         except Exception as exc:  # pragma: no cover — defensive
             logger.debug(
                 "cluster device meters ws: snapshot failed: %s", exc
             )
-            return {
-                "type": "device_peak_meters:cluster_registry",
-                "schema_version": 1,
-                "data": {
-                    "local": {"devices": []},
-                    "peers": [],
-                    "errors": {"@local": str(exc)},
-                },
-            }
+            return build_cluster_registry_frame(
+                errors={"@local": str(exc)},
+            )
 
     try:
         # Initial state on connect so the consumer never has to wait

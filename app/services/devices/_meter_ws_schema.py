@@ -39,6 +39,18 @@ from pydantic import BaseModel, Field
 
 
 # ---------------------------------------------------------------------------
+# Canonical wire-protocol constants
+# ---------------------------------------------------------------------------
+# Centralized so route handlers, tests, and operator tooling import the
+# exact strings/numbers the WS endpoints emit. Drift here = drift in the
+# canonical Pydantic models below = test failure.
+
+REGISTRY_FRAME_TYPE = "device_peak_meters:registry"
+CLUSTER_REGISTRY_FRAME_TYPE = "device_peak_meters:cluster_registry"
+SCHEMA_VERSION = 1
+
+
+# ---------------------------------------------------------------------------
 # Per-snapshot models (shared between local + cluster frames)
 # ---------------------------------------------------------------------------
 
@@ -58,11 +70,16 @@ class MeterSnapshotPayload(BaseModel):
         default_factory=list,
         description="Peak dBFS per output channel.",
     )
-    source: Literal["engine", "placeholder"] = Field(
+    source: Literal["engine", "placeholder", "engine_unavailable"] = Field(
         default="placeholder",
         description=(
             "`engine` = measured from the live engine ring buffer; "
-            "`placeholder` = silence fallback (no measurement yet)."
+            "`placeholder` = silence fallback (no measurement yet); "
+            "`engine_unavailable` = engine source registered but its "
+            "reader raised (silence-shaped snapshot returned). Lets the "
+            "GUI distinguish 'no engine wired up yet' (cool-gray Tag) "
+            "from 'engine unreachable right now' (red Tag) without "
+            "scraping a separate health endpoint."
         ),
     )
     captured_at: Optional[float] = Field(

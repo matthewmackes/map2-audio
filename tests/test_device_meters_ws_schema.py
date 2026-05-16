@@ -129,9 +129,17 @@ def test_meter_snapshot_payload_defaults_match_silence_sentinel() -> None:
 
 
 def test_meter_snapshot_payload_rejects_unknown_source() -> None:
-    """`source` is a Literal — only 'engine' / 'placeholder' accepted."""
+    """`source` is a Literal — only 'engine' / 'placeholder' /
+    'engine_unavailable' accepted."""
     with pytest.raises(ValueError):
         MeterSnapshotPayload(source="custom-thing")  # type: ignore[arg-type]
+
+
+def test_meter_snapshot_payload_accepts_engine_unavailable_source() -> None:
+    """T2519 / juce_engine_meter_source emits source='engine_unavailable'
+    when the engine reader raises (silence-shaped fallback)."""
+    snap = MeterSnapshotPayload(source="engine_unavailable")
+    assert snap.source == "engine_unavailable"
 
 
 def test_device_meter_row_input_channels_must_be_non_negative() -> None:
