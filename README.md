@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1702** Python | **1751** TypeScript | **235** C++/H | **149** Docs | **4664** total commits | **4** stars | **0** forks | **0** open issues
+**1702** Python | **1751** TypeScript | **235** C++/H | **149** Docs | **4666** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`528ddf520`](https://github.com/matthewmackes/map2-audio/commit/528ddf5203a0546026e7abce6af63479143a6745) | docs(worklist): file run-14b handoff (5 cycles + handoff ... | Map2 Audio | 2026-05-16 |
+| [`692b707c6`](https://github.com/matthewmackes/map2-audio/commit/692b707c6b7028d6de68926e304d0665eec3fb09) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-16 |
 | [`9e2ebfb43`](https://github.com/matthewmackes/map2-audio/commit/9e2ebfb43bb2d445c0556495fbff2fd1e5b8d498) | docs(architecture): run-14b cycle 4 — SONOBUS_DAEMON.md c... | Map2 Audio | 2026-05-16 |
 | [`c473ab9f7`](https://github.com/matthewmackes/map2-audio/commit/c473ab9f719826b556b6f1d8341957ed63cef905) | feat(web): run-14b cycle 3 — dev-build frame validation i... | Map2 Audio | 2026-05-16 |
 | [`abb9d7a69`](https://github.com/matthewmackes/map2-audio/commit/abb9d7a69343b7c1b0eec46b80d2573c16ef5aa5) | feat(web): run-14b cycle 2 — TypeScript codegen for meter... | Map2 Audio | 2026-05-16 |
 | [`5c83bf0f8`](https://github.com/matthewmackes/map2-audio/commit/5c83bf0f8932c1cfa1932d9d6367b3140fd107fa) | refactor(meters): run-14b cycle 1 — strict ClusterMeterRe... | Map2 Audio | 2026-05-16 |
 | [`f030dae06`](https://github.com/matthewmackes/map2-audio/commit/f030dae06bebc191e4254f1ce5d5b59974aff329) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-16 |
 | [`0858fde63`](https://github.com/matthewmackes/map2-audio/commit/0858fde63c57a5c67bbb1ef3d5b0ee2b16228819) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-16 |
-| [`29973ec2e`](https://github.com/matthewmackes/map2-audio/commit/29973ec2e7aff949690b2153d267a770aef4493a) | docs(worklist): file run-14a handoff (8 cycles + handoff ... | Map2 Audio | 2026-05-16 |
-| [`48a31978d`](https://github.com/matthewmackes/map2-audio/commit/48a31978d0e3ad69017ba8a4a5e60b225d5beb75) | refactor(meters): wire WS handlers through canonical _met... | Map2 Audio | 2026-05-16 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
