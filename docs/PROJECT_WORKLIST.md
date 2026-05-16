@@ -2950,6 +2950,41 @@ The earlier order-1 row is fully drained for pure-Python / pure-frontend slices.
 
 ---
 
+### Pick-up next (run-14b handoff, filed 2026-05-16, end-of-run)
+
+**Run-14b total: 5 cycles + handoff, all dual-pushed to origin + gitlab.** User invoked "continue × 5". Closed all 4 software-side picks from yesterday's run-14a handoff.
+
+Shipped this run, in order:
+
+1. **Cycle 1 — Strict ClusterMeterRegistryData validation** (commit `277408dc4`). Dropped the dict-passthrough in the cluster WS handler. `ClusterPeerSlice` gained `health: str = "offline"` to mirror the REST projection. `DeviceMeterRow.snapshot` is now Optional (the cluster registry projection emits `snapshot=None` on the default `include_snapshot=False` fan-out path; the strict-validation path tripped on it). 114 device-meter tests + 19 schema tests green; +2 acceptance tests.
+
+2. **Cycle 2 — TypeScript codegen for meter-WS frame types** (commit `abb9d7a69`). New `scripts/generate_meter_ws_types.py` reads the canonical Pydantic source in-process + emits `web/src/app/types/meterWsFrame.generated.ts` with all 8 model interfaces + 2 type guards + the wire-protocol constants. `--check` mode is the CI drift gate. 11 codegen tests green.
+
+3. **Cycle 3 — Dev-build frame validation in WS hooks** (commit `c473ab9f7`). New `web/src/app/hooks/validateMeterWsFrame.ts` ships `checkRegistryFrame()` + `checkClusterRegistryFrame()` structural validators. Wired `devValidate*Frame()` into `useDevicesPeakMetersStream` + `useDevicesPeakMetersClusterStream`. Vite tree-shakes the dead branch in production via `import.meta.env.DEV`; Jest hits the catch path and the validation no-ops in tests. Backend drift now surfaces as a deduped console.warn instead of silent UI miss. 16 validator tests + 79 across the broader hook sweep green.
+
+4. **Cycle 4 — `SONOBUS_DAEMON.md` canonical reference** (commit `9e2ebfb43`). Single grep-able doc covering: UDS protocol (frame shapes + 8 commands + 10 error codes + 6 events) / 3 build modes (full/stub/disabled) + compile-time flags / 8 supervisor lifecycle states + GUI Tag tones / REST + WS surface / evidence-dir layout. 23 doc-contract tests pin the must-have anchors so a future rename of a state string or error code without a doc update fails CI.
+
+5. **Cycle 5 — handoff (this entry).**
+
+**Cumulative test surface this run:** +2 acceptance + 11 codegen + 16 validator + 23 doc-contract = +52 new tests.
+
+**Status of long-term priorities after this run:**
+- All 4 software-side picks from run-14a closed.
+- Canonical schema → TS types → frontend validation pipeline now end-to-end + CI-gated.
+- T2521 unchanged: T2521-4 cycles 3 / 4 / 6 + T2521-10 still bench-gated.
+
+**Next-session order-1 picks** (priority order; pure-Python or pure-frontend only):
+
+1. **Wire `npm run typecheck` to also run `python3 scripts/generate_meter_ws_types.py --check`** — currently the codegen --check is only a manual step. CI integration so a Pydantic schema change without the codegen refresh fails the merge gate. ~1 cycle.
+2. **Generalize the meter-WS schema pattern to other WS surfaces** — there are at least three other WS topics in the platform that emit ad-hoc envelopes (sonobus events, midi traffic, snapshot telemetry). A second `generate_*_ws_types.py` codegen step would establish the pattern as platform-wide. ~2-3 cycles.
+3. **Move `wsSubscriptionStore`'s visibility back-pressure into a Visibility hook** — currently the visibility-change listener is a module-level singleton. Pulling it into a `useDocumentVisibility()` hook would make the back-pressure behavior testable in isolation + reusable by other long-running subscriptions (e.g. SSE clients). ~1-2 cycles.
+4. **T2521-4 cycle 3 stub** — even without the AOO vendor pull, the `AooTransport.{h,cpp}` stub paths could expand to: track per-stream peer state (peer_addr, peer_port placeholders) + emit `peer_up` / `peer_down` events in stub mode for end-to-end event-relay testing. Sets the supervisor's event-fanout path under load before the bench operator does the real AOO integration. ~1-2 cycles.
+5. **T2459-H final bench session gates** — physical hardware required. Code-side complete.
+
+**Bench-only / spec-needed** (unchanged): T2515-7/8, T2517-1/8/9 + Follow-up-A/B, T2521-4 cycles 3/4/6, T2521-10 soak, looper RT-gated tail.
+
+---
+
 ### Pick-up next (run-14a handoff, filed 2026-05-16, end-of-run)
 
 **Run-14a total: 6 cycles + handoff, all dual-pushed to origin + gitlab.** Continued the autonomous Continue protocol after the prior session closed T2521-4 cycles 1/2/5/7 (SonoBus daemon software-side complete) and the run-13i 3-pick list. This run closed three more cycles + caught a real bug in the run-13i schema work.
