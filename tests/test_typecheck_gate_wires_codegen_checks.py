@@ -51,6 +51,14 @@ def test_typecheck_runs_sonobus_events_ws_codegen_check(scripts: dict[str, str])
     )
 
 
+def test_typecheck_runs_midi_traffic_ws_codegen_check(scripts: dict[str, str]) -> None:
+    """Run-14c cycle 2: midi:traffic WS codegen drift check must run before tsc."""
+    assert "verify:midi-traffic-ws-types" in scripts["typecheck"], (
+        "npm run typecheck must invoke `verify:midi-traffic-ws-types` "
+        "(midi:traffic WS codegen drift gate)"
+    )
+
+
 def test_typecheck_runs_meter_ws_codegen_check(scripts: dict[str, str]) -> None:
     """Run-14b pick #1: meter-WS codegen drift check must run before tsc."""
     assert "verify:meter-ws-types" in scripts["typecheck"], (
