@@ -117,7 +117,25 @@ int DaemonServer::run()
     // operator sees the binding rows in /api/sonobus/diagnostics with
     // metrics=0 (rather than an empty list that hides the binding).
 
-    uds_->registerHandler("create_source", [this](const Frame& f) -> CommandResult {
+    // Run-14c cycle 4 — stub-mode event emission. When AOO is not
+    // vendored, the create_source/sink handlers still push synthetic
+    // `peer_up` + `session_start` events through the UDS so the
+    // backend supervisor's event-relay loop + WS fanout path can be
+    // exercised end-to-end without bench hardware. The same applies
+    // to destroy → `session_stop` + `peer_down`. In full mode (AOO
+    // vendored, cycle 3 wires real AOO observers) these synthetic
+    // events get replaced by real ones from the AOO source/sink callbacks.
+
+    auto emit_stub_lifecycle = [this](const char* event_type,
+                                      const std::string& stream_id) {
+        if (! IS_STUB_BUILD) return;
+        uds_->pushEvent(event_type, {
+            {"stream_id", stream_id},
+            {"stub", true},
+        });
+    };
+
+    uds_->registerHandler("create_source", [this, emit_stub_lifecycle](const Frame& f) -> CommandResult {
         if (! f.payload.is_object() || ! f.payload.contains("stream_id"))
             return errResult("invalid_argument", "payload must contain stream_id");
         std::string stream_id = f.payload.at("stream_id").get<std::string>();
@@ -125,6 +143,8 @@ int DaemonServer::run()
         if (r == TransportResult::Ok || r == TransportResult::Unavailable)
         {
             metrics_->registerStream(stream_id);
+            emit_stub_lifecycle("peer_up", stream_id);
+            emit_stub_lifecycle("session_start", stream_id);
         }
         if (r != TransportResult::Ok)
             return errResult(transportResultName(r),
@@ -132,19 +152,21 @@ int DaemonServer::run()
         return okResult({{"stream_id", stream_id}});
     });
 
-    uds_->registerHandler("destroy_source", [this](const Frame& f) -> CommandResult {
+    uds_->registerHandler("destroy_source", [this, emit_stub_lifecycle](const Frame& f) -> CommandResult {
         if (! f.payload.is_object() || ! f.payload.contains("stream_id"))
             return errResult("invalid_argument", "payload must contain stream_id");
         std::string stream_id = f.payload.at("stream_id").get<std::string>();
         auto r = aoo_->destroySource(stream_id);
         metrics_->unregisterStream(stream_id);
+        emit_stub_lifecycle("session_stop", stream_id);
+        emit_stub_lifecycle("peer_down", stream_id);
         if (r != TransportResult::Ok)
             return errResult(transportResultName(r),
                              "destroySource(" + stream_id + ") failed");
         return okResult({{"stream_id", stream_id}});
     });
 
-    uds_->registerHandler("create_sink", [this](const Frame& f) -> CommandResult {
+    uds_->registerHandler("create_sink", [this, emit_stub_lifecycle](const Frame& f) -> CommandResult {
         if (! f.payload.is_object() || ! f.payload.contains("stream_id"))
             return errResult("invalid_argument", "payload must contain stream_id");
         std::string stream_id = f.payload.at("stream_id").get<std::string>();
@@ -152,6 +174,8 @@ int DaemonServer::run()
         if (r == TransportResult::Ok || r == TransportResult::Unavailable)
         {
             metrics_->registerStream(stream_id);
+            emit_stub_lifecycle("peer_up", stream_id);
+            emit_stub_lifecycle("session_start", stream_id);
         }
         if (r != TransportResult::Ok)
             return errResult(transportResultName(r),
@@ -159,12 +183,14 @@ int DaemonServer::run()
         return okResult({{"stream_id", stream_id}});
     });
 
-    uds_->registerHandler("destroy_sink", [this](const Frame& f) -> CommandResult {
+    uds_->registerHandler("destroy_sink", [this, emit_stub_lifecycle](const Frame& f) -> CommandResult {
         if (! f.payload.is_object() || ! f.payload.contains("stream_id"))
             return errResult("invalid_argument", "payload must contain stream_id");
         std::string stream_id = f.payload.at("stream_id").get<std::string>();
         auto r = aoo_->destroySink(stream_id);
         metrics_->unregisterStream(stream_id);
+        emit_stub_lifecycle("session_stop", stream_id);
+        emit_stub_lifecycle("peer_down", stream_id);
         if (r != TransportResult::Ok)
             return errResult(transportResultName(r),
                              "destroySink(" + stream_id + ") failed");

@@ -100,17 +100,46 @@ class DaemonHandle:
         """Read one '\n'-terminated frame from the daemon. Retains any
         trailing bytes from a multi-frame TCP read in `_recv_buf` so
         the next call sees them — without this, batched responses get
-        silently dropped after the first one."""
+        silently dropped after the first one.
+
+        Run-14c cycle 4 update: skips event frames (those carrying
+        `event: true`) so tests that expect a command response don't
+        accidentally read a synthetic stub-mode event. Tests that
+        need to read events should use recv_event() instead.
+        """
         assert self.sock is not None
-        self.sock.settimeout(timeout)
-        while b"\n" not in self._recv_buf:
-            chunk = self.sock.recv(4096)
-            if not chunk:
-                raise EOFError(f"daemon closed connection; buf={self._recv_buf!r}")
-            self._recv_buf += chunk
-        line, _, rest = self._recv_buf.partition(b"\n")
-        self._recv_buf = rest
-        return json.loads(line.decode())
+        while True:
+            self.sock.settimeout(timeout)
+            while b"\n" not in self._recv_buf:
+                chunk = self.sock.recv(4096)
+                if not chunk:
+                    raise EOFError(f"daemon closed connection; buf={self._recv_buf!r}")
+                self._recv_buf += chunk
+            line, _, rest = self._recv_buf.partition(b"\n")
+            self._recv_buf = rest
+            frame = json.loads(line.decode())
+            if isinstance(frame, dict) and frame.get("event") is True:
+                # Skip event frames; loop back to read the next.
+                continue
+            return frame
+
+    def recv_event(self, timeout: float = 2.0) -> dict[str, Any]:
+        """Read one event frame (`event: true`). Skips response frames."""
+        assert self.sock is not None
+        while True:
+            self.sock.settimeout(timeout)
+            while b"\n" not in self._recv_buf:
+                chunk = self.sock.recv(4096)
+                if not chunk:
+                    raise EOFError(f"daemon closed connection; buf={self._recv_buf!r}")
+                self._recv_buf += chunk
+            line, _, rest = self._recv_buf.partition(b"\n")
+            self._recv_buf = rest
+            frame = json.loads(line.decode())
+            if isinstance(frame, dict) and frame.get("event") is True:
+                return frame
+            # Skip non-event frames.
+            continue
 
     def stop(self) -> None:
         if self.sock is not None:

@@ -91,17 +91,35 @@ pytestmark_functional = pytest.mark.skipif(
 )
 
 
+_recv_buffers: dict[int, bytes] = {}
+
+
 def _send_recv(sock: socket.socket, frame: dict[str, Any]) -> dict[str, Any]:
-    """Sync send-recv helper for the functional tests."""
+    """Sync send-recv helper for the functional tests.
+
+    Run-14c cycle 4: skips event frames (those carrying `event: true`)
+    so command-response tests don't accidentally read a synthetic
+    stub-mode event from the create/destroy lifecycle handlers.
+    Retains the read buffer per-socket so subsequent calls see any
+    leftover bytes from a multi-frame TCP read.
+    """
     sock.sendall((json.dumps(frame) + "\n").encode())
     sock.settimeout(5.0)
-    buf = b""
-    while b"\n" not in buf:
-        chunk = sock.recv(4096)
-        if not chunk:
-            raise EOFError(f"daemon closed; buf={buf!r}")
-        buf += chunk
-    return json.loads(buf.partition(b"\n")[0].decode())
+    buf = _recv_buffers.get(id(sock), b"")
+    while True:
+        while b"\n" not in buf:
+            chunk = sock.recv(4096)
+            if not chunk:
+                raise EOFError(f"daemon closed; buf={buf!r}")
+            buf += chunk
+        line, _, rest = buf.partition(b"\n")
+        buf = rest
+        decoded = json.loads(line.decode())
+        if isinstance(decoded, dict) and decoded.get("event") is True:
+            # Skip event frames.
+            continue
+        _recv_buffers[id(sock)] = buf
+        return decoded
 
 
 # ---------------------------------------------------------------------------
