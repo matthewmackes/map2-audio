@@ -17,6 +17,7 @@ import type {
   DeviceMetersRegistryEntry,
   DeviceMetersRegistryPayload,
 } from './useDevicesPeakMetersRegistry'
+import { devValidateRegistryFrame } from './validateMeterWsFrame'
 import { subscribe as subscribeWs } from './wsSubscriptionStore'
 
 interface StreamFrame {
@@ -137,6 +138,11 @@ export function useDevicesPeakMetersStream(
     }
     const subscription = subscribeWs(url, {
       onFrame: (frame) => {
+        // Run-14b cycle 3: dev-build structural check against the
+        // canonical Pydantic schema. No-op in production. A backend
+        // schema drift surfaces as a console warn (deduped per
+        // unique error message) rather than a silent UI miss.
+        devValidateRegistryFrame(frame)
         const f = frame as StreamFrame | undefined
         if (f?.data?.devices) {
           setDevices(f.data.devices)

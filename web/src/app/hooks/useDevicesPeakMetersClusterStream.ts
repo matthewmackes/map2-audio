@@ -17,6 +17,7 @@ import type {
   DeviceMetersClusterRegistryPayload,
 } from './useDevicesPeakMetersClusterRegistry'
 import type { DeviceMetersRegistryPayload } from './useDevicesPeakMetersRegistry'
+import { devValidateClusterRegistryFrame } from './validateMeterWsFrame'
 import { subscribe as subscribeWs } from './wsSubscriptionStore'
 
 interface ClusterStreamFrame {
@@ -108,6 +109,9 @@ export function useDevicesPeakMetersClusterStream(
     }
     const subscription = subscribeWs(url, {
       onFrame: (frame) => {
+        // Run-14b cycle 3: dev-build structural check against the
+        // canonical Pydantic schema. No-op in production.
+        devValidateClusterRegistryFrame(frame)
         const f = frame as ClusterStreamFrame | undefined
         if (f?.data && typeof f.data === 'object') {
           setLocal(f.data.local)
