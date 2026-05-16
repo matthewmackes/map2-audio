@@ -2950,6 +2950,48 @@ The earlier order-1 row is fully drained for pure-Python / pure-frontend slices.
 
 ---
 
+### Pick-up next (run-14a handoff, filed 2026-05-16, end-of-run)
+
+**Run-14a total: 6 cycles + handoff, all dual-pushed to origin + gitlab.** Continued the autonomous Continue protocol after the prior session closed T2521-4 cycles 1/2/5/7 (SonoBus daemon software-side complete) and the run-13i 3-pick list. This run closed three more cycles + caught a real bug in the run-13i schema work.
+
+Shipped this run, in order:
+
+1. **T2521-4 cycle 2 — UDS protocol decode + dispatch** (commit `35275b24a`). Line-delimited JSON frame parser + dispatcher + async event push. 7 command handlers wired (hello / ping / create_source / destroy_source / create_sink / destroy_sink / shutdown). Single-client lifecycle with new-connection-preempts-existing. nlohmann/json reused from the NAM vendor tree (no new dep). 14 functional pytest cases against the real built daemon.
+
+2. **T2521-4 cycle 5 — daemon supervisor + UDS client** (commit `6947f6c85`). `app/services/sonobus/daemon_client.py` (~380 LOC) + `daemon_supervisor.py` (~340 LOC). Two deployment models supported by one supervisor (systemd-managed production / supervised dev). Status route now reads live `daemon_running` + `daemon_endpoint` + `daemon_status` + `daemon_capabilities`. Crash storm guard (≤5/60s → DEGRADED). 13 supervisor + 14 protocol = 27 new pytest cases.
+
+3. **T2521-4 cycle 7 — metrics + WS event bridge** (commit `b800fff03`). End-to-end live metrics: daemon side adds `metrics_query` UDS command + 5s `metrics_snapshot` event push. Supervisor adds event-relay task + `latest_metrics()` cache + bounded event ring + WS-subscriber fanout. `/api/sonobus/diagnostics` route surfaces live per-binding RTT/loss/jitter (or None when daemon hasn't snapshotted yet). `/api/sonobus/events` WS forwards daemon events as `sonobus:daemon` envelopes. 14 new pytest cases.
+
+4. **Run-13i pick #1 — canonical WS frame envelope schema** (commit `42e06b1a8`). `app/services/devices/_meter_ws_schema.py` ships canonical Pydantic models for both `device_peak_meters:*` topics + `GET /api/v1/devices/peak-meters/ws-schema` route publishes JSON Schema. 18 pytest cases lock the contract.
+
+5. **Run-13i pick #2 — wsSubscriptionStore visibility back-pressure** (commit `cfbbc38b9`). `visibilitychange` listener tears down sockets when document hidden, reopens on visible. 9 new jest cases. Closes background-tab bandwidth waste for the 30 fps device-meter streams.
+
+6. **Run-13i pick #3 — node-down inline row test-id + red tone** (commit `64cb8241a`). `data-testid="cluster-overview-node-down-<node_id>"` on the synthetic TR + Carbon `red` Tag tone. 4 new jest cases.
+
+7. **Worklist hygiene** (commit `3e107a685`). Closed T2500-MV + T2518 stale `[>] In Progress` markers (both had completion notes but the Status field was never flipped). Verified each at HEAD before the flip with the canonical pytest + jest commands.
+
+8. **WS handler builder wiring + bug fix** (commit `48a31978d`). Follow-on cleanup of pick #1: route handlers in `device_meters.py` now build frames through the canonical `_meter_ws_schema.py` builders. **Caught a real bug**: the run-13i Literal `["engine", "placeholder"]` rejected `source="engine_unavailable"` (the silence-shaped fallback the JuceEngineMeterSource emits). Updated to 3-value Literal + new acceptance test pins it.
+
+**Cumulative test surface this session:** +41 T2521-4 + 18 schema + 9 visibility + 4 node-down + 1 acceptance = +73 new tests. Combined with prior session: 745 + 73 + 113 (current device-meter sweep) + 223 (current sonobus sweep) = stable, no regressions.
+
+**Status of long-term priorities after this run:**
+- T2521-4 software-side: cycles 1, 2, 5, 7 complete. Cycles 3 (AOO source/sink integration), 4 (JACK port handoff), 6 (engine binding) remain bench-gated — they need the AOO vendor source pull + production audio host with UA-1000 + JACK.
+- T2521-10 soak: bench-gated.
+- All run-13i picks closed.
+- T2500-MV + T2518 worklist status fixed.
+
+**Next-session order-1 picks** (priority order; pure-Python or pure-frontend only):
+
+1. **Lift inner cluster-frame data through `ClusterMeterRegistryData`** — currently the cluster WS handler bypasses strict Pydantic validation on the inner data dict because the projection emits extra peer fields (`health`, hostname-fallback) that aren't yet on `ClusterPeerSlice`. Add those fields to the slice model + drop the dict-passthrough so the entire frame validates strictly. ~1-2 cycles.
+2. **Generate TypeScript types from `/peak-meters/ws-schema`** — the route is live; next step is a `web/scripts/sync-meter-ws-types.{ts,mjs}` codegen step that fetches the schema + writes TS interfaces under `web/src/app/types/meterWsFrame.ts`. Pure-frontend tooling. ~2 cycles.
+3. **`useDevicesPeakMetersStream` + `useDevicesPeakMetersClusterStream` validate frames against the canonical schema in dev** — wrap the `onFrame` callback so dev builds Zod-validate (or just `JSON.parse` + duck-check) the incoming frame against `DeviceMeterRegistryFrame.json_schema()`. Catches backend drift in the browser console. Pure-frontend. ~1-2 cycles.
+4. **T2521-4 docs/architecture/SONOBUS_DAEMON.md** — single canonical doc covering the UDS protocol (frame shape, command list, error codes, event types), build modes (full / stub), supervisor lifecycle states, evidence dir layout. Currently spread across `SONOBUS_AOO_TRANSPORT.md` + `SONOBUS_BENCH_HANDOFF.md`. ~1 cycle.
+5. **T2459-H final bench session gates** — physical hardware required. Code-side complete.
+
+**Bench-only / spec-needed** (unchanged): T2515-7/8, T2517-1/8/9 + Follow-up-A/B, T2521-4/10 (cycles 3/4/6), looper RT-gated tail.
+
+---
+
 ### Pick-up next (run-13i handoff, filed 2026-05-14, end-of-run)
 
 **Run-13i total: 5 cycles + handoff, all dual-pushed to origin + gitlab.** User invoked "continue × 5". Closed every order-1 pick from yesterday's run-13h handoff plus shipped the cluster stream node filter end-to-end.
