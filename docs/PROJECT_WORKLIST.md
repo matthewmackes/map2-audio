@@ -2950,6 +2950,57 @@ The earlier order-1 row is fully drained for pure-Python / pure-frontend slices.
 
 ---
 
+### Pick-up next (run-14c handoff, filed 2026-05-16, end-of-run)
+
+**Run-14c total: 9 cycles + handoff, all dual-pushed to origin + gitlab.** User invoked "continue x10". Closed every order-1 pick from yesterday's run-14b handoff + dropped in two opportunistic improvements (cycles 7 + 8) the audit work surfaced.
+
+Shipped this run, in order:
+
+1. **Cycle 1 — sonobus events WS canonical schema + TS codegen** (commit `5126d3832`). Extended the run-14b cycle-2 pattern to the second platform WS topic. `app/services/sonobus/_events_ws_schema.py` + `scripts/generate_sonobus_events_ws_types.py` + 21 schema tests + `web/src/app/types/sonobusEventsWsFrame.generated.ts` + typecheck gate wire.
+
+2. **Cycle 2 — midi:traffic WS canonical schema + TS codegen** (commit `871dd9ba3`). Third platform WS topic gets the same treatment. `app/services/midi_hub/_traffic_ws_schema.py` + script + 16 tests + generated TS + typecheck gate.
+
+3. **Cycle 3 — useDocumentVisibility hook extraction** (commit `4aa4aa117`). Pulled the visibility back-pressure (run-13i pick #2) out of `wsSubscriptionStore.ts` into a standalone reusable module. `web/src/app/hooks/useDocumentVisibility.ts` ships both the React hook + the non-React `subscribeDocumentVisibility()` surface. 10 new hook tests; 19 pre-existing wsSubscriptionStore tests still green.
+
+4. **Cycle 4 — T2521-4 stub-mode event emission** (commit `e81b45653`). Daemon's stub-mode create/destroy handlers now emit synthetic peer_up + session_start (create) and session_stop + peer_down (destroy) through the UDS. End-to-end test exercises supervisor → event-relay → subscriber queue without bench hardware. 4 new tests; updated 2 pre-existing test helpers to skip event frames when reading command responses.
+
+5. **Cycles 5+6 — AVB binding enum types + consumer narrowing** (commit `f516486fc`). Closes the follow-on filed in the 2026-05-16 snapshot codegen drift audit. New `web/src/app/types/avbBindingTypes.ts` ships 5 hand-mirrored Literal types + iterable consts + 4 runtime type guards. `useAvbBindings.ts` consumes them — `AvbBindingRecord` interface fields are narrowed from plain `string` to the canonical enums. Pydantic-vs-TS drift test pins the lockstep. Pattern note: hand-mirrored (not codegen) because the 5 enums are small + stable and consumers want runtime helpers.
+
+6. **Cycle 7 — codegen drift preflight in build_web_dist_atomic** (commit `73353463c`). The build script invokes `tsc -b` directly, bypassing `npm run typecheck`. Cycle 7 adds a `run_codegen_drift_preflight()` step that runs every Pydantic→TS codegen `--check` BEFORE tsc + vite, so direct builds (dev `update` shorthand, future CI paths) can't ship a drifted codegen. 4 new tests including a drift-simulation that clobbers a generated file + verifies the build exits nonzero with the regen command name.
+
+7. **Cycle 8 — CODEGEN_INDEX.md canonical reference** (commit `54d0b58c3`). Single grep-able doc indexing all 5 generated/hand-mirrored TS files in the platform. Each entry documents 12 fields (file path, Pydantic source, generator approach, npm scripts, both enforcement gate locations, test contract, worklist anchor, consumers). "Required artefacts per new entry" recipe section: a 6th generated file gets a checklist for the 8 artefacts to produce. 16 doc-contract tests.
+
+8. **Cycle 9 — SnapshotInterfacePicker e2e flow** (commit `33d606163`). New `SnapshotInterfacePicker.e2e.test.tsx` exercises the full select → re-render → switch → re-render round-trip. PickerHarness owns selectedInterfaceId in useState to mirror how SnapshotPublishPage threads the picker through. 5 e2e tests covering selection + round-trip + Use rig default + refetch stickiness + backend-failure error state.
+
+9. **Cycle 10 — this handoff.**
+
+**Cumulative test surface this run:** 21 (cycle 1) + 16 (cycle 2) + 10 (cycle 3) + 4 (cycle 4) + 8 (cycles 5+6) + 4 (cycle 7) + 16 (cycle 8) + 5 (cycle 9) = +84 new tests. Plus the cycle-4 test-helper backport touched 2 pre-existing test files non-destructively. No regressions in the broader sweeps.
+
+**Pipeline state at HEAD 33d606163**
+
+End-to-end CI-gated Pydantic → TS surface:
+- 4 codegen scripts (T2455 snapshots + 3 WS frame schemas) — all gated at `npm run typecheck` time AND at `python3 scripts/build_web_dist_atomic.py` preflight time
+- 1 hand-mirrored enum module (AVB bindings) — gated by `tests/test_avb_binding_types_codegen_pin.py` parsing the TS file against the Pydantic Literals
+- Generated TS files indexed in `docs/architecture/CODEGEN_INDEX.md` with a recipe for adding a 6th
+
+**Status of long-term priorities after this run:**
+- All 4 software-side picks from run-14b closed.
+- Snapshot codegen drift audit follow-on (AVB enums) closed.
+- T2521-4 software-side: cycles 1, 2, 4, 5, 7 complete; cycles 3 + 6 still need the AOO vendor pull + bench hardware (the stub-mode peer_up/session_start events from cycle 4 cover the supervisor event-relay path test-side).
+- T2521-10 soak: bench-gated.
+
+**Next-session order-1 picks** (priority order; pure-Python or pure-frontend only):
+
+1. **Wire validateMeterWsFrame() pattern for sonobus + midi-traffic WS hooks** — Cycles 1 + 2 generated TS types + type guards but no dev-build validator hook exists for either yet. Mirror the `validateMeterWsFrame.ts` pattern (cycle 3 of run-14b) for sonobus events + midi traffic so dev builds catch drift in the browser console. ~1-2 cycles.
+2. **Consumer-side narrowing for AVB binding REST routes** — Cycles 5+6 narrowed the binding record; the REST route helpers (`AvbServicesBindingsPage`, `AvbServicesConnectionsPage`) still consume the values as plain strings in their UI. Thread the enums through filter chips + DataTable cells. ~1 cycle.
+3. **Apply useDocumentVisibility to the metering UI's 1s staleness tick** — Cycle 3's hook is ready; the obvious next consumer is `useDevicesPeakMetersStream`'s `STALE_TICK_INTERVAL_MS` setInterval that runs every 1 s. Skip the tick when hidden — saves a per-second re-render across every mounted meter panel in a background tab. ~1 cycle.
+4. **T2521-4 stub events for connect_peer / disconnect_peer** — Cycle 4 covered create/destroy source/sink. The full SonoBus authority also has connect_peer / disconnect_peer commands (filed but not yet wired in stub mode). Mirror cycle 4's pattern for them. ~1 cycle.
+5. **T2459-H final bench session** — physical hardware required. Code-side complete.
+
+**Bench-only / spec-needed** (unchanged): T2515-7/8, T2517-1/8/9 + Follow-up-A/B, T2521-4 cycles 3/6, T2521-10 soak, looper RT-gated tail.
+
+---
+
 ### Pick-up next (run-14b handoff, filed 2026-05-16, end-of-run)
 
 **Run-14b total: 5 cycles + handoff, all dual-pushed to origin + gitlab.** User invoked "continue × 5". Closed all 4 software-side picks from yesterday's run-14a handoff.
