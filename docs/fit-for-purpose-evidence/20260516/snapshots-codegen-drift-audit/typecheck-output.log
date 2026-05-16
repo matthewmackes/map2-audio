@@ -1,0 +1,16 @@
+
+> mackes-audio-platform-2-web@3.0.0-FEB2026 typecheck
+> npm run verify:contracts && npm run verify:meter-ws-types && tsc --noEmit
+
+
+> mackes-audio-platform-2-web@3.0.0-FEB2026 verify:contracts
+> python3 ../scripts/generate_typescript_contracts.py --check
+
+✨ openapi-typescript 7.13.0
+🚀 /tmp/tmp8ni4vdbb.json → /tmp/tmpersj4jv7.ts [2.5s]
+snapshots.generated.ts is up to date.
+
+> mackes-audio-platform-2-web@3.0.0-FEB2026 verify:meter-ws-types
+> python3 ../scripts/generate_meter_ws_types.py --check
+
+exit 0

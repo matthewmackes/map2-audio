@@ -1,0 +1,11 @@
+    File "/usr/lib64/python3.14/asyncio/base_events.py", line 550, in _check_closed
+      raise RuntimeError('Event loop is closed')
+  RuntimeError: Event loop is closed
+  
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+    warnings.warn(pytest.PytestUnhandledThreadExceptionWarning(msg))
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+696 passed, 4 skipped, 5797 deselected, 27 warnings in 120.28s (0:02:00)
+exit captured separately: 0
