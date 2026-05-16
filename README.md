@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1714** Python | **1756** TypeScript | **235** C++/H | **149** Docs | **4678** total commits | **4** stars | **0** forks | **0** open issues
+**1714** Python | **1757** TypeScript | **235** C++/H | **149** Docs | **4681** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`dfbda48d3`](https://github.com/matthewmackes/map2-audio/commit/dfbda48d36a5f1f0763dbea6fb43a222c83f30b5) | docs(worklist): file run-14c handoff (9 cycles + handoff ... | Map2 Audio | 2026-05-16 |
+| [`33d606163`](https://github.com/matthewmackes/map2-audio/commit/33d606163f0939c0824d6a1c6e6ec1573f673b84) | test(web): run-14c cycle 9 — SnapshotInterfacePicker e2e ... | Map2 Audio | 2026-05-16 |
+| [`20aa2e065`](https://github.com/matthewmackes/map2-audio/commit/20aa2e0652d891c5439802c1965b32bac5cfc4e3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-16 |
 | [`54d0b58c3`](https://github.com/matthewmackes/map2-audio/commit/54d0b58c3b28cb2d94cc8fbe9f4992a7285fb422) | docs(architecture): run-14c cycle 8 — CODEGEN_INDEX.md | Map2 Audio | 2026-05-16 |
 | [`73353463c`](https://github.com/matthewmackes/map2-audio/commit/73353463cb24f9f7a6044abd0f497e10e1db53bd) | ci(build): run-14c cycle 7 — codegen drift preflight in b... | Map2 Audio | 2026-05-16 |
 | [`f516486fc`](https://github.com/matthewmackes/map2-audio/commit/f516486fca3107d53c35c03beafd4737261c198c) | feat(avb): run-14c cycles 5+6 — hand-mirrored AVB binding... | Map2 Audio | 2026-05-16 |
 | [`e81b45653`](https://github.com/matthewmackes/map2-audio/commit/e81b4565381890b98196789154985ad46474d0c5) | feat(sonobus): run-14c cycle 4 — T2521-4 stub-mode event ... | Map2 Audio | 2026-05-16 |
 | [`4aa4aa117`](https://github.com/matthewmackes/map2-audio/commit/4aa4aa117f229fa1745000bc971a716cbb43201b) | refactor(web): run-14c cycle 3 — extract useDocumentVisib... | Map2 Audio | 2026-05-16 |
-| [`871dd9ba3`](https://github.com/matthewmackes/map2-audio/commit/871dd9ba3456d69ad1e0358746d9b439ebfa969d) | feat(midi): run-14c cycle 2 — canonical schema + TS codeg... | Map2 Audio | 2026-05-16 |
-| [`5126d3832`](https://github.com/matthewmackes/map2-audio/commit/5126d38323c9f41e9f636a933049c8df69e0a09d) | feat(sonobus): run-14c cycle 1 — canonical schema + TS co... | Map2 Audio | 2026-05-16 |
-| [`e00d41e15`](https://github.com/matthewmackes/map2-audio/commit/e00d41e1593e03331fd4f8df6c3956d39e2e62f9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-16 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
