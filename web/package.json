@@ -14,7 +14,7 @@
     "preview": "node ../scripts/serve_web_dist.mjs --host 0.0.0.0 --port 3000",
     "serve": "node ../scripts/serve_web_dist.mjs --host 0.0.0.0 --port 3000",
     "start:prod": "npm run build && npm run serve",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "npm run verify:contracts && npm run verify:meter-ws-types && tsc --noEmit",
     "generate:types": "python3 ../scripts/generate_typescript_contracts.py",
     "verify:contracts": "python3 ../scripts/generate_typescript_contracts.py --check",
     "test": "node ../node_modules/jest/bin/jest.js --config ../package.json",
@@ -22,7 +22,9 @@
     "visual:home-smoke": "node ../scripts/run_home_visual_smoke.mjs",
     "visual:home-smoke:install": "playwright install chromium",
     "visual:workspace-smoke": "node ../scripts/run_workspace_visual_smoke.mjs",
-    "visual:workspace-smoke:install": "playwright install chromium"
+    "visual:workspace-smoke:install": "playwright install chromium",
+    "generate:meter-ws-types": "python3 ../scripts/generate_meter_ws_types.py",
+    "verify:meter-ws-types": "python3 ../scripts/generate_meter_ws_types.py --check"
   },
   "dependencies": {
     "@ariakit/react": "^0.4.21",
