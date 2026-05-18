@@ -15,289 +15,62 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
       <div
         class="global-tree-nav__header"
       >
-        <span
-          class="cds--popover-container cds--popover--caret cds--popover--drop-shadow cds--popover--bottom-start"
+        <a
+          aria-label="Node MAP2-TESTBED, status OK. Open node detail."
+          class="node-id-icon"
+          data-health="success"
+          href="/node/MANAGEMENT-NODE-1"
         >
-          <button
-            aria-expanded="false"
-            aria-label="Node MAP2-TESTBED, status OK. Click to switch nodes."
-            class="node-id-card"
-            data-pressure-tone="waiting"
-            data-status="ok"
-            type="button"
+          <svg
+            aria-hidden="true"
+            class="node-id-icon__hex"
+            data-tone="success"
+            height="28"
+            viewBox="0 0 32 32"
+            width="28"
           >
-            <div
-              class="node-id-card__eyebrow"
-            >
-              <span
-                class="node-id-card__eyebrow-left"
-              >
-                <span
-                  class="node-id-card__dot"
-                />
-                <span>
-                  Current Node in View
-                </span>
-              </span>
-              <span
-                class="node-id-card__eyebrow-status"
-              >
-                OK
-              </span>
-            </div>
-            <div
-              class="node-id-card__head"
-            >
-              <span
-                class="node-id-card__host"
-              >
-                <svg
-                  aria-hidden="true"
-                  class="node-id-card__head-mark"
-                  focusable="false"
-                  viewBox="0 0 256 256"
-                >
-                  <rect
-                    fill="#4DA6FF"
-                    height="256"
-                    rx="56"
-                    ry="56"
-                    width="256"
-                    x="0"
-                    y="0"
-                  />
-                  <rect
-                    fill="#000000"
-                    height="95"
-                    rx="14"
-                    ry="14"
-                    width="95"
-                    x="22"
-                    y="22"
-                  />
-                  <rect
-                    fill="#000000"
-                    height="95"
-                    rx="14"
-                    ry="14"
-                    width="95"
-                    x="139"
-                    y="22"
-                  />
-                  <rect
-                    fill="#000000"
-                    height="95"
-                    rx="14"
-                    ry="14"
-                    width="95"
-                    x="22"
-                    y="139"
-                  />
-                  <rect
-                    fill="#000000"
-                    height="95"
-                    rx="14"
-                    ry="14"
-                    width="95"
-                    x="139"
-                    y="139"
-                  />
-                </svg>
-                <span>
-                  MAP2-TESTBED
-                </span>
-              </span>
-              <span
-                class="node-id-card__role"
-              >
-                ALL-IN-ONE
-              </span>
-              <span
-                aria-hidden="true"
-                class="node-id-card__caret"
-              >
-                ▾
-              </span>
-            </div>
-            <div
-              class="node-id-card__placeholder"
-            >
-              WAITING FOR DATA
-            </div>
-            <div
-              class="node-id-card__secondary"
-            >
-              <div
-                class="node-id-card__chip"
-                data-tone="muted"
-              >
-                <span
-                  class="node-id-card__chip-label"
-                >
-                  CPU
-                </span>
-                <span
-                  class="node-id-card__chip-value"
-                >
-                  —
-                </span>
-              </div>
-              <div
-                class="node-id-card__chip"
-                data-tone="muted"
-              >
-                <span
-                  class="node-id-card__chip-label"
-                >
-                  MEM
-                </span>
-                <span
-                  class="node-id-card__chip-value"
-                >
-                  —
-                </span>
-              </div>
-              <div
-                class="node-id-card__chip"
-                data-tone="muted"
-              >
-                <span
-                  class="node-id-card__chip-label"
-                >
-                  LAT
-                </span>
-                <span
-                  class="node-id-card__chip-value"
-                >
-                  —
-                </span>
-              </div>
-            </div>
-          </button>
+            <polygon
+              class="node-id-icon__hex-fill"
+              points="16,2 28.12,9 28.12,23 16,30 3.88,23 3.88,9"
+            />
+            <polygon
+              class="node-id-icon__hex-ring"
+              points="16,2 28.12,9 28.12,23 16,30 3.88,23 3.88,9"
+            />
+            <circle
+              class="node-id-icon__hex-dot"
+              cx="16"
+              cy="11"
+              r="1.6"
+            />
+            <circle
+              class="node-id-icon__hex-dot"
+              cx="11"
+              cy="20"
+              r="1.6"
+            />
+            <circle
+              class="node-id-icon__hex-dot"
+              cx="21"
+              cy="20"
+              r="1.6"
+            />
+          </svg>
           <span
-            class="cds--popover"
+            class="node-id-icon__text"
           >
             <span
-              class="cds--popover-content global-tree-nav__node-popover"
+              class="node-id-icon__name"
             >
-              <div
-                class="node-mini-card"
-                style="border-inline-start-color: #0f62fe;"
-              >
-                <div
-                  class="node-mini-card__header"
-                >
-                  <div>
-                    <h3
-                      class="node-mini-card__title"
-                    >
-                      MAP2-TESTBED
-                    </h3>
-                    <p
-                      class="node-mini-card__subtitle"
-                    >
-                      MAP2-TESTBED
-                    </p>
-                  </div>
-                  <div
-                    class="cds--tag cds--tag--cool-gray"
-                    id="tag-id-_r_1_"
-                  >
-                    <span
-                      class="cds--tag__label"
-                      dir="auto"
-                      title="All-In-One"
-                    >
-                      All-In-One
-                    </span>
-                  </div>
-                </div>
-                <div
-                  class="node-mini-card__context"
-                >
-                  <span>
-                    Local studio view
-                  </span>
-                </div>
-                <div
-                  class="node-mini-card__status"
-                >
-                  <span>
-                    Status
-                  </span>
-                  <div
-                    class="cds--tag cds--tag--green"
-                    id="tag-id-_r_2_"
-                  >
-                    <span
-                      class="cds--tag__label"
-                      dir="auto"
-                      title="OK"
-                    >
-                      OK
-                    </span>
-                  </div>
-                </div>
-                <div
-                  class="node-mini-card__health-row"
-                >
-                  <span>
-                    Health
-                  </span>
-                  <span
-                    class="node-mini-card__health-value node-mini-card__health-value--good"
-                  >
-                    100
-                    %
-                  </span>
-                </div>
-                <div
-                  class="node-mini-card__actions"
-                >
-                  <button
-                    class="cds--btn cds--btn--sm cds--layout--size-sm cds--btn--ghost"
-                    type="button"
-                  >
-                    Set as page node
-                  </button>
-                  <a
-                    class="cds--link"
-                    href="/node-ops/management?focusNodeId=MANAGEMENT-NODE-1"
-                  >
-                    View details
-                  </a>
-                </div>
-              </div>
-              <div
-                class="global-tree-nav__node-switcher"
-              >
-                <p
-                  class="global-tree-nav__node-switcher-title"
-                >
-                  Switch all pages to
-                </p>
-                <div
-                  class="global-tree-nav__node-switcher-list"
-                >
-                  <button
-                    class="global-tree-nav__node-switcher-button is-active"
-                    type="button"
-                  >
-                    <span>
-                      MAP2-TESTBED
-                    </span>
-                    <span>
-                      OK
-                    </span>
-                  </button>
-                </div>
-              </div>
+              MAP2-TESTBED
             </span>
             <span
-              class="cds--popover-caret"
-            />
+              class="node-id-icon__role"
+            >
+              ALL-IN-ONE
+            </span>
           </span>
-        </span>
+        </a>
         <div
           aria-label="System actions"
           class="global-tree-nav__quick-actions"
@@ -311,7 +84,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
             >
               <button
                 aria-label="Refresh"
-                aria-labelledby="tooltip-_r_4_"
+                aria-labelledby="tooltip-_r_0_"
                 class="global-tree-nav__quick-action global-tree-nav__quick-action--refresh"
                 type="button"
               >
@@ -337,7 +110,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
             <span
               aria-hidden="true"
               class="cds--popover"
-              id="tooltip-_r_4_"
+              id="tooltip-_r_0_"
               role="tooltip"
             >
               <span
@@ -358,7 +131,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
             >
               <button
                 aria-label="Restart"
-                aria-labelledby="tooltip-_r_6_"
+                aria-labelledby="tooltip-_r_2_"
                 class="global-tree-nav__quick-action global-tree-nav__quick-action--restart"
                 type="button"
               >
@@ -381,7 +154,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
             <span
               aria-hidden="true"
               class="cds--popover"
-              id="tooltip-_r_6_"
+              id="tooltip-_r_2_"
               role="tooltip"
             >
               <span
@@ -402,7 +175,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
             >
               <button
                 aria-label="Log Out"
-                aria-labelledby="tooltip-_r_8_"
+                aria-labelledby="tooltip-_r_4_"
                 class="global-tree-nav__quick-action global-tree-nav__quick-action--logout"
                 type="button"
               >
@@ -428,7 +201,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
             <span
               aria-hidden="true"
               class="cds--popover"
-              id="tooltip-_r_8_"
+              id="tooltip-_r_4_"
               role="tooltip"
             >
               <span
@@ -449,7 +222,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
             >
               <button
                 aria-label="Full system reboot"
-                aria-labelledby="tooltip-_r_a_"
+                aria-labelledby="tooltip-_r_6_"
                 class="global-tree-nav__quick-action global-tree-nav__quick-action--reboot"
                 type="button"
               >
@@ -475,7 +248,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
             <span
               aria-hidden="true"
               class="cds--popover"
-              id="tooltip-_r_a_"
+              id="tooltip-_r_6_"
               role="tooltip"
             >
               <span
@@ -506,7 +279,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
             >
               <button
                 aria-label="Home"
-                aria-labelledby="tooltip-_r_c_"
+                aria-labelledby="tooltip-_r_8_"
                 class="global-tree-nav__icon-button is-active"
                 type="button"
               >
@@ -534,7 +307,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
             <span
               aria-hidden="true"
               class="cds--popover"
-              id="tooltip-_r_c_"
+              id="tooltip-_r_8_"
               role="tooltip"
             >
               <span
@@ -555,7 +328,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
             >
               <button
                 aria-label="Snapshot Editor"
-                aria-labelledby="tooltip-_r_e_"
+                aria-labelledby="tooltip-_r_a_"
                 class="global-tree-nav__icon-button"
                 type="button"
               >
@@ -597,7 +370,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
             <span
               aria-hidden="true"
               class="cds--popover"
-              id="tooltip-_r_e_"
+              id="tooltip-_r_a_"
               role="tooltip"
             >
               <span
@@ -618,7 +391,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
             >
               <button
                 aria-label="Sequencer"
-                aria-labelledby="tooltip-_r_g_"
+                aria-labelledby="tooltip-_r_c_"
                 class="global-tree-nav__icon-button"
                 type="button"
               >
@@ -655,7 +428,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
             <span
               aria-hidden="true"
               class="cds--popover"
-              id="tooltip-_r_g_"
+              id="tooltip-_r_c_"
               role="tooltip"
             >
               <span
@@ -1218,7 +991,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                     >
                       <button
                         aria-label="Close"
-                        aria-labelledby="tooltip-_r_k_"
+                        aria-labelledby="tooltip-_r_g_"
                         class="cds--modal-close cds--btn cds--btn--primary cds--btn--icon-only"
                         type="button"
                       >
@@ -1242,7 +1015,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                     <span
                       aria-hidden="false"
                       class="cds--popover"
-                      id="tooltip-_r_k_"
+                      id="tooltip-_r_g_"
                       role="tooltip"
                     >
                       <span
@@ -3484,13 +3257,13 @@ python -m tui.node_console
                     >
                       <h2
                         class="cds--data-table-header__title"
-                        id="tc-_r_p_-title"
+                        id="tc-_r_l_-title"
                       >
                         Operations table
                       </h2>
                       <p
                         class="cds--data-table-header__description"
-                        id="tc-_r_p_-description"
+                        id="tc-_r_l_-description"
                       >
                         All live home telemetry collapsed into one searchable Carbon table. Select a row to open the owning workspace.
                       </p>
@@ -3531,15 +3304,15 @@ python -m tui.node_console
                         </div>
                         <label
                           class="cds--label"
-                          for="table-toolbar-search-_r_q_"
-                          id="table-toolbar-search-_r_q_-search"
+                          for="table-toolbar-search-_r_m_"
+                          id="table-toolbar-search-_r_m_-search"
                         >
                           Filter table
                         </label>
                         <input
                           autocomplete="off"
                           class="cds--search-input"
-                          id="table-toolbar-search-_r_q_"
+                          id="table-toolbar-search-_r_m_"
                           placeholder="Filter table"
                           tabindex="0"
                           type="search"
@@ -3569,7 +3342,7 @@ python -m tui.node_console
                       </div>
                       <div
                         class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--cool-gray"
-                        id="tag-id-_r_s_"
+                        id="tag-id-_r_o_"
                       >
                         <span
                           class="cds--tag__label"
@@ -3582,7 +3355,7 @@ python -m tui.node_console
                       </div>
                       <div
                         class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--cool-gray"
-                        id="tag-id-_r_t_"
+                        id="tag-id-_r_p_"
                       >
                         <span
                           class="cds--tag__label"
@@ -3595,7 +3368,7 @@ python -m tui.node_console
                       </div>
                       <div
                         class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--green"
-                        id="tag-id-_r_u_"
+                        id="tag-id-_r_q_"
                       >
                         <span
                           class="cds--tag__label"
@@ -3607,7 +3380,7 @@ python -m tui.node_console
                       </div>
                       <div
                         class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--warm-gray"
-                        id="tag-id-_r_v_"
+                        id="tag-id-_r_r_"
                       >
                         <span
                           class="cds--tag__label"
@@ -3626,9 +3399,9 @@ python -m tui.node_console
                       class="cds--data-table-content"
                     >
                       <table
-                        aria-describedby="tc-_r_p_-description"
+                        aria-describedby="tc-_r_l_-description"
                         aria-label="Home telemetry table"
-                        aria-labelledby="tc-_r_p_-title"
+                        aria-labelledby="tc-_r_l_-title"
                         class="cds--data-table hp2-home-shell__table cds--data-table--sm cds--data-table--sort cds--data-table--zebra cds--data-table--visible-overflow-menu"
                       >
                         <thead>
@@ -3640,12 +3413,12 @@ python -m tui.node_console
                             >
                               <div
                                 class="cds--table-sort__description"
-                                id="table-sort-_r_10_"
+                                id="table-sort-_r_s_"
                               >
                                 Click to sort rows by Surface header in ascending order
                               </div>
                               <button
-                                aria-describedby="table-sort-_r_10_"
+                                aria-describedby="table-sort-_r_s_"
                                 class="cds--table-sort"
                                 type="button"
                               >
@@ -3703,12 +3476,12 @@ python -m tui.node_console
                             >
                               <div
                                 class="cds--table-sort__description"
-                                id="table-sort-_r_11_"
+                                id="table-sort-_r_t_"
                               >
                                 Click to sort rows by Signal header in ascending order
                               </div>
                               <button
-                                aria-describedby="table-sort-_r_11_"
+                                aria-describedby="table-sort-_r_t_"
                                 class="cds--table-sort"
                                 type="button"
                               >
@@ -3766,12 +3539,12 @@ python -m tui.node_console
                             >
                               <div
                                 class="cds--table-sort__description"
-                                id="table-sort-_r_12_"
+                                id="table-sort-_r_u_"
                               >
                                 Click to sort rows by Current state header in ascending order
                               </div>
                               <button
-                                aria-describedby="table-sort-_r_12_"
+                                aria-describedby="table-sort-_r_u_"
                                 class="cds--table-sort"
                                 type="button"
                               >
@@ -3829,12 +3602,12 @@ python -m tui.node_console
                             >
                               <div
                                 class="cds--table-sort__description"
-                                id="table-sort-_r_13_"
+                                id="table-sort-_r_v_"
                               >
                                 Click to sort rows by Scope header in ascending order
                               </div>
                               <button
-                                aria-describedby="table-sort-_r_13_"
+                                aria-describedby="table-sort-_r_v_"
                                 class="cds--table-sort"
                                 type="button"
                               >
@@ -3892,12 +3665,12 @@ python -m tui.node_console
                             >
                               <div
                                 class="cds--table-sort__description"
-                                id="table-sort-_r_14_"
+                                id="table-sort-_r_10_"
                               >
                                 Click to sort rows by Detail header in ascending order
                               </div>
                               <button
-                                aria-describedby="table-sort-_r_14_"
+                                aria-describedby="table-sort-_r_10_"
                                 class="cds--table-sort"
                                 type="button"
                               >
@@ -3955,12 +3728,12 @@ python -m tui.node_console
                             >
                               <div
                                 class="cds--table-sort__description"
-                                id="table-sort-_r_15_"
+                                id="table-sort-_r_11_"
                               >
                                 Click to sort rows by Workspace header in ascending order
                               </div>
                               <button
-                                aria-describedby="table-sort-_r_15_"
+                                aria-describedby="table-sort-_r_11_"
                                 class="cds--table-sort"
                                 type="button"
                               >
@@ -4025,7 +3798,7 @@ python -m tui.node_console
                             <td>
                               <div
                                 class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--cool-gray"
-                                id="tag-id-_r_16_"
+                                id="tag-id-_r_12_"
                               >
                                 <span
                                   class="cds--tag__label"
@@ -4054,7 +3827,7 @@ python -m tui.node_console
                                 </span>
                                 <div
                                   class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--green"
-                                  id="tag-id-_r_17_"
+                                  id="tag-id-_r_13_"
                                 >
                                   <span
                                     class="cds--tag__label"
@@ -4140,7 +3913,7 @@ python -m tui.node_console
               >
                 <button
                   aria-label="Close"
-                  aria-labelledby="tooltip-_r_1a_"
+                  aria-labelledby="tooltip-_r_16_"
                   class="cds--modal-close cds--btn cds--btn--primary cds--btn--icon-only"
                   type="button"
                 >
@@ -4164,7 +3937,7 @@ python -m tui.node_console
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_1a_"
+                id="tooltip-_r_16_"
                 role="tooltip"
               >
                 <span
@@ -4227,13 +4000,13 @@ python -m tui.node_console
             Cancel
           </button>
           <button
-            aria-describedby="danger-description-_r_1e_"
+            aria-describedby="danger-description-_r_1a_"
             class="cds--btn cds--btn--danger"
             type="button"
           >
             <span
               class="cds--visually-hidden"
-              id="danger-description-_r_1e_"
+              id="danger-description-_r_1a_"
             >
               danger
             </span>
@@ -4293,7 +4066,7 @@ python -m tui.node_console
               >
                 <button
                   aria-label="Close"
-                  aria-labelledby="tooltip-_r_1h_"
+                  aria-labelledby="tooltip-_r_1d_"
                   class="cds--modal-close cds--btn cds--btn--primary cds--btn--icon-only"
                   type="button"
                 >
@@ -4317,7 +4090,7 @@ python -m tui.node_console
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_1h_"
+                id="tooltip-_r_1d_"
                 role="tooltip"
               >
                 <span
@@ -4381,289 +4154,62 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
       <div
         class="global-tree-nav__header"
       >
-        <span
-          class="cds--popover-container cds--popover--caret cds--popover--drop-shadow cds--popover--bottom-start"
+        <a
+          aria-label="Node MAP2-TESTBED, status OK. Open node detail."
+          class="node-id-icon"
+          data-health="success"
+          href="/node/MANAGEMENT-NODE-1"
         >
-          <button
-            aria-expanded="false"
-            aria-label="Node MAP2-TESTBED, status OK. Click to switch nodes."
-            class="node-id-card"
-            data-pressure-tone="waiting"
-            data-status="ok"
-            type="button"
+          <svg
+            aria-hidden="true"
+            class="node-id-icon__hex"
+            data-tone="success"
+            height="28"
+            viewBox="0 0 32 32"
+            width="28"
           >
-            <div
-              class="node-id-card__eyebrow"
-            >
-              <span
-                class="node-id-card__eyebrow-left"
-              >
-                <span
-                  class="node-id-card__dot"
-                />
-                <span>
-                  Current Node in View
-                </span>
-              </span>
-              <span
-                class="node-id-card__eyebrow-status"
-              >
-                OK
-              </span>
-            </div>
-            <div
-              class="node-id-card__head"
-            >
-              <span
-                class="node-id-card__host"
-              >
-                <svg
-                  aria-hidden="true"
-                  class="node-id-card__head-mark"
-                  focusable="false"
-                  viewBox="0 0 256 256"
-                >
-                  <rect
-                    fill="#4DA6FF"
-                    height="256"
-                    rx="56"
-                    ry="56"
-                    width="256"
-                    x="0"
-                    y="0"
-                  />
-                  <rect
-                    fill="#000000"
-                    height="95"
-                    rx="14"
-                    ry="14"
-                    width="95"
-                    x="22"
-                    y="22"
-                  />
-                  <rect
-                    fill="#000000"
-                    height="95"
-                    rx="14"
-                    ry="14"
-                    width="95"
-                    x="139"
-                    y="22"
-                  />
-                  <rect
-                    fill="#000000"
-                    height="95"
-                    rx="14"
-                    ry="14"
-                    width="95"
-                    x="22"
-                    y="139"
-                  />
-                  <rect
-                    fill="#000000"
-                    height="95"
-                    rx="14"
-                    ry="14"
-                    width="95"
-                    x="139"
-                    y="139"
-                  />
-                </svg>
-                <span>
-                  MAP2-TESTBED
-                </span>
-              </span>
-              <span
-                class="node-id-card__role"
-              >
-                ALL-IN-ONE
-              </span>
-              <span
-                aria-hidden="true"
-                class="node-id-card__caret"
-              >
-                ▾
-              </span>
-            </div>
-            <div
-              class="node-id-card__placeholder"
-            >
-              WAITING FOR DATA
-            </div>
-            <div
-              class="node-id-card__secondary"
-            >
-              <div
-                class="node-id-card__chip"
-                data-tone="muted"
-              >
-                <span
-                  class="node-id-card__chip-label"
-                >
-                  CPU
-                </span>
-                <span
-                  class="node-id-card__chip-value"
-                >
-                  —
-                </span>
-              </div>
-              <div
-                class="node-id-card__chip"
-                data-tone="muted"
-              >
-                <span
-                  class="node-id-card__chip-label"
-                >
-                  MEM
-                </span>
-                <span
-                  class="node-id-card__chip-value"
-                >
-                  —
-                </span>
-              </div>
-              <div
-                class="node-id-card__chip"
-                data-tone="muted"
-              >
-                <span
-                  class="node-id-card__chip-label"
-                >
-                  LAT
-                </span>
-                <span
-                  class="node-id-card__chip-value"
-                >
-                  —
-                </span>
-              </div>
-            </div>
-          </button>
+            <polygon
+              class="node-id-icon__hex-fill"
+              points="16,2 28.12,9 28.12,23 16,30 3.88,23 3.88,9"
+            />
+            <polygon
+              class="node-id-icon__hex-ring"
+              points="16,2 28.12,9 28.12,23 16,30 3.88,23 3.88,9"
+            />
+            <circle
+              class="node-id-icon__hex-dot"
+              cx="16"
+              cy="11"
+              r="1.6"
+            />
+            <circle
+              class="node-id-icon__hex-dot"
+              cx="11"
+              cy="20"
+              r="1.6"
+            />
+            <circle
+              class="node-id-icon__hex-dot"
+              cx="21"
+              cy="20"
+              r="1.6"
+            />
+          </svg>
           <span
-            class="cds--popover"
+            class="node-id-icon__text"
           >
             <span
-              class="cds--popover-content global-tree-nav__node-popover"
+              class="node-id-icon__name"
             >
-              <div
-                class="node-mini-card"
-                style="border-inline-start-color: #0f62fe;"
-              >
-                <div
-                  class="node-mini-card__header"
-                >
-                  <div>
-                    <h3
-                      class="node-mini-card__title"
-                    >
-                      MAP2-TESTBED
-                    </h3>
-                    <p
-                      class="node-mini-card__subtitle"
-                    >
-                      MAP2-TESTBED
-                    </p>
-                  </div>
-                  <div
-                    class="cds--tag cds--tag--cool-gray"
-                    id="tag-id-_r_1n_"
-                  >
-                    <span
-                      class="cds--tag__label"
-                      dir="auto"
-                      title="All-In-One"
-                    >
-                      All-In-One
-                    </span>
-                  </div>
-                </div>
-                <div
-                  class="node-mini-card__context"
-                >
-                  <span>
-                    Local studio view
-                  </span>
-                </div>
-                <div
-                  class="node-mini-card__status"
-                >
-                  <span>
-                    Status
-                  </span>
-                  <div
-                    class="cds--tag cds--tag--green"
-                    id="tag-id-_r_1o_"
-                  >
-                    <span
-                      class="cds--tag__label"
-                      dir="auto"
-                      title="OK"
-                    >
-                      OK
-                    </span>
-                  </div>
-                </div>
-                <div
-                  class="node-mini-card__health-row"
-                >
-                  <span>
-                    Health
-                  </span>
-                  <span
-                    class="node-mini-card__health-value node-mini-card__health-value--good"
-                  >
-                    100
-                    %
-                  </span>
-                </div>
-                <div
-                  class="node-mini-card__actions"
-                >
-                  <button
-                    class="cds--btn cds--btn--sm cds--layout--size-sm cds--btn--ghost"
-                    type="button"
-                  >
-                    Set as page node
-                  </button>
-                  <a
-                    class="cds--link"
-                    href="/node-ops/management?focusNodeId=MANAGEMENT-NODE-1"
-                  >
-                    View details
-                  </a>
-                </div>
-              </div>
-              <div
-                class="global-tree-nav__node-switcher"
-              >
-                <p
-                  class="global-tree-nav__node-switcher-title"
-                >
-                  Switch all pages to
-                </p>
-                <div
-                  class="global-tree-nav__node-switcher-list"
-                >
-                  <button
-                    class="global-tree-nav__node-switcher-button is-active"
-                    type="button"
-                  >
-                    <span>
-                      MAP2-TESTBED
-                    </span>
-                    <span>
-                      OK
-                    </span>
-                  </button>
-                </div>
-              </div>
+              MAP2-TESTBED
             </span>
             <span
-              class="cds--popover-caret"
-            />
+              class="node-id-icon__role"
+            >
+              ALL-IN-ONE
+            </span>
           </span>
-        </span>
+        </a>
         <div
           aria-label="System actions"
           class="global-tree-nav__quick-actions"
@@ -4677,7 +4223,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
             >
               <button
                 aria-label="Refresh"
-                aria-labelledby="tooltip-_r_1q_"
+                aria-labelledby="tooltip-_r_1i_"
                 class="global-tree-nav__quick-action global-tree-nav__quick-action--refresh"
                 type="button"
               >
@@ -4703,7 +4249,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
             <span
               aria-hidden="true"
               class="cds--popover"
-              id="tooltip-_r_1q_"
+              id="tooltip-_r_1i_"
               role="tooltip"
             >
               <span
@@ -4724,7 +4270,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
             >
               <button
                 aria-label="Restart"
-                aria-labelledby="tooltip-_r_1s_"
+                aria-labelledby="tooltip-_r_1k_"
                 class="global-tree-nav__quick-action global-tree-nav__quick-action--restart"
                 type="button"
               >
@@ -4747,7 +4293,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
             <span
               aria-hidden="true"
               class="cds--popover"
-              id="tooltip-_r_1s_"
+              id="tooltip-_r_1k_"
               role="tooltip"
             >
               <span
@@ -4768,7 +4314,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
             >
               <button
                 aria-label="Log Out"
-                aria-labelledby="tooltip-_r_1u_"
+                aria-labelledby="tooltip-_r_1m_"
                 class="global-tree-nav__quick-action global-tree-nav__quick-action--logout"
                 type="button"
               >
@@ -4794,7 +4340,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
             <span
               aria-hidden="true"
               class="cds--popover"
-              id="tooltip-_r_1u_"
+              id="tooltip-_r_1m_"
               role="tooltip"
             >
               <span
@@ -4815,7 +4361,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
             >
               <button
                 aria-label="Full system reboot"
-                aria-labelledby="tooltip-_r_20_"
+                aria-labelledby="tooltip-_r_1o_"
                 class="global-tree-nav__quick-action global-tree-nav__quick-action--reboot"
                 type="button"
               >
@@ -4841,7 +4387,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
             <span
               aria-hidden="true"
               class="cds--popover"
-              id="tooltip-_r_20_"
+              id="tooltip-_r_1o_"
               role="tooltip"
             >
               <span
@@ -4872,7 +4418,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
             >
               <button
                 aria-label="Home"
-                aria-labelledby="tooltip-_r_22_"
+                aria-labelledby="tooltip-_r_1q_"
                 class="global-tree-nav__icon-button is-active"
                 type="button"
               >
@@ -4900,7 +4446,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
             <span
               aria-hidden="true"
               class="cds--popover"
-              id="tooltip-_r_22_"
+              id="tooltip-_r_1q_"
               role="tooltip"
             >
               <span
@@ -4921,7 +4467,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
             >
               <button
                 aria-label="Snapshot Editor"
-                aria-labelledby="tooltip-_r_24_"
+                aria-labelledby="tooltip-_r_1s_"
                 class="global-tree-nav__icon-button"
                 type="button"
               >
@@ -4963,7 +4509,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
             <span
               aria-hidden="true"
               class="cds--popover"
-              id="tooltip-_r_24_"
+              id="tooltip-_r_1s_"
               role="tooltip"
             >
               <span
@@ -4984,7 +4530,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
             >
               <button
                 aria-label="Sequencer"
-                aria-labelledby="tooltip-_r_26_"
+                aria-labelledby="tooltip-_r_1u_"
                 class="global-tree-nav__icon-button"
                 type="button"
               >
@@ -5021,7 +4567,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
             <span
               aria-hidden="true"
               class="cds--popover"
-              id="tooltip-_r_26_"
+              id="tooltip-_r_1u_"
               role="tooltip"
             >
               <span
@@ -5584,7 +5130,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                     >
                       <button
                         aria-label="Close"
-                        aria-labelledby="tooltip-_r_2a_"
+                        aria-labelledby="tooltip-_r_22_"
                         class="cds--modal-close cds--btn cds--btn--primary cds--btn--icon-only"
                         type="button"
                       >
@@ -5608,7 +5154,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                     <span
                       aria-hidden="false"
                       class="cds--popover"
-                      id="tooltip-_r_2a_"
+                      id="tooltip-_r_22_"
                       role="tooltip"
                     >
                       <span
@@ -7865,13 +7411,13 @@ python -m tui.node_console
                     >
                       <h2
                         class="cds--data-table-header__title"
-                        id="tc-_r_2f_-title"
+                        id="tc-_r_27_-title"
                       >
                         Operations table
                       </h2>
                       <p
                         class="cds--data-table-header__description"
-                        id="tc-_r_2f_-description"
+                        id="tc-_r_27_-description"
                       >
                         All live home telemetry collapsed into one searchable Carbon table. Select a row to open the owning workspace.
                       </p>
@@ -7912,15 +7458,15 @@ python -m tui.node_console
                         </div>
                         <label
                           class="cds--label"
-                          for="table-toolbar-search-_r_2g_"
-                          id="table-toolbar-search-_r_2g_-search"
+                          for="table-toolbar-search-_r_28_"
+                          id="table-toolbar-search-_r_28_-search"
                         >
                           Filter table
                         </label>
                         <input
                           autocomplete="off"
                           class="cds--search-input"
-                          id="table-toolbar-search-_r_2g_"
+                          id="table-toolbar-search-_r_28_"
                           placeholder="Filter table"
                           tabindex="0"
                           type="search"
@@ -7950,7 +7496,7 @@ python -m tui.node_console
                       </div>
                       <div
                         class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--cool-gray"
-                        id="tag-id-_r_2i_"
+                        id="tag-id-_r_2a_"
                       >
                         <span
                           class="cds--tag__label"
@@ -7963,7 +7509,7 @@ python -m tui.node_console
                       </div>
                       <div
                         class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--cool-gray"
-                        id="tag-id-_r_2j_"
+                        id="tag-id-_r_2b_"
                       >
                         <span
                           class="cds--tag__label"
@@ -7976,7 +7522,7 @@ python -m tui.node_console
                       </div>
                       <div
                         class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--green"
-                        id="tag-id-_r_2k_"
+                        id="tag-id-_r_2c_"
                       >
                         <span
                           class="cds--tag__label"
@@ -7988,7 +7534,7 @@ python -m tui.node_console
                       </div>
                       <div
                         class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--warm-gray"
-                        id="tag-id-_r_2l_"
+                        id="tag-id-_r_2d_"
                       >
                         <span
                           class="cds--tag__label"
@@ -8007,9 +7553,9 @@ python -m tui.node_console
                       class="cds--data-table-content"
                     >
                       <table
-                        aria-describedby="tc-_r_2f_-description"
+                        aria-describedby="tc-_r_27_-description"
                         aria-label="Home telemetry table"
-                        aria-labelledby="tc-_r_2f_-title"
+                        aria-labelledby="tc-_r_27_-title"
                         class="cds--data-table hp2-home-shell__table cds--data-table--sm cds--data-table--sort cds--data-table--zebra cds--data-table--visible-overflow-menu"
                       >
                         <thead>
@@ -8021,12 +7567,12 @@ python -m tui.node_console
                             >
                               <div
                                 class="cds--table-sort__description"
-                                id="table-sort-_r_2m_"
+                                id="table-sort-_r_2e_"
                               >
                                 Click to sort rows by Surface header in ascending order
                               </div>
                               <button
-                                aria-describedby="table-sort-_r_2m_"
+                                aria-describedby="table-sort-_r_2e_"
                                 class="cds--table-sort"
                                 type="button"
                               >
@@ -8084,12 +7630,12 @@ python -m tui.node_console
                             >
                               <div
                                 class="cds--table-sort__description"
-                                id="table-sort-_r_2n_"
+                                id="table-sort-_r_2f_"
                               >
                                 Click to sort rows by Signal header in ascending order
                               </div>
                               <button
-                                aria-describedby="table-sort-_r_2n_"
+                                aria-describedby="table-sort-_r_2f_"
                                 class="cds--table-sort"
                                 type="button"
                               >
@@ -8147,12 +7693,12 @@ python -m tui.node_console
                             >
                               <div
                                 class="cds--table-sort__description"
-                                id="table-sort-_r_2o_"
+                                id="table-sort-_r_2g_"
                               >
                                 Click to sort rows by Current state header in ascending order
                               </div>
                               <button
-                                aria-describedby="table-sort-_r_2o_"
+                                aria-describedby="table-sort-_r_2g_"
                                 class="cds--table-sort"
                                 type="button"
                               >
@@ -8210,12 +7756,12 @@ python -m tui.node_console
                             >
                               <div
                                 class="cds--table-sort__description"
-                                id="table-sort-_r_2p_"
+                                id="table-sort-_r_2h_"
                               >
                                 Click to sort rows by Scope header in ascending order
                               </div>
                               <button
-                                aria-describedby="table-sort-_r_2p_"
+                                aria-describedby="table-sort-_r_2h_"
                                 class="cds--table-sort"
                                 type="button"
                               >
@@ -8273,12 +7819,12 @@ python -m tui.node_console
                             >
                               <div
                                 class="cds--table-sort__description"
-                                id="table-sort-_r_2q_"
+                                id="table-sort-_r_2i_"
                               >
                                 Click to sort rows by Detail header in ascending order
                               </div>
                               <button
-                                aria-describedby="table-sort-_r_2q_"
+                                aria-describedby="table-sort-_r_2i_"
                                 class="cds--table-sort"
                                 type="button"
                               >
@@ -8336,12 +7882,12 @@ python -m tui.node_console
                             >
                               <div
                                 class="cds--table-sort__description"
-                                id="table-sort-_r_2r_"
+                                id="table-sort-_r_2j_"
                               >
                                 Click to sort rows by Workspace header in ascending order
                               </div>
                               <button
-                                aria-describedby="table-sort-_r_2r_"
+                                aria-describedby="table-sort-_r_2j_"
                                 class="cds--table-sort"
                                 type="button"
                               >
@@ -8406,7 +7952,7 @@ python -m tui.node_console
                             <td>
                               <div
                                 class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--cool-gray"
-                                id="tag-id-_r_2s_"
+                                id="tag-id-_r_2k_"
                               >
                                 <span
                                   class="cds--tag__label"
@@ -8435,7 +7981,7 @@ python -m tui.node_console
                                 </span>
                                 <div
                                   class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--green"
-                                  id="tag-id-_r_2t_"
+                                  id="tag-id-_r_2l_"
                                 >
                                   <span
                                     class="cds--tag__label"
@@ -8521,7 +8067,7 @@ python -m tui.node_console
               >
                 <button
                   aria-label="Close"
-                  aria-labelledby="tooltip-_r_30_"
+                  aria-labelledby="tooltip-_r_2o_"
                   class="cds--modal-close cds--btn cds--btn--primary cds--btn--icon-only"
                   type="button"
                 >
@@ -8545,7 +8091,7 @@ python -m tui.node_console
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_30_"
+                id="tooltip-_r_2o_"
                 role="tooltip"
               >
                 <span
@@ -8608,13 +8154,13 @@ python -m tui.node_console
             Cancel
           </button>
           <button
-            aria-describedby="danger-description-_r_34_"
+            aria-describedby="danger-description-_r_2s_"
             class="cds--btn cds--btn--danger"
             type="button"
           >
             <span
               class="cds--visually-hidden"
-              id="danger-description-_r_34_"
+              id="danger-description-_r_2s_"
             >
               danger
             </span>
@@ -8674,7 +8220,7 @@ python -m tui.node_console
               >
                 <button
                   aria-label="Close"
-                  aria-labelledby="tooltip-_r_37_"
+                  aria-labelledby="tooltip-_r_2v_"
                   class="cds--modal-close cds--btn cds--btn--primary cds--btn--icon-only"
                   type="button"
                 >
@@ -8698,7 +8244,7 @@ python -m tui.node_console
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_37_"
+                id="tooltip-_r_2v_"
                 role="tooltip"
               >
                 <span
@@ -8762,289 +8308,62 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
       <div
         class="global-tree-nav__header"
       >
-        <span
-          class="cds--popover-container cds--popover--caret cds--popover--drop-shadow cds--popover--bottom-start"
+        <a
+          aria-label="Node MAP2-TESTBED, status OK. Open node detail."
+          class="node-id-icon"
+          data-health="success"
+          href="/node/MANAGEMENT-NODE-1"
         >
-          <button
-            aria-expanded="false"
-            aria-label="Node MAP2-TESTBED, status OK. Click to switch nodes."
-            class="node-id-card"
-            data-pressure-tone="waiting"
-            data-status="ok"
-            type="button"
+          <svg
+            aria-hidden="true"
+            class="node-id-icon__hex"
+            data-tone="success"
+            height="28"
+            viewBox="0 0 32 32"
+            width="28"
           >
-            <div
-              class="node-id-card__eyebrow"
-            >
-              <span
-                class="node-id-card__eyebrow-left"
-              >
-                <span
-                  class="node-id-card__dot"
-                />
-                <span>
-                  Current Node in View
-                </span>
-              </span>
-              <span
-                class="node-id-card__eyebrow-status"
-              >
-                OK
-              </span>
-            </div>
-            <div
-              class="node-id-card__head"
-            >
-              <span
-                class="node-id-card__host"
-              >
-                <svg
-                  aria-hidden="true"
-                  class="node-id-card__head-mark"
-                  focusable="false"
-                  viewBox="0 0 256 256"
-                >
-                  <rect
-                    fill="#4DA6FF"
-                    height="256"
-                    rx="56"
-                    ry="56"
-                    width="256"
-                    x="0"
-                    y="0"
-                  />
-                  <rect
-                    fill="#000000"
-                    height="95"
-                    rx="14"
-                    ry="14"
-                    width="95"
-                    x="22"
-                    y="22"
-                  />
-                  <rect
-                    fill="#000000"
-                    height="95"
-                    rx="14"
-                    ry="14"
-                    width="95"
-                    x="139"
-                    y="22"
-                  />
-                  <rect
-                    fill="#000000"
-                    height="95"
-                    rx="14"
-                    ry="14"
-                    width="95"
-                    x="22"
-                    y="139"
-                  />
-                  <rect
-                    fill="#000000"
-                    height="95"
-                    rx="14"
-                    ry="14"
-                    width="95"
-                    x="139"
-                    y="139"
-                  />
-                </svg>
-                <span>
-                  MAP2-TESTBED
-                </span>
-              </span>
-              <span
-                class="node-id-card__role"
-              >
-                ALL-IN-ONE
-              </span>
-              <span
-                aria-hidden="true"
-                class="node-id-card__caret"
-              >
-                ▾
-              </span>
-            </div>
-            <div
-              class="node-id-card__placeholder"
-            >
-              WAITING FOR DATA
-            </div>
-            <div
-              class="node-id-card__secondary"
-            >
-              <div
-                class="node-id-card__chip"
-                data-tone="muted"
-              >
-                <span
-                  class="node-id-card__chip-label"
-                >
-                  CPU
-                </span>
-                <span
-                  class="node-id-card__chip-value"
-                >
-                  —
-                </span>
-              </div>
-              <div
-                class="node-id-card__chip"
-                data-tone="muted"
-              >
-                <span
-                  class="node-id-card__chip-label"
-                >
-                  MEM
-                </span>
-                <span
-                  class="node-id-card__chip-value"
-                >
-                  —
-                </span>
-              </div>
-              <div
-                class="node-id-card__chip"
-                data-tone="muted"
-              >
-                <span
-                  class="node-id-card__chip-label"
-                >
-                  LAT
-                </span>
-                <span
-                  class="node-id-card__chip-value"
-                >
-                  —
-                </span>
-              </div>
-            </div>
-          </button>
+            <polygon
+              class="node-id-icon__hex-fill"
+              points="16,2 28.12,9 28.12,23 16,30 3.88,23 3.88,9"
+            />
+            <polygon
+              class="node-id-icon__hex-ring"
+              points="16,2 28.12,9 28.12,23 16,30 3.88,23 3.88,9"
+            />
+            <circle
+              class="node-id-icon__hex-dot"
+              cx="16"
+              cy="11"
+              r="1.6"
+            />
+            <circle
+              class="node-id-icon__hex-dot"
+              cx="11"
+              cy="20"
+              r="1.6"
+            />
+            <circle
+              class="node-id-icon__hex-dot"
+              cx="21"
+              cy="20"
+              r="1.6"
+            />
+          </svg>
           <span
-            class="cds--popover"
+            class="node-id-icon__text"
           >
             <span
-              class="cds--popover-content global-tree-nav__node-popover"
+              class="node-id-icon__name"
             >
-              <div
-                class="node-mini-card"
-                style="border-inline-start-color: #0f62fe;"
-              >
-                <div
-                  class="node-mini-card__header"
-                >
-                  <div>
-                    <h3
-                      class="node-mini-card__title"
-                    >
-                      MAP2-TESTBED
-                    </h3>
-                    <p
-                      class="node-mini-card__subtitle"
-                    >
-                      MAP2-TESTBED
-                    </p>
-                  </div>
-                  <div
-                    class="cds--tag cds--tag--cool-gray"
-                    id="tag-id-_r_3d_"
-                  >
-                    <span
-                      class="cds--tag__label"
-                      dir="auto"
-                      title="All-In-One"
-                    >
-                      All-In-One
-                    </span>
-                  </div>
-                </div>
-                <div
-                  class="node-mini-card__context"
-                >
-                  <span>
-                    Local studio view
-                  </span>
-                </div>
-                <div
-                  class="node-mini-card__status"
-                >
-                  <span>
-                    Status
-                  </span>
-                  <div
-                    class="cds--tag cds--tag--green"
-                    id="tag-id-_r_3e_"
-                  >
-                    <span
-                      class="cds--tag__label"
-                      dir="auto"
-                      title="OK"
-                    >
-                      OK
-                    </span>
-                  </div>
-                </div>
-                <div
-                  class="node-mini-card__health-row"
-                >
-                  <span>
-                    Health
-                  </span>
-                  <span
-                    class="node-mini-card__health-value node-mini-card__health-value--good"
-                  >
-                    100
-                    %
-                  </span>
-                </div>
-                <div
-                  class="node-mini-card__actions"
-                >
-                  <button
-                    class="cds--btn cds--btn--sm cds--layout--size-sm cds--btn--ghost"
-                    type="button"
-                  >
-                    Set as page node
-                  </button>
-                  <a
-                    class="cds--link"
-                    href="/node-ops/management?focusNodeId=MANAGEMENT-NODE-1"
-                  >
-                    View details
-                  </a>
-                </div>
-              </div>
-              <div
-                class="global-tree-nav__node-switcher"
-              >
-                <p
-                  class="global-tree-nav__node-switcher-title"
-                >
-                  Switch all pages to
-                </p>
-                <div
-                  class="global-tree-nav__node-switcher-list"
-                >
-                  <button
-                    class="global-tree-nav__node-switcher-button is-active"
-                    type="button"
-                  >
-                    <span>
-                      MAP2-TESTBED
-                    </span>
-                    <span>
-                      OK
-                    </span>
-                  </button>
-                </div>
-              </div>
+              MAP2-TESTBED
             </span>
             <span
-              class="cds--popover-caret"
-            />
+              class="node-id-icon__role"
+            >
+              ALL-IN-ONE
+            </span>
           </span>
-        </span>
+        </a>
         <div
           aria-label="System actions"
           class="global-tree-nav__quick-actions"
@@ -9058,7 +8377,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
             >
               <button
                 aria-label="Refresh"
-                aria-labelledby="tooltip-_r_3g_"
+                aria-labelledby="tooltip-_r_34_"
                 class="global-tree-nav__quick-action global-tree-nav__quick-action--refresh"
                 type="button"
               >
@@ -9084,7 +8403,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
             <span
               aria-hidden="true"
               class="cds--popover"
-              id="tooltip-_r_3g_"
+              id="tooltip-_r_34_"
               role="tooltip"
             >
               <span
@@ -9105,7 +8424,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
             >
               <button
                 aria-label="Restart"
-                aria-labelledby="tooltip-_r_3i_"
+                aria-labelledby="tooltip-_r_36_"
                 class="global-tree-nav__quick-action global-tree-nav__quick-action--restart"
                 type="button"
               >
@@ -9128,7 +8447,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
             <span
               aria-hidden="true"
               class="cds--popover"
-              id="tooltip-_r_3i_"
+              id="tooltip-_r_36_"
               role="tooltip"
             >
               <span
@@ -9149,7 +8468,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
             >
               <button
                 aria-label="Log Out"
-                aria-labelledby="tooltip-_r_3k_"
+                aria-labelledby="tooltip-_r_38_"
                 class="global-tree-nav__quick-action global-tree-nav__quick-action--logout"
                 type="button"
               >
@@ -9175,7 +8494,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
             <span
               aria-hidden="true"
               class="cds--popover"
-              id="tooltip-_r_3k_"
+              id="tooltip-_r_38_"
               role="tooltip"
             >
               <span
@@ -9196,7 +8515,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
             >
               <button
                 aria-label="Full system reboot"
-                aria-labelledby="tooltip-_r_3m_"
+                aria-labelledby="tooltip-_r_3a_"
                 class="global-tree-nav__quick-action global-tree-nav__quick-action--reboot"
                 type="button"
               >
@@ -9222,7 +8541,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
             <span
               aria-hidden="true"
               class="cds--popover"
-              id="tooltip-_r_3m_"
+              id="tooltip-_r_3a_"
               role="tooltip"
             >
               <span
@@ -9253,7 +8572,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
             >
               <button
                 aria-label="Home"
-                aria-labelledby="tooltip-_r_3o_"
+                aria-labelledby="tooltip-_r_3c_"
                 class="global-tree-nav__icon-button"
                 type="button"
               >
@@ -9281,7 +8600,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
             <span
               aria-hidden="true"
               class="cds--popover"
-              id="tooltip-_r_3o_"
+              id="tooltip-_r_3c_"
               role="tooltip"
             >
               <span
@@ -9302,7 +8621,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
             >
               <button
                 aria-label="Snapshot Editor"
-                aria-labelledby="tooltip-_r_3q_"
+                aria-labelledby="tooltip-_r_3e_"
                 class="global-tree-nav__icon-button"
                 type="button"
               >
@@ -9344,7 +8663,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
             <span
               aria-hidden="true"
               class="cds--popover"
-              id="tooltip-_r_3q_"
+              id="tooltip-_r_3e_"
               role="tooltip"
             >
               <span
@@ -9365,7 +8684,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
             >
               <button
                 aria-label="Sequencer"
-                aria-labelledby="tooltip-_r_3s_"
+                aria-labelledby="tooltip-_r_3g_"
                 class="global-tree-nav__icon-button"
                 type="button"
               >
@@ -9402,7 +8721,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
             <span
               aria-hidden="true"
               class="cds--popover"
-              id="tooltip-_r_3s_"
+              id="tooltip-_r_3g_"
               role="tooltip"
             >
               <span
@@ -10081,7 +9400,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
               >
                 <button
                   aria-label="Close"
-                  aria-labelledby="tooltip-_r_40_"
+                  aria-labelledby="tooltip-_r_3k_"
                   class="cds--modal-close cds--btn cds--btn--primary cds--btn--icon-only"
                   type="button"
                 >
@@ -10105,7 +9424,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_40_"
+                id="tooltip-_r_3k_"
                 role="tooltip"
               >
                 <span
@@ -10168,13 +9487,13 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
             Cancel
           </button>
           <button
-            aria-describedby="danger-description-_r_44_"
+            aria-describedby="danger-description-_r_3o_"
             class="cds--btn cds--btn--danger"
             type="button"
           >
             <span
               class="cds--visually-hidden"
-              id="danger-description-_r_44_"
+              id="danger-description-_r_3o_"
             >
               danger
             </span>
@@ -10234,7 +9553,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
               >
                 <button
                   aria-label="Close"
-                  aria-labelledby="tooltip-_r_47_"
+                  aria-labelledby="tooltip-_r_3r_"
                   class="cds--modal-close cds--btn cds--btn--primary cds--btn--icon-only"
                   type="button"
                 >
@@ -10258,7 +9577,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_47_"
+                id="tooltip-_r_3r_"
                 role="tooltip"
               >
                 <span

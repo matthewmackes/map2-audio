@@ -174,4 +174,50 @@ describe('NodeIdentityCard (V4-A3 Numbered Ladder)', () => {
     fireEvent.click(screen.getByRole('button', { name: /Node map2-host/i }))
     expect(onToggle).toHaveBeenCalledTimes(1)
   })
+
+  describe('page-body mode (no onToggle)', () => {
+    it('renders as a non-interactive <section> when onToggle is omitted', () => {
+      const { container } = render(<NodeIdentityCard node={baseNode} />)
+      const card = container.querySelector('.node-id-card')!
+      expect(card.tagName).toBe('SECTION')
+      // No button affordance — no aria-expanded, no caret, no role=button.
+      expect(card).not.toHaveAttribute('aria-expanded')
+      expect(container.querySelector('.node-id-card__caret')).toBeNull()
+      expect(screen.queryByRole('button', { name: /Node map2-host/i })).toBeNull()
+    })
+
+    it('keeps the same data-status / data-pressure-tone wiring as the interactive mode', () => {
+      const { container } = render(<NodeIdentityCard node={baseNode} />)
+      const card = container.querySelector('.node-id-card')!
+      expect(card).toHaveAttribute('data-status', 'ok')
+      expect(card).toHaveAttribute('data-pressure-tone', 'stable')
+    })
+
+    it('renders the same card body content (eyebrow, ladder, xrun callout, footer chips)', () => {
+      const { container } = render(<NodeIdentityCard node={baseNode} />)
+      const card = container.querySelector('.node-id-card')!
+      expect(card).toHaveTextContent('Current Node in View')
+      expect(card).toHaveTextContent('OK')
+      expect(card).toHaveTextContent('map2-host (MAP2-TESTBED)')
+      expect(card).toHaveTextContent('ALL-IN-ONE')
+      expect(card).toHaveTextContent('LAT PRESS')
+      expect(card).toHaveTextContent('STABLE')
+      expect(container.querySelectorAll('.node-id-card__ladder-step').length).toBe(10)
+      expect(card).toHaveTextContent('NO DROPOUTS')
+      expect(card).toHaveTextContent('62%')
+      // The aria-label drops the "Click to switch nodes" call-to-action
+      // because the section is no longer clickable.
+      expect(card.getAttribute('aria-label')).toBe('Node map2-host (MAP2-TESTBED), status OK.')
+    })
+
+    it('renders the placeholder card as a <section> when node is null', () => {
+      const { container } = render(<NodeIdentityCard node={null} loadingLabel="LOADING" />)
+      const card = container.querySelector('.node-id-card')!
+      expect(card.tagName).toBe('SECTION')
+      expect(card).toHaveAttribute('data-status', 'offline')
+      expect(card).toHaveAttribute('data-pressure-tone', 'waiting')
+      expect(container.querySelector('.node-id-card__caret')).toBeNull()
+      expect(card).toHaveTextContent('LOADING')
+    })
+  })
 })

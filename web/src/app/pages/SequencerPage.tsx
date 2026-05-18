@@ -1,15 +1,32 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
+  Activity,
   ArrowLeft,
+  Calibrate,
+  Catalog,
+  Categories,
+  ConnectionSignal,
+  DataStructured,
+  Flow,
+  Headphones,
   Launch,
+  Layers,
+  Music,
   PauseFilled,
   PlayFilled,
   Reset,
+  Router,
+  TrainSpeed,
   WarningAlt,
 } from '@carbon/icons-react'
 import { Button, Dropdown, InlineLoading, InlineNotification, Tag, Tile } from '@carbon/react'
+import { LayoutGroup, motion } from 'framer-motion'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+
+import { BoTag, computeWarnCount } from './sequencerViews/sequencerViewShared'
+import { MAP2_SPRING } from '../styles/motionPrimitives'
+import { useReducedMotionSafeTransition } from '../styles/useReducedMotionSafeVariants'
 
 import { useSetShellWindow } from '@/app/layout/useSetShellWindow'
 import { useSequencerRuntimeStateSync } from '@/app/hooks/useSequencerRuntimeState'
@@ -69,6 +86,23 @@ const SECTION_IDS: readonly SectionId[] = [
 
 /** Subset of section ids that share the Brain Overview shell. */
 const OVERVIEW_SECTIONS: readonly SectionId[] = ['performance', 'console', 'step', 'split', 'setup'] as const
+
+const SECTION_TAB_META: Record<SectionId, { label: string; sub: string; Icon: typeof DataStructured }> = {
+  performance: { label: 'Performance', sub: 'Pads · Transport · Meters', Icon: DataStructured },
+  console: { label: 'Console', sub: 'Mixer · Faders · Routing', Icon: ConnectionSignal },
+  step: { label: 'Step', sub: 'Sequencer · Pattern · Song', Icon: Flow },
+  split: { label: 'Split', sub: 'Keyboard · Pads · Routing', Icon: Categories },
+  setup: { label: 'Setup', sub: 'Onboarding · Bind · Activate', Icon: Catalog },
+  perform: { label: 'Perform', sub: 'Transport · Layers · Slots', Icon: PlayFilled },
+  layers: { label: 'Layers', sub: 'Zones · Slots · Polyphony', Icon: Layers },
+  sequence: { label: 'Sequence', sub: 'Patterns · Lanes · Fills', Icon: TrainSpeed },
+  routing: { label: 'Routing', sub: 'Buses · Master · Sends', Icon: Router },
+  inputs: { label: 'Inputs', sub: 'Keys · Triggers · Assignments', Icon: Calibrate },
+  library: { label: 'Library', sub: 'Assets · Bench · Import', Icon: Catalog },
+  session_media: { label: 'Session Media', sub: 'Backing · Tempo · Pitch', Icon: Headphones },
+  practice_coach: { label: 'Practice Coach', sub: 'Styles · Packs · Coaching', Icon: Music },
+  diagnostics: { label: 'Diagnostics', sub: 'Metrics · Qualification · Warnings', Icon: Activity },
+}
 
 const PRACTICE_STYLES = [
   { id: 'rock_8', label: 'Rock 8', feel: 'Straight', signature: '4/4' },
@@ -431,6 +465,8 @@ export function SequencerPage() {
     ],
   }, [activeSection, handleSectionChange, navigate, benchHealthLabel, benchHealthStatus])
 
+  const tabIndicatorTransition = useReducedMotionSafeTransition(MAP2_SPRING.tabIndicator)
+
   if (
     stateQuery.isLoading
     || transportQuery.isLoading
@@ -533,6 +569,48 @@ export function SequencerPage() {
         </section>
 
         <hr className="brain-page__divider" role="separator" aria-hidden="true" />
+
+        <LayoutGroup id="sequencer-section-tabs">
+          <div className="brain-overview__tabs" role="tablist" aria-label="Sequencer sections">
+            {SECTION_IDS.map((id) => {
+              const { label, sub, Icon } = SECTION_TAB_META[id]
+              const isActive = id === activeSection
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  className={`brain-overview__tab${isActive ? ' brain-overview__tab--active' : ''}`}
+                  onClick={() => handleSectionChange(id)}
+                >
+                  {isActive ? (
+                    <motion.span
+                      layoutId="sequencer-section-tab-indicator"
+                      className="brain-overview__tab-indicator"
+                      aria-hidden="true"
+                      transition={tabIndicatorTransition}
+                    />
+                  ) : null}
+                  <div className="brain-overview__tab-icon">
+                    <Icon size={12} />
+                  </div>
+                  <div className="brain-overview__tab-labels">
+                    <div className="brain-overview__tab-label">{label}</div>
+                    <div className="brain-overview__tab-sub">{sub}</div>
+                  </div>
+                </button>
+              )
+            })}
+            <div className="brain-overview__tab-spacer" />
+            <div className="brain-overview__tab-meta">
+              {computeWarnCount(diagnostics) > 0
+                ? <BoTag tone="warn">{computeWarnCount(diagnostics)} WARN</BoTag>
+                : null}
+              {qualification.controller_ready ? <BoTag tone="ok">READY</BoTag> : null}
+            </div>
+          </div>
+        </LayoutGroup>
 
         {OVERVIEW_SECTIONS.includes(activeSection) ? (
           <SequencerOverviewShell

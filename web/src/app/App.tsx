@@ -88,6 +88,7 @@ const MaschinePage          = lazy(() => import('./pages/MaschinePage').then(m =
 // T2504; the salvaged shell tree lives at
 // `web/src/_archive/multitrack-recorder-2026-05-11/` for T2509 reference.
 const McuPage               = lazy(() => import('./pages/McuPage').then(m => ({ default: m.McuPage })))
+const NodeDetailPage        = lazy(() => import('./pages/NodeDetailPage').then(m => ({ default: m.NodeDetailPage })))
 const LaunchControlPage     = lazy(() => import('./pages/LaunchControlPage').then(m => ({ default: m.LaunchControlPage })))
 const MidiCommanderPage     = lazy(() => import('./pages/MidiCommanderPage').then(m => ({ default: m.MidiCommanderPage })))
 // T2491 cleanup — MidiHubShell is no longer imported directly here.
@@ -681,6 +682,13 @@ export function App() {
                                 <Route path="/daw" element={<Navigate to="/artifacts" replace />} />
                                 <Route path="/daw/*" element={<Navigate to="/artifacts" replace />} />
                                 <Route path="/mcu" element={<McuPage />} />
+                                {/* /node detail page — replaces the popover that
+                                    hung off the V4-A3 NodeIdentityCard in the
+                                    global nav. The icon mounted in GlobalTreeNav
+                                    links here. /node (no id) resolves to the
+                                    locally viewed node. */}
+                                <Route path="/node" element={<NodeDetailPage />} />
+                                <Route path="/node/:nodeId" element={<NodeDetailPage />} />
                                 <Route path="/launch-control" element={<LaunchControlPage />} />
                                 <Route path="/midi-commander" element={<MidiCommanderPage />} />
                                 {/* Nav reorg 2026-05-03 — /chains route deleted.

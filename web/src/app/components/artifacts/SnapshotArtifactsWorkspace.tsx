@@ -17,6 +17,7 @@ import {
   Add,
   ArrowsHorizontal,
   CloudUpload,
+  Download,
   Launch,
   Network_4,
   Renew,
@@ -36,6 +37,7 @@ import { useCommittedAudioState, useObservedAudioState } from '../../hooks/useAu
 import { useRealtimeCadence } from '../../hooks/useRealtimeCadence'
 import { useRouteActive } from '../../hooks/useRouteActive'
 import { ARTIFACTS_BASE_PATH, WORKSPACE_ARTIFACTS_BASE_PATH } from '../../pages/audioArtifactsRoutes'
+import { API_BASE } from '../../../map2/transport'
 import {
   useClusterSnapshotRuntimeLiveState,
   useSnapshotActivationEvents,
@@ -200,6 +202,10 @@ function getAuthoritySyncTagType(syncStatus: string) {
     return 'warm-gray'
   }
   return 'cool-gray'
+}
+
+function getSnapshotBundleDownloadHref(snapshotId: number) {
+  return `${API_BASE}/snapshots/${snapshotId}/export`
 }
 
 export function SnapshotArtifactsWorkspace({
@@ -464,20 +470,6 @@ export function SnapshotArtifactsWorkspace({
     onError: (error: Error) => onToast('error', 'Snapshot import failed', error.message),
   })
 
-  const exportMutation = useMutation({
-    mutationFn: (snapshotId: number) => snapshotsApi.exportSnapshot(snapshotId),
-    onSuccess: (payload) => {
-      const url = URL.createObjectURL(payload.blob)
-      const anchor = document.createElement('a')
-      anchor.href = url
-      anchor.download = payload.filename
-      anchor.click()
-      URL.revokeObjectURL(url)
-      onToast('success', 'Snapshot exported', payload.filename)
-    },
-    onError: (error: Error) => onToast('error', 'Snapshot export failed', error.message),
-  })
-
   const selectedSnapshotDirty = computeDirty(
     selectedSnapshot ?? ({
       is_active: false,
@@ -597,11 +589,21 @@ export function SnapshotArtifactsWorkspace({
                   : false
                 const deploymentNodes = summarizeDeploymentNodes(snapshot.id, deploymentsQuery.data?.deployments ?? [])
                 return (
-                  <button
-                    type="button"
+                  <article
                     key={snapshot.id}
+                    role="listitem"
+                    tabIndex={0}
+                    aria-current={isSelected ? 'true' : undefined}
                     className={`aap-snapshots__card${isSelected ? ' aap-snapshots__card--selected' : ''}`}
                     onClick={() => {
+                      setSelectedSnapshotId(snapshot.id)
+                      setProgramValue(snapshot.program_number === null ? '' : String(snapshot.program_number))
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key !== 'Enter' && event.key !== ' ') {
+                        return
+                      }
+                      event.preventDefault()
                       setSelectedSnapshotId(snapshot.id)
                       setProgramValue(snapshot.program_number === null ? '' : String(snapshot.program_number))
                     }}
@@ -613,21 +615,33 @@ export function SnapshotArtifactsWorkspace({
                           MIDI PC {snapshot.program_number === null ? '—' : snapshot.program_number} · {snapshot.channel_count} paths · {snapshot.chain_count} chains
                         </p>
                       </div>
-                      <div className="aap-snapshots__card-actions">
-                        {/* T2454-D: per-row Pin button. Wrapped in a span so
-                            the click is contained inside the button surface
-                            and doesn't bubble up to the card's selection handler. */}
-                        <span onClick={(event) => event.stopPropagation()}>
+                      <div
+                        className="aap-snapshots__card-actions"
+                        onClick={(event) => event.stopPropagation()}
+                        onKeyDown={(event) => event.stopPropagation()}
+                      >
+                        {/* T2454-D: per-row Pin button. Wrapped in the actions
+                            rail so interaction does not bubble to the card
+                            selection handler. */}
+                        <span>
                           <SnapshotPinButton snapshotId={snapshot.id} />
                         </span>
-                        <OverflowMenu ariaLabel={`Snapshot actions for ${snapshot.name}`} onClick={(event) => event.stopPropagation()}>
+                        <a
+                          className="aap-snapshots__bundle-link"
+                          href={getSnapshotBundleDownloadHref(snapshot.id)}
+                          download
+                          aria-label={`Download bundle for ${snapshot.name}`}
+                        >
+                          <Download size={16} aria-hidden="true" />
+                          <span>Download bundle</span>
+                        </a>
+                        <OverflowMenu ariaLabel={`Snapshot actions for ${snapshot.name}`}>
                           <OverflowMenuItem itemText="Make Live" onClick={() => activateMutation.mutate(snapshot.id)} />
                           <OverflowMenuItem
                             itemText={snapshot.is_favorite ? 'Remove favorite' : 'Mark favorite'}
                             onClick={() => favoriteMutation.mutate({ snapshotId: snapshot.id, isFavorite: !snapshot.is_favorite })}
                           />
                           <OverflowMenuItem itemText="Duplicate snapshot" onClick={() => duplicateMutation.mutate(snapshot.id)} />
-                          <OverflowMenuItem itemText="Export snapshot" onClick={() => exportMutation.mutate(snapshot.id)} />
                           <OverflowMenuItem
                             isDelete
                             itemText="Delete snapshot"
@@ -650,7 +664,7 @@ export function SnapshotArtifactsWorkspace({
                       <span>{deploymentNodes}</span>
                       <span>{formatDate(snapshot.updated_at ?? snapshot.created_at)}</span>
                     </div>
-                  </button>
+                  </article>
                 )
               })}
             </div>

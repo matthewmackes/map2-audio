@@ -238,10 +238,15 @@ describe('AppShell global tree navigation', () => {
     // operator expands MIDI Services. The navigation tests below
     // (which click a parent first) exercise those child rows.
 
-    // The node identity card surfaces the display name plus the host/role plate.
-    const nodeCard = screen.getByRole('button', { name: /Node map2-host \(Studio\)/i })
-    expect(nodeCard).toHaveTextContent('map2-host')
-    expect(nodeCard).toHaveTextContent('ALL-IN-ONE')
+    // 2026-05-15 — the legacy V4-A3 NodeIdentityCard <button> in the nav
+    // header has been replaced by NodeIdentityIcon: a hexagon + name + mode
+    // <a> link to /node/:nodeId. The intent of this assertion is unchanged
+    // (the chrome still surfaces the display name + role at a glance) — only
+    // the underlying element shape moved from button → link with an
+    // "Open node detail" call-to-action in the aria-label.
+    const nodeIcon = screen.getByRole('link', { name: /Node map2-host \(Studio\), status OK\. Open node detail\./i })
+    expect(nodeIcon).toHaveTextContent('map2-host')
+    expect(nodeIcon).toHaveTextContent('ALL-IN-ONE')
   })
 
   it('renders non-landing routes with the page header controls and the global tree rail', () => {

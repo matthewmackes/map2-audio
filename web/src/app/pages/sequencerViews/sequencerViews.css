@@ -39,6 +39,8 @@
   padding: 10px 14px 0;
   background: var(--bo-bg);
   border-bottom: 1px solid var(--bo-border);
+  overflow-x: auto;
+  scrollbar-width: thin;
 }
 
 .brain-overview__tab {
@@ -46,6 +48,7 @@
   align-items: center;
   gap: 10px;
   padding: 10px 16px;
+  flex: 0 0 auto;
   cursor: pointer;
   background: transparent;
   color: var(--bo-text-dim);

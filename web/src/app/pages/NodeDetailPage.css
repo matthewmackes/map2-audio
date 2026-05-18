@@ -1,0 +1,125 @@
+/* NodeDetailPage — body of /node/:nodeId. Hosts the V4-A3 NodeIdentityCard
+   in page-body mode plus the cluster node switcher salvaged from the
+   global-nav popover. */
+
+.node-detail-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.25rem 1.5rem 2rem;
+  max-width: 720px;
+  font-family: var(--plex-sans, "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif);
+}
+
+.node-detail-page__header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.node-detail-page__title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.node-detail-page__subtitle {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.node-detail-page__body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.node-detail-page__not-found {
+  padding: 1rem 1.25rem;
+  border: 1px dashed var(--border);
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.node-detail-page__not-found code {
+  font-family: ui-monospace, "IBM Plex Mono", monospace;
+  background: var(--bg);
+  padding: 0.05em 0.4em;
+  border-radius: 3px;
+}
+
+.node-detail-page__mini {
+  /* NodeMiniCard already has its own internal layout; just give it room. */
+  width: 100%;
+}
+
+.node-detail-page__switcher {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  padding: 1rem 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.node-detail-page__switcher-title {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin: 0;
+}
+
+.node-detail-page__switcher-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.node-detail-page__switcher-button {
+  appearance: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color var(--map2-dur-fast, 140ms) ease,
+    border-color var(--map2-dur-fast, 140ms) ease;
+}
+
+.node-detail-page__switcher-button:hover {
+  background-color: var(--bg);
+  border-color: var(--border);
+}
+
+.node-detail-page__switcher-button:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.node-detail-page__switcher-button.is-active {
+  border-color: var(--border-strong);
+  background-color: var(--bg);
+}
+
+.node-detail-page__switcher-status {
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}

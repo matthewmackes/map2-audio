@@ -256,6 +256,12 @@ const PREFETCH_RULES: PrefetchRule[] = [
     prefix: '/sonobus',
     loaders: [() => import('./pages/SonoBusServicesShell')],
   },
+  // V4-A3 NodeNav — /node page replaces the popover that hung off the
+  // NodeIdentityCard in the global nav.
+  {
+    prefix: '/node',
+    loaders: [() => import('./pages/NodeDetailPage')],
+  },
 ]
 
 // Build a sorted view (longest prefix first) once at module load so each

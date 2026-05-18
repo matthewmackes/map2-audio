@@ -1,0 +1,107 @@
+/* NodeIdentityIcon — compact identity pill that replaces the full V4-A3 card
+   in the global navigation rail. Hexagon glyph with health-tinted ring + name +
+   role chip. Click navigates to /node/:nodeId. */
+
+.node-id-icon {
+  --nii-bg: var(--surface);
+  --nii-border: var(--border);
+  --nii-border-strong: var(--border-strong);
+  --nii-text: var(--text-primary);
+  --nii-text-dim: var(--text-secondary);
+  --nii-text-meta: var(--text-tertiary);
+  --nii-tone: var(--text-tertiary);
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--nii-bg);
+  border: 1px solid var(--nii-border);
+  border-left: 3px solid var(--nii-tone);
+  color: var(--nii-text);
+  text-decoration: none;
+  font-family: var(--plex-sans, "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif);
+  cursor: pointer;
+  transition: border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
+}
+
+.node-id-icon:hover {
+  border-color: var(--nii-border-strong);
+}
+
+.node-id-icon:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.node-id-icon[data-health="success"] { --nii-tone: var(--support-success); }
+.node-id-icon[data-health="warning"] { --nii-tone: var(--support-warning); }
+.node-id-icon[data-health="danger"]  { --nii-tone: var(--support-danger); }
+.node-id-icon[data-health="muted"]   { --nii-tone: var(--text-tertiary); }
+
+/* ── Hexagon ───────────────────────────────────────────────────────────── */
+.node-id-icon__hex {
+  flex: 0 0 auto;
+  display: block;
+}
+
+.node-id-icon__hex-fill {
+  fill: var(--bg);
+}
+
+.node-id-icon__hex-ring {
+  fill: none;
+  stroke: var(--nii-tone);
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+}
+
+.node-id-icon__hex-dot {
+  fill: var(--nii-tone);
+}
+
+/* Subtle pulse on warning to draw the eye without being noisy. */
+@media (prefers-reduced-motion: no-preference) {
+  .node-id-icon[data-health="warning"] .node-id-icon__hex-ring {
+    animation: nii-pulse 2.4s ease-in-out infinite;
+  }
+  .node-id-icon[data-health="danger"] .node-id-icon__hex-ring {
+    animation: nii-pulse 1.2s ease-in-out infinite;
+  }
+}
+
+@keyframes nii-pulse {
+  0%, 100% { stroke-opacity: 1; }
+  50%      { stroke-opacity: 0.55; }
+}
+
+/* ── Text block ────────────────────────────────────────────────────────── */
+.node-id-icon__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.15;
+}
+
+.node-id-icon__name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--nii-text);
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.node-id-icon__role {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: var(--nii-text-meta);
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

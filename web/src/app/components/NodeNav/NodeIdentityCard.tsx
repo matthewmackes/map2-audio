@@ -1,5 +1,10 @@
 /* NodeIdentityCard — V4-A3 Numbered Ladder layout (replaces the prior D3 hero band).
-   Sits at the top of the global navigation rail. Click anywhere opens the node selector.
+
+   Two render modes (controlled by props):
+     - Interactive (isOpen + onToggle supplied): renders as a <button>. Legacy mount used
+       this in the global nav to open a popover. Tests still cover this path.
+     - Page-body (isOpen + onToggle omitted): renders as a <section>. Used by
+       NodeDetailPage as the body of /node/:nodeId.
 
    Layout (top → bottom):
      1. Eyebrow strip:   ● CURRENT NODE IN VIEW — STATUS
@@ -24,8 +29,8 @@ import './NodeIdentityCard.css'
 
 interface NodeIdentityCardProps {
   node: NodeSummary | null
-  isOpen: boolean
-  onToggle: () => void
+  isOpen?: boolean
+  onToggle?: () => void
   loadingLabel?: string
 }
 
@@ -33,18 +38,12 @@ type PressureTone = 'stable' | 'watch' | 'critical' | 'offline' | 'waiting'
 
 export const NodeIdentityCard = forwardRef<HTMLButtonElement, NodeIdentityCardProps>(
   function NodeIdentityCard({ node, isOpen, onToggle, loadingLabel }, ref) {
+    const interactive = typeof onToggle === 'function'
+    const showCaret = interactive
+
     if (!node) {
-      return (
-        <button
-          ref={ref}
-          type="button"
-          className="node-id-card"
-          data-status="offline"
-          data-pressure-tone="waiting"
-          aria-expanded={isOpen}
-          aria-label="Node discovery unavailable"
-          onClick={onToggle}
-        >
+      const placeholderBody = (
+        <>
           <div className="node-id-card__eyebrow">
             <span className="node-id-card__eyebrow-left">
               <span className="node-id-card__dot" />
@@ -58,7 +57,7 @@ export const NodeIdentityCard = forwardRef<HTMLButtonElement, NodeIdentityCardPr
               <span>—</span>
             </span>
             <span className="node-id-card__role">—</span>
-            <span className="node-id-card__caret" aria-hidden>▾</span>
+            {showCaret ? <span className="node-id-card__caret" aria-hidden>▾</span> : null}
           </div>
           <div className="node-id-card__placeholder">{loadingLabel ?? 'NODE OFFLINE'}</div>
           <div className="node-id-card__secondary">
@@ -66,7 +65,35 @@ export const NodeIdentityCard = forwardRef<HTMLButtonElement, NodeIdentityCardPr
             <FooterChip label="MEM" v="—" tone="muted" />
             <FooterChip label="LAT" v="—" tone="muted" />
           </div>
-        </button>
+        </>
+      )
+
+      if (interactive) {
+        return (
+          <button
+            ref={ref}
+            type="button"
+            className="node-id-card"
+            data-status="offline"
+            data-pressure-tone="waiting"
+            aria-expanded={isOpen}
+            aria-label="Node discovery unavailable"
+            onClick={onToggle}
+          >
+            {placeholderBody}
+          </button>
+        )
+      }
+
+      return (
+        <section
+          className="node-id-card"
+          data-status="offline"
+          data-pressure-tone="waiting"
+          aria-label="Node discovery unavailable"
+        >
+          {placeholderBody}
+        </section>
       )
     }
 
@@ -77,17 +104,8 @@ export const NodeIdentityCard = forwardRef<HTMLButtonElement, NodeIdentityCardPr
     const pressure = formatLatencyPressure(node)
     const showLive = status !== 'offline' && pressure.tone !== 'offline' && pressure.tone !== 'waiting'
 
-    return (
-      <button
-        ref={ref}
-        type="button"
-        className="node-id-card"
-        data-status={status}
-        data-pressure-tone={pressure.tone}
-        aria-expanded={isOpen}
-        aria-label={`Node ${displayName}, status ${getNodeStatusLabel(status)}. Click to switch nodes.`}
-        onClick={onToggle}
-      >
+    const cardBody = (
+      <>
         {/* Eyebrow */}
         <div className="node-id-card__eyebrow">
           <span className="node-id-card__eyebrow-left">
@@ -104,7 +122,7 @@ export const NodeIdentityCard = forwardRef<HTMLButtonElement, NodeIdentityCardPr
             <span>{displayName}</span>
           </span>
           <span className="node-id-card__role">{roleLabel}</span>
-          <span className="node-id-card__caret" aria-hidden>▾</span>
+          {showCaret ? <span className="node-id-card__caret" aria-hidden>▾</span> : null}
         </div>
 
         {showLive ? (
@@ -156,7 +174,35 @@ export const NodeIdentityCard = forwardRef<HTMLButtonElement, NodeIdentityCardPr
             tone={showLive ? latencyTone(node.audio_latency_ms) : 'muted'}
           />
         </div>
-      </button>
+      </>
+    )
+
+    if (interactive) {
+      return (
+        <button
+          ref={ref}
+          type="button"
+          className="node-id-card"
+          data-status={status}
+          data-pressure-tone={pressure.tone}
+          aria-expanded={isOpen}
+          aria-label={`Node ${displayName}, status ${getNodeStatusLabel(status)}. Click to switch nodes.`}
+          onClick={onToggle}
+        >
+          {cardBody}
+        </button>
+      )
+    }
+
+    return (
+      <section
+        className="node-id-card"
+        data-status={status}
+        data-pressure-tone={pressure.tone}
+        aria-label={`Node ${displayName}, status ${getNodeStatusLabel(status)}.`}
+      >
+        {cardBody}
+      </section>
     )
   },
 )

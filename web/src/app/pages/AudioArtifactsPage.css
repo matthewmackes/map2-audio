@@ -635,6 +635,34 @@
   gap: 0.75rem;
 }
 
+.aap-snapshots__card-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.aap-snapshots__bundle-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--cds-link-primary);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.aap-snapshots__bundle-link:hover {
+  color: var(--cds-link-primary-hover);
+  text-decoration: underline;
+}
+
+.aap-snapshots__bundle-link:focus-visible {
+  outline: 2px solid var(--cds-focus);
+  outline-offset: 2px;
+}
+
 .aap-snapshots__card-name {
   margin: 0;
   font-weight: 600;
@@ -707,5 +735,4 @@
   display: grid;
   gap: 0.35rem;
 }
-
 

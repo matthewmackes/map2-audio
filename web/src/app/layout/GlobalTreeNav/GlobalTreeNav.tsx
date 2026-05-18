@@ -1,9 +1,7 @@
 import {
-  Popover,
-  PopoverContent,
   Tooltip,
 } from '@carbon/react'
-import { useCallback, useEffect, useMemo, useState, type ComponentType, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, type ComponentType, type ReactNode } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
   Add,
@@ -40,8 +38,7 @@ import {
 } from '@carbon/icons-react'
 
 import { MapArtifactsLibraryIcon, MapRackDeviceIcon } from '../../components/icons/map'
-import { NodeIdentityCard } from '../../components/NodeNav/NodeIdentityCard'
-import { NodeMiniCard } from '../../components/NodeNav/NodeMiniCard'
+import { NodeIdentityIcon } from '../../components/NodeNav/NodeIdentityIcon'
 import {
   allRouteNavigationItems,
   canonicalizeNavigationRoute,
@@ -63,19 +60,12 @@ import { pinDevice, unpinDevice, usePinnedDevices } from '../../state/uiSettings
 import { useToasts } from '../../components/Toasts'
 import { useNodePageContext } from '../../hooks/useNodePageContext'
 import { HOST_MACHINE_ROUTE } from '../../pages/hostMachineRoutes'
-import { useViewedNodeStore } from '../../stores/viewedNodeStore'
 import {
   NODE_PAGE_KEYS,
-  formatNodeDisplayName,
-  getNodeStatusLabel,
   pageKeyFromPathname,
 } from '../../utils/nodeDisplay'
 import { useClusterSnapshotRuntimeLiveState } from '../../hooks/useSnapshotRuntimeState'
 import { usePersistedState, type PersistedKey } from '../../utils/persistedState'
-import {
-  applyViewedNodeScopeToAllPages,
-  writeViewedHostToSearch,
-} from '../../utils/viewedNodeScope'
 import type { SnapshotRuntimeClusterLiveStateResponse, SnapshotRuntimeLiveState } from '../../../map2/types'
 import './GlobalTreeNav.css'
 
@@ -669,9 +659,7 @@ export function GlobalTreeNav({
   const navigate = useNavigate()
   const pageKey = pageKeyFromPathname(location.pathname) ?? NODE_PAGE_KEYS.home
   const { topologyNodes, viewedNodeId, nodeTopologyQuery } = useNodePageContext(pageKey)
-  const setViewedNode = useViewedNodeStore((state) => state.setViewedNode)
   const [expandedIds, setExpandedIds] = usePersistedState(GLOBAL_TREE_EXPANDED_KEY)
-  const [nodeSelectorOpen, setNodeSelectorOpen] = useState(false)
   const pinnedDeviceIds = usePinnedDevices()
   const clusterRuntimeStateQuery = useClusterSnapshotRuntimeLiveState({ refetchInterval: false })
   const { pushToast } = useToasts()
@@ -751,13 +739,6 @@ export function GlobalTreeNav({
   const displayedNode = topologyNodes.find((node) => node.node_id === viewedNodeId)
     ?? topologyNodes.find((node) => node.is_local)
     ?? null
-  const sortedNodes = useMemo(() => {
-    return [...topologyNodes].sort((left, right) => {
-      if (left.is_local) return -1
-      if (right.is_local) return 1
-      return left.hostname.localeCompare(right.hostname)
-    })
-  }, [topologyNodes])
 
   useEffect(() => {
     if (!activeNodePath || activeNodePath.length < 2) {
@@ -806,48 +787,10 @@ export function GlobalTreeNav({
   return (
     <nav className="global-tree-nav" aria-label="Global navigation">
       <div className="global-tree-nav__header">
-        <Popover
-          align="bottom-start"
-          caret
-          open={nodeSelectorOpen}
-          onRequestClose={() => setNodeSelectorOpen(false)}
-        >
-          <NodeIdentityCard
-            node={displayedNode ?? null}
-            isOpen={nodeSelectorOpen}
-            onToggle={() => setNodeSelectorOpen((current) => !current)}
-            loadingLabel={nodeTopologyQuery.isLoading ? 'LOADING' : 'UNAVAILABLE'}
-          />
-          <PopoverContent className="global-tree-nav__node-popover">
-            {displayedNode ? <NodeMiniCard node={displayedNode} pageKey={pageKey} onClose={() => setNodeSelectorOpen(false)} /> : null}
-            <div className="global-tree-nav__node-switcher">
-              <p className="global-tree-nav__node-switcher-title">Switch all pages to</p>
-              <div className="global-tree-nav__node-switcher-list">
-                {sortedNodes.map((node) => (
-                  <button
-                    key={node.node_id}
-                    type="button"
-                    className={joinClasses(
-                      'global-tree-nav__node-switcher-button',
-                      node.node_id === viewedNodeId && 'is-active',
-                    )}
-                    onClick={() => {
-                      applyViewedNodeScopeToAllPages(setViewedNode, node.node_id)
-                      const nextSearch = writeViewedHostToSearch(location.search, node.node_id)
-                      if (nextSearch !== location.search) {
-                        navigate({ pathname: location.pathname, search: nextSearch }, { replace: true })
-                      }
-                      setNodeSelectorOpen(false)
-                    }}
-                  >
-                    <span>{formatNodeDisplayName(node)}</span>
-                    <span>{getNodeStatusLabel(node.status)}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </PopoverContent>
-        </Popover>
+        <NodeIdentityIcon
+          node={displayedNode ?? null}
+          loadingLabel={nodeTopologyQuery.isLoading ? 'LOADING' : 'UNAVAILABLE'}
+        />
 
         <div className="global-tree-nav__quick-actions" role="group" aria-label="System actions">
           <Tooltip label="Refresh" align="bottom" enterDelayMs={300}>

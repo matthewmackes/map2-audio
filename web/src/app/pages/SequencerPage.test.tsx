@@ -602,7 +602,7 @@ describe('SequencerPage', () => {
 
     await waitFor(() => expect(mockImportFromDrums).toHaveBeenCalledWith({ instanceId: 42, pluginPosition: 9 }))
     await waitFor(() => expect(screen.getByTestId('location-probe')).toHaveTextContent('/sequencer?instance_id=42&plugin_position=9&section=performance'))
-    expect(screen.getByTestId('location-probe')).not.toHaveTextContent('import_source')
+    await waitFor(() => expect(screen.getByTestId('location-probe')).not.toHaveTextContent('import_source'))
     expect(mockImportFromSynthForge).not.toHaveBeenCalled()
   })
 
