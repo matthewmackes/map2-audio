@@ -361,7 +361,7 @@ describe('Desktop experience integration', () => {
 
     expect(await screen.findByTestId('home-shell')).toBeInTheDocument()
     const navTree = screen.getByLabelText('Global navigation')
-    fireEvent.click(within(navTree).getByText('Snapshot Editor'))
+    fireEvent.click(within(navTree).getAllByText('Snapshot Editor')[0])
 
     await waitFor(() => {
       expect(screen.getByTestId('route-probe')).toHaveTextContent('/snapshot-editor')
@@ -385,7 +385,7 @@ describe('Desktop experience integration', () => {
 
     const navTree = screen.getByLabelText('Global navigation')
     expect(navTree).toBeInTheDocument()
-    fireEvent.click(within(navTree).getByText('Snapshot Editor'))
+    fireEvent.click(within(navTree).getAllByText('Snapshot Editor')[0])
 
     await waitFor(() => {
       expect(screen.getByTestId('route-probe')).toHaveTextContent('/snapshot-editor')

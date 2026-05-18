@@ -251,6 +251,11 @@ const PREFETCH_RULES: PrefetchRule[] = [
     prefix: '/welcome',
     loaders: [() => import('./pages/WelcomePage')],
   },
+  // T2521-6 — SonoBus services region (Overview + Connections + Routing).
+  {
+    prefix: '/sonobus',
+    loaders: [() => import('./pages/SonoBusServicesShell')],
+  },
 ]
 
 // Build a sorted view (longest prefix first) once at module load so each

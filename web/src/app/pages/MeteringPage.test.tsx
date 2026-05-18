@@ -4,7 +4,6 @@ import { render, screen } from '@testing-library/react'
 import { MeteringPage } from './MeteringPage'
 
 const mockUseCluster = jest.fn()
-const mockUseIsMobile = jest.fn()
 const mockUseWebSocketTopic = jest.fn()
 
 function mockNodePanel(testId: string) {
@@ -15,10 +14,6 @@ function mockNodePanel(testId: string) {
 
 jest.mock('../contexts/useCluster', () => ({
   useCluster: () => mockUseCluster(),
-}))
-
-jest.mock('../hooks/useIsMobile', () => ({
-  useIsMobile: () => mockUseIsMobile(),
 }))
 
 jest.mock('../../map2/hooks/useWebSocket', () => ({
@@ -60,10 +55,8 @@ jest.mock('../components/Visualizations/ClusterMeteringStrip', () => ({
 describe('MeteringPage cluster integration', () => {
   beforeEach(() => {
     mockUseCluster.mockReset()
-    mockUseIsMobile.mockReset()
     mockUseWebSocketTopic.mockReset()
 
-    mockUseIsMobile.mockReturnValue(false)
     mockUseCluster.mockReturnValue({
       activeNodeId: 'node-b',
       localNodeId: 'node-local',

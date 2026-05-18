@@ -493,58 +493,80 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
       <div
         class="global-tree-nav__scroll"
       >
-        <button
-          class="global-tree-nav__home-row is-active"
-          type="button"
-        >
-          <span
-            aria-hidden="true"
-            class="global-tree-nav__dense-spacer"
-          />
-          <svg
-            aria-hidden="true"
-            class="global-tree-nav__dense-icon"
-            fill="currentColor"
-            focusable="false"
-            height="14"
-            preserveAspectRatio="xMidYMid meet"
-            viewBox="0 0 32 32"
-            width="14"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M16.6123,2.2138a1.01,1.01,0,0,0-1.2427,0L1,13.4194l1.2427,1.5717L4,13.6209V26a2.0041,2.0041,0,0,0,2,2H26a2.0037,2.0037,0,0,0,2-2V13.63L29.7573,15,31,13.4282ZM18,26H14V18h4Zm2,0V18a2.0023,2.0023,0,0,0-2-2H14a2.002,2.002,0,0,0-2,2v8H6V12.0615l10-7.79,10,7.8005V26Z"
-            />
-          </svg>
-          <span
-            class="global-tree-nav__dense-label"
-          >
-            Home
-          </span>
-        </button>
         <div
-          class="global-tree-nav__hero-stack"
+          aria-label="Primary destinations"
+          class="global-tree-nav__icon-row"
+          role="group"
         >
-          <div
-            class="global-tree-nav__hero"
+          <span
+            class="cds--popover-container cds--popover--caret cds--popover--high-contrast cds--popover--bottom cds--tooltip"
           >
-            <button
-              aria-expanded="true"
-              class="global-tree-nav__hero-header"
-              type="button"
+            <div
+              class="cds--tooltip-trigger__wrapper"
             >
-              <span
-                aria-hidden="true"
-                class="global-tree-nav__hero-icon-tile"
+              <button
+                aria-label="Home"
+                aria-labelledby="tooltip-_r_c_"
+                class="global-tree-nav__icon-button is-active"
+                type="button"
               >
                 <svg
                   aria-hidden="true"
                   fill="currentColor"
                   focusable="false"
-                  height="16"
+                  height="20"
                   preserveAspectRatio="xMidYMid meet"
                   viewBox="0 0 32 32"
-                  width="16"
+                  width="20"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M16.6123,2.2138a1.01,1.01,0,0,0-1.2427,0L1,13.4194l1.2427,1.5717L4,13.6209V26a2.0041,2.0041,0,0,0,2,2H26a2.0037,2.0037,0,0,0,2-2V13.63L29.7573,15,31,13.4282ZM18,26H14V18h4Zm2,0V18a2.0023,2.0023,0,0,0-2-2H14a2.002,2.002,0,0,0-2,2v8H6V12.0615l10-7.79,10,7.8005V26Z"
+                  />
+                </svg>
+                <span
+                  class="global-tree-nav__icon-button-label"
+                >
+                  Home
+                </span>
+              </button>
+            </div>
+            <span
+              aria-hidden="true"
+              class="cds--popover"
+              id="tooltip-_r_c_"
+              role="tooltip"
+            >
+              <span
+                class="cds--popover-content cds--tooltip-content"
+              >
+                Home
+              </span>
+              <span
+                class="cds--popover-caret"
+              />
+            </span>
+          </span>
+          <span
+            class="cds--popover-container cds--popover--caret cds--popover--high-contrast cds--popover--bottom cds--tooltip"
+          >
+            <div
+              class="cds--tooltip-trigger__wrapper"
+            >
+              <button
+                aria-label="Snapshot Editor"
+                aria-labelledby="tooltip-_r_e_"
+                class="global-tree-nav__icon-button"
+                type="button"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="currentColor"
+                  focusable="false"
+                  height="20"
+                  preserveAspectRatio="xMidYMid meet"
+                  viewBox="0 0 32 32"
+                  width="20"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
@@ -560,71 +582,54 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                     d="M28,3H4c-1.1028,0-2,.8975-2,2V21c0,1.1025,.8972,2,2,2H12v4h-4v2h12v-8H4V5H28v14h2V5c0-1.1025-.8972-2-2-2Zm-10,24h-4v-4h4v4Z"
                   />
                 </svg>
-              </span>
-              <span
-                class="global-tree-nav__hero-text"
-              >
                 <span
-                  class="global-tree-nav__hero-title-row"
-                >
-                  <span
-                    class="global-tree-nav__hero-title"
-                  >
-                    Snapshot Editor
-                  </span>
-                  <span
-                    class="global-tree-nav__hero-badge"
-                  >
-                    Signal Flow
-                  </span>
-                </span>
-                <span
-                  class="global-tree-nav__hero-status is-live"
-                >
-                  <span
-                    aria-hidden="true"
-                    class="global-tree-nav__hero-status-dot"
-                  />
-                  Live
-                </span>
-              </span>
-              <svg
-                aria-hidden="true"
-                class="global-tree-nav__hero-caret is-open"
-                fill="currentColor"
-                focusable="false"
-                height="12"
-                preserveAspectRatio="xMidYMid meet"
-                viewBox="0 0 32 32"
-                width="12"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M12 8 22 16 12 24z"
+                  aria-label="Live"
+                  class="global-tree-nav__icon-button-status is-live"
+                  title="Live"
                 />
-              </svg>
-            </button>
-          </div>
-          <div
-            class="global-tree-nav__hero"
-          >
-            <button
-              aria-expanded="true"
-              class="global-tree-nav__hero-header"
-              type="button"
+                <span
+                  class="global-tree-nav__icon-button-label"
+                >
+                  Snapshot Editor
+                </span>
+              </button>
+            </div>
+            <span
+              aria-hidden="true"
+              class="cds--popover"
+              id="tooltip-_r_e_"
+              role="tooltip"
             >
               <span
-                aria-hidden="true"
-                class="global-tree-nav__hero-icon-tile"
+                class="cds--popover-content cds--tooltip-content"
+              >
+                Snapshot Editor
+              </span>
+              <span
+                class="cds--popover-caret"
+              />
+            </span>
+          </span>
+          <span
+            class="cds--popover-container cds--popover--caret cds--popover--high-contrast cds--popover--bottom cds--tooltip"
+          >
+            <div
+              class="cds--tooltip-trigger__wrapper"
+            >
+              <button
+                aria-label="Sequencer"
+                aria-labelledby="tooltip-_r_g_"
+                class="global-tree-nav__icon-button"
+                type="button"
               >
                 <svg
                   aria-hidden="true"
                   fill="currentColor"
                   focusable="false"
-                  height="16"
+                  height="20"
                   preserveAspectRatio="xMidYMid meet"
                   viewBox="0 0 32 32"
-                  width="16"
+                  width="20"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
@@ -640,126 +645,29 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                     d="M26,18H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,26,18Zm0,8H20V20h6Z"
                   />
                 </svg>
-              </span>
-              <span
-                class="global-tree-nav__hero-text"
-              >
                 <span
-                  class="global-tree-nav__hero-title-row"
+                  class="global-tree-nav__icon-button-label"
                 >
-                  <span
-                    class="global-tree-nav__hero-title"
-                  >
-                    Sequencer
-                  </span>
+                  Sequencer
                 </span>
-                <span
-                  class="global-tree-nav__hero-subtitle"
-                >
-                  13
-                   
-                  sections
-                </span>
-              </span>
-              <svg
-                aria-hidden="true"
-                class="global-tree-nav__hero-caret is-open"
-                fill="currentColor"
-                focusable="false"
-                height="12"
-                preserveAspectRatio="xMidYMid meet"
-                viewBox="0 0 32 32"
-                width="12"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M12 8 22 16 12 24z"
-                />
-              </svg>
-            </button>
-            <div
-              class="global-tree-nav__hero-body"
-            >
-              <button
-                class="global-tree-nav__hero-child"
-                type="button"
-              >
-                Performance
-              </button>
-              <button
-                class="global-tree-nav__hero-child"
-                type="button"
-              >
-                Console
-              </button>
-              <button
-                class="global-tree-nav__hero-child"
-                type="button"
-              >
-                Step
-              </button>
-              <button
-                class="global-tree-nav__hero-child"
-                type="button"
-              >
-                Split
-              </button>
-              <button
-                class="global-tree-nav__hero-child"
-                type="button"
-              >
-                Perform
-              </button>
-              <button
-                class="global-tree-nav__hero-child"
-                type="button"
-              >
-                Layers
-              </button>
-              <button
-                class="global-tree-nav__hero-child"
-                type="button"
-              >
-                Sequence
-              </button>
-              <button
-                class="global-tree-nav__hero-child"
-                type="button"
-              >
-                Routing
-              </button>
-              <button
-                class="global-tree-nav__hero-child"
-                type="button"
-              >
-                Inputs
-              </button>
-              <button
-                class="global-tree-nav__hero-child"
-                type="button"
-              >
-                Library
-              </button>
-              <button
-                class="global-tree-nav__hero-child"
-                type="button"
-              >
-                Diagnostics
-              </button>
-              <button
-                class="global-tree-nav__hero-child"
-                type="button"
-              >
-                Session Media
-              </button>
-              <button
-                class="global-tree-nav__hero-child"
-                type="button"
-              >
-                Practice Coach
               </button>
             </div>
-          </div>
+            <span
+              aria-hidden="true"
+              class="cds--popover"
+              id="tooltip-_r_g_"
+              role="tooltip"
+            >
+              <span
+                class="cds--popover-content cds--tooltip-content"
+              >
+                Sequencer
+              </span>
+              <span
+                class="cds--popover-caret"
+              />
+            </span>
+          </span>
         </div>
         <div
           class="global-tree-nav__section-bar is-services"
@@ -782,14 +690,14 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
           class="global-tree-nav__dense-group"
         >
           <button
-            aria-expanded="true"
+            aria-expanded="false"
             class="global-tree-nav__dense-row"
             style="padding-left: 16px;"
             type="button"
           >
             <svg
               aria-hidden="true"
-              class="global-tree-nav__dense-caret is-open"
+              class="global-tree-nav__dense-caret"
               fill="currentColor"
               focusable="false"
               height="9"
@@ -823,165 +731,6 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
               MIDI Services
             </span>
           </button>
-          <div
-            class="global-tree-nav__dense-children"
-            style="padding-left: 20px;"
-          >
-            <div
-              aria-hidden="true"
-              class="global-tree-nav__dense-indent-guide"
-            />
-            <button
-              class="global-tree-nav__dense-row"
-              style="padding-left: 32px;"
-              type="button"
-            >
-              <span
-                aria-hidden="true"
-                class="global-tree-nav__dense-spacer"
-              />
-              <span
-                class="global-tree-nav__dense-label"
-              >
-                Connections
-              </span>
-            </button>
-            <button
-              class="global-tree-nav__dense-row"
-              style="padding-left: 32px;"
-              type="button"
-            >
-              <span
-                aria-hidden="true"
-                class="global-tree-nav__dense-spacer"
-              />
-              <span
-                class="global-tree-nav__dense-label"
-              >
-                Devices
-              </span>
-            </button>
-            <button
-              class="global-tree-nav__dense-row"
-              style="padding-left: 32px;"
-              type="button"
-            >
-              <span
-                aria-hidden="true"
-                class="global-tree-nav__dense-spacer"
-              />
-              <span
-                class="global-tree-nav__dense-label"
-              >
-                Bindings
-              </span>
-            </button>
-            <button
-              class="global-tree-nav__dense-row"
-              style="padding-left: 32px;"
-              type="button"
-            >
-              <span
-                aria-hidden="true"
-                class="global-tree-nav__dense-spacer"
-              />
-              <span
-                class="global-tree-nav__dense-label"
-              >
-                Routing
-              </span>
-            </button>
-            <button
-              class="global-tree-nav__dense-row"
-              style="padding-left: 32px;"
-              type="button"
-            >
-              <span
-                aria-hidden="true"
-                class="global-tree-nav__dense-spacer"
-              />
-              <span
-                class="global-tree-nav__dense-label"
-              >
-                Presets
-              </span>
-            </button>
-            <button
-              class="global-tree-nav__dense-row"
-              style="padding-left: 32px;"
-              type="button"
-            >
-              <span
-                aria-hidden="true"
-                class="global-tree-nav__dense-spacer"
-              />
-              <span
-                class="global-tree-nav__dense-label"
-              >
-                Transport
-              </span>
-            </button>
-            <button
-              class="global-tree-nav__dense-row"
-              style="padding-left: 32px;"
-              type="button"
-            >
-              <span
-                aria-hidden="true"
-                class="global-tree-nav__dense-spacer"
-              />
-              <span
-                class="global-tree-nav__dense-label"
-              >
-                Events
-              </span>
-            </button>
-            <button
-              class="global-tree-nav__dense-row"
-              style="padding-left: 32px;"
-              type="button"
-            >
-              <span
-                aria-hidden="true"
-                class="global-tree-nav__dense-spacer"
-              />
-              <span
-                class="global-tree-nav__dense-label"
-              >
-                Processing
-              </span>
-            </button>
-            <button
-              class="global-tree-nav__dense-row"
-              style="padding-left: 32px;"
-              type="button"
-            >
-              <span
-                aria-hidden="true"
-                class="global-tree-nav__dense-spacer"
-              />
-              <span
-                class="global-tree-nav__dense-label"
-              >
-                Network
-              </span>
-            </button>
-            <button
-              class="global-tree-nav__dense-row"
-              style="padding-left: 32px;"
-              type="button"
-            >
-              <span
-                aria-hidden="true"
-                class="global-tree-nav__dense-spacer"
-              />
-              <span
-                class="global-tree-nav__dense-label"
-              >
-                Lab
-              </span>
-            </button>
-          </div>
           <button
             aria-expanded="false"
             class="global-tree-nav__dense-row"
@@ -1022,6 +771,36 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
               class="global-tree-nav__dense-label"
             >
               AVB
+            </span>
+          </button>
+          <button
+            class="global-tree-nav__dense-row"
+            style="padding-left: 16px;"
+            type="button"
+          >
+            <span
+              aria-hidden="true"
+              class="global-tree-nav__dense-spacer"
+            />
+            <svg
+              aria-hidden="true"
+              class="global-tree-nav__dense-icon"
+              fill="currentColor"
+              focusable="false"
+              height="14"
+              preserveAspectRatio="xMidYMid meet"
+              viewBox="0 0 32 32"
+              width="14"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M26,14a2,2,0,0,0,2-2V6a2,2,0,0,0-2-2H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h2v4.1A5,5,0,0,0,18.1,22H14V20a2,2,0,0,0-2-2H10V13.9a5,5,0,1,0-2,0V18H6a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V24h4.1A5,5,0,1,0,24,18.1V14ZM6,9a3,3,0,1,1,3,3A3,3,0,0,1,6,9Zm6,17H6V20h6Zm14-3a3,3,0,1,1-3-3A3,3,0,0,1,26,23ZM20,6h6v6H20Z"
+              />
+            </svg>
+            <span
+              class="global-tree-nav__dense-label"
+            >
+              SonoBus
             </span>
           </button>
           <button
@@ -1439,7 +1218,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                     >
                       <button
                         aria-label="Close"
-                        aria-labelledby="tooltip-_r_e_"
+                        aria-labelledby="tooltip-_r_k_"
                         class="cds--modal-close cds--btn cds--btn--primary cds--btn--icon-only"
                         type="button"
                       >
@@ -1463,7 +1242,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                     <span
                       aria-hidden="false"
                       class="cds--popover"
-                      id="tooltip-_r_e_"
+                      id="tooltip-_r_k_"
                       role="tooltip"
                     >
                       <span
@@ -3435,6 +3214,33 @@ python -m tui.node_console
                     Where the code lives.
                   </h2>
                   <div
+                    class="map2x-guide-section__meta"
+                  >
+                    <span
+                      class="map2x-tag"
+                    >
+                      v
+                      0000000000000001
+                    </span>
+                    <span
+                      class="map2x-tag"
+                    >
+                      00000000
+                    </span>
+                    <span
+                      class="map2x-tag map2x-tag--accent"
+                    >
+                      AGPL-3.0-only
+                    </span>
+                    <span
+                      class="map2x-tag"
+                      title="Currently deployed git commit"
+                    >
+                      commit 
+                      —
+                    </span>
+                  </div>
+                  <div
                     class="map2x-panel"
                   >
                     <div
@@ -3678,13 +3484,13 @@ python -m tui.node_console
                     >
                       <h2
                         class="cds--data-table-header__title"
-                        id="tc-_r_j_-title"
+                        id="tc-_r_p_-title"
                       >
                         Operations table
                       </h2>
                       <p
                         class="cds--data-table-header__description"
-                        id="tc-_r_j_-description"
+                        id="tc-_r_p_-description"
                       >
                         All live home telemetry collapsed into one searchable Carbon table. Select a row to open the owning workspace.
                       </p>
@@ -3725,15 +3531,15 @@ python -m tui.node_console
                         </div>
                         <label
                           class="cds--label"
-                          for="table-toolbar-search-_r_k_"
-                          id="table-toolbar-search-_r_k_-search"
+                          for="table-toolbar-search-_r_q_"
+                          id="table-toolbar-search-_r_q_-search"
                         >
                           Filter table
                         </label>
                         <input
                           autocomplete="off"
                           class="cds--search-input"
-                          id="table-toolbar-search-_r_k_"
+                          id="table-toolbar-search-_r_q_"
                           placeholder="Filter table"
                           tabindex="0"
                           type="search"
@@ -3763,7 +3569,7 @@ python -m tui.node_console
                       </div>
                       <div
                         class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--cool-gray"
-                        id="tag-id-_r_m_"
+                        id="tag-id-_r_s_"
                       >
                         <span
                           class="cds--tag__label"
@@ -3776,7 +3582,7 @@ python -m tui.node_console
                       </div>
                       <div
                         class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--cool-gray"
-                        id="tag-id-_r_n_"
+                        id="tag-id-_r_t_"
                       >
                         <span
                           class="cds--tag__label"
@@ -3789,7 +3595,7 @@ python -m tui.node_console
                       </div>
                       <div
                         class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--green"
-                        id="tag-id-_r_o_"
+                        id="tag-id-_r_u_"
                       >
                         <span
                           class="cds--tag__label"
@@ -3801,7 +3607,7 @@ python -m tui.node_console
                       </div>
                       <div
                         class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--warm-gray"
-                        id="tag-id-_r_p_"
+                        id="tag-id-_r_v_"
                       >
                         <span
                           class="cds--tag__label"
@@ -3820,9 +3626,9 @@ python -m tui.node_console
                       class="cds--data-table-content"
                     >
                       <table
-                        aria-describedby="tc-_r_j_-description"
+                        aria-describedby="tc-_r_p_-description"
                         aria-label="Home telemetry table"
-                        aria-labelledby="tc-_r_j_-title"
+                        aria-labelledby="tc-_r_p_-title"
                         class="cds--data-table hp2-home-shell__table cds--data-table--sm cds--data-table--sort cds--data-table--zebra cds--data-table--visible-overflow-menu"
                       >
                         <thead>
@@ -3834,12 +3640,12 @@ python -m tui.node_console
                             >
                               <div
                                 class="cds--table-sort__description"
-                                id="table-sort-_r_q_"
+                                id="table-sort-_r_10_"
                               >
                                 Click to sort rows by Surface header in ascending order
                               </div>
                               <button
-                                aria-describedby="table-sort-_r_q_"
+                                aria-describedby="table-sort-_r_10_"
                                 class="cds--table-sort"
                                 type="button"
                               >
@@ -3897,12 +3703,12 @@ python -m tui.node_console
                             >
                               <div
                                 class="cds--table-sort__description"
-                                id="table-sort-_r_r_"
+                                id="table-sort-_r_11_"
                               >
                                 Click to sort rows by Signal header in ascending order
                               </div>
                               <button
-                                aria-describedby="table-sort-_r_r_"
+                                aria-describedby="table-sort-_r_11_"
                                 class="cds--table-sort"
                                 type="button"
                               >
@@ -3960,12 +3766,12 @@ python -m tui.node_console
                             >
                               <div
                                 class="cds--table-sort__description"
-                                id="table-sort-_r_s_"
+                                id="table-sort-_r_12_"
                               >
                                 Click to sort rows by Current state header in ascending order
                               </div>
                               <button
-                                aria-describedby="table-sort-_r_s_"
+                                aria-describedby="table-sort-_r_12_"
                                 class="cds--table-sort"
                                 type="button"
                               >
@@ -4023,12 +3829,12 @@ python -m tui.node_console
                             >
                               <div
                                 class="cds--table-sort__description"
-                                id="table-sort-_r_t_"
+                                id="table-sort-_r_13_"
                               >
                                 Click to sort rows by Scope header in ascending order
                               </div>
                               <button
-                                aria-describedby="table-sort-_r_t_"
+                                aria-describedby="table-sort-_r_13_"
                                 class="cds--table-sort"
                                 type="button"
                               >
@@ -4086,12 +3892,12 @@ python -m tui.node_console
                             >
                               <div
                                 class="cds--table-sort__description"
-                                id="table-sort-_r_u_"
+                                id="table-sort-_r_14_"
                               >
                                 Click to sort rows by Detail header in ascending order
                               </div>
                               <button
-                                aria-describedby="table-sort-_r_u_"
+                                aria-describedby="table-sort-_r_14_"
                                 class="cds--table-sort"
                                 type="button"
                               >
@@ -4149,12 +3955,12 @@ python -m tui.node_console
                             >
                               <div
                                 class="cds--table-sort__description"
-                                id="table-sort-_r_v_"
+                                id="table-sort-_r_15_"
                               >
                                 Click to sort rows by Workspace header in ascending order
                               </div>
                               <button
-                                aria-describedby="table-sort-_r_v_"
+                                aria-describedby="table-sort-_r_15_"
                                 class="cds--table-sort"
                                 type="button"
                               >
@@ -4219,7 +4025,7 @@ python -m tui.node_console
                             <td>
                               <div
                                 class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--cool-gray"
-                                id="tag-id-_r_10_"
+                                id="tag-id-_r_16_"
                               >
                                 <span
                                   class="cds--tag__label"
@@ -4248,7 +4054,7 @@ python -m tui.node_console
                                 </span>
                                 <div
                                   class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--green"
-                                  id="tag-id-_r_11_"
+                                  id="tag-id-_r_17_"
                                 >
                                   <span
                                     class="cds--tag__label"
@@ -4334,7 +4140,7 @@ python -m tui.node_console
               >
                 <button
                   aria-label="Close"
-                  aria-labelledby="tooltip-_r_14_"
+                  aria-labelledby="tooltip-_r_1a_"
                   class="cds--modal-close cds--btn cds--btn--primary cds--btn--icon-only"
                   type="button"
                 >
@@ -4358,7 +4164,7 @@ python -m tui.node_console
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_14_"
+                id="tooltip-_r_1a_"
                 role="tooltip"
               >
                 <span
@@ -4421,13 +4227,13 @@ python -m tui.node_console
             Cancel
           </button>
           <button
-            aria-describedby="danger-description-_r_18_"
+            aria-describedby="danger-description-_r_1e_"
             class="cds--btn cds--btn--danger"
             type="button"
           >
             <span
               class="cds--visually-hidden"
-              id="danger-description-_r_18_"
+              id="danger-description-_r_1e_"
             >
               danger
             </span>
@@ -4487,7 +4293,7 @@ python -m tui.node_console
               >
                 <button
                   aria-label="Close"
-                  aria-labelledby="tooltip-_r_1b_"
+                  aria-labelledby="tooltip-_r_1h_"
                   class="cds--modal-close cds--btn cds--btn--primary cds--btn--icon-only"
                   type="button"
                 >
@@ -4511,7 +4317,7 @@ python -m tui.node_console
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_1b_"
+                id="tooltip-_r_1h_"
                 role="tooltip"
               >
                 <span
@@ -4761,7 +4567,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                   </div>
                   <div
                     class="cds--tag cds--tag--cool-gray"
-                    id="tag-id-_r_1h_"
+                    id="tag-id-_r_1n_"
                   >
                     <span
                       class="cds--tag__label"
@@ -4787,7 +4593,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                   </span>
                   <div
                     class="cds--tag cds--tag--green"
-                    id="tag-id-_r_1i_"
+                    id="tag-id-_r_1o_"
                   >
                     <span
                       class="cds--tag__label"
@@ -4871,7 +4677,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
             >
               <button
                 aria-label="Refresh"
-                aria-labelledby="tooltip-_r_1k_"
+                aria-labelledby="tooltip-_r_1q_"
                 class="global-tree-nav__quick-action global-tree-nav__quick-action--refresh"
                 type="button"
               >
@@ -4897,7 +4703,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
             <span
               aria-hidden="true"
               class="cds--popover"
-              id="tooltip-_r_1k_"
+              id="tooltip-_r_1q_"
               role="tooltip"
             >
               <span
@@ -4918,7 +4724,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
             >
               <button
                 aria-label="Restart"
-                aria-labelledby="tooltip-_r_1m_"
+                aria-labelledby="tooltip-_r_1s_"
                 class="global-tree-nav__quick-action global-tree-nav__quick-action--restart"
                 type="button"
               >
@@ -4941,7 +4747,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
             <span
               aria-hidden="true"
               class="cds--popover"
-              id="tooltip-_r_1m_"
+              id="tooltip-_r_1s_"
               role="tooltip"
             >
               <span
@@ -4962,7 +4768,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
             >
               <button
                 aria-label="Log Out"
-                aria-labelledby="tooltip-_r_1o_"
+                aria-labelledby="tooltip-_r_1u_"
                 class="global-tree-nav__quick-action global-tree-nav__quick-action--logout"
                 type="button"
               >
@@ -4988,7 +4794,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
             <span
               aria-hidden="true"
               class="cds--popover"
-              id="tooltip-_r_1o_"
+              id="tooltip-_r_1u_"
               role="tooltip"
             >
               <span
@@ -5009,7 +4815,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
             >
               <button
                 aria-label="Full system reboot"
-                aria-labelledby="tooltip-_r_1q_"
+                aria-labelledby="tooltip-_r_20_"
                 class="global-tree-nav__quick-action global-tree-nav__quick-action--reboot"
                 type="button"
               >
@@ -5035,7 +4841,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
             <span
               aria-hidden="true"
               class="cds--popover"
-              id="tooltip-_r_1q_"
+              id="tooltip-_r_20_"
               role="tooltip"
             >
               <span
@@ -5053,58 +4859,80 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
       <div
         class="global-tree-nav__scroll"
       >
-        <button
-          class="global-tree-nav__home-row is-active"
-          type="button"
-        >
-          <span
-            aria-hidden="true"
-            class="global-tree-nav__dense-spacer"
-          />
-          <svg
-            aria-hidden="true"
-            class="global-tree-nav__dense-icon"
-            fill="currentColor"
-            focusable="false"
-            height="14"
-            preserveAspectRatio="xMidYMid meet"
-            viewBox="0 0 32 32"
-            width="14"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M16.6123,2.2138a1.01,1.01,0,0,0-1.2427,0L1,13.4194l1.2427,1.5717L4,13.6209V26a2.0041,2.0041,0,0,0,2,2H26a2.0037,2.0037,0,0,0,2-2V13.63L29.7573,15,31,13.4282ZM18,26H14V18h4Zm2,0V18a2.0023,2.0023,0,0,0-2-2H14a2.002,2.002,0,0,0-2,2v8H6V12.0615l10-7.79,10,7.8005V26Z"
-            />
-          </svg>
-          <span
-            class="global-tree-nav__dense-label"
-          >
-            Home
-          </span>
-        </button>
         <div
-          class="global-tree-nav__hero-stack"
+          aria-label="Primary destinations"
+          class="global-tree-nav__icon-row"
+          role="group"
         >
-          <div
-            class="global-tree-nav__hero"
+          <span
+            class="cds--popover-container cds--popover--caret cds--popover--high-contrast cds--popover--bottom cds--tooltip"
           >
-            <button
-              aria-expanded="true"
-              class="global-tree-nav__hero-header"
-              type="button"
+            <div
+              class="cds--tooltip-trigger__wrapper"
             >
-              <span
-                aria-hidden="true"
-                class="global-tree-nav__hero-icon-tile"
+              <button
+                aria-label="Home"
+                aria-labelledby="tooltip-_r_22_"
+                class="global-tree-nav__icon-button is-active"
+                type="button"
               >
                 <svg
                   aria-hidden="true"
                   fill="currentColor"
                   focusable="false"
-                  height="16"
+                  height="20"
                   preserveAspectRatio="xMidYMid meet"
                   viewBox="0 0 32 32"
-                  width="16"
+                  width="20"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M16.6123,2.2138a1.01,1.01,0,0,0-1.2427,0L1,13.4194l1.2427,1.5717L4,13.6209V26a2.0041,2.0041,0,0,0,2,2H26a2.0037,2.0037,0,0,0,2-2V13.63L29.7573,15,31,13.4282ZM18,26H14V18h4Zm2,0V18a2.0023,2.0023,0,0,0-2-2H14a2.002,2.002,0,0,0-2,2v8H6V12.0615l10-7.79,10,7.8005V26Z"
+                  />
+                </svg>
+                <span
+                  class="global-tree-nav__icon-button-label"
+                >
+                  Home
+                </span>
+              </button>
+            </div>
+            <span
+              aria-hidden="true"
+              class="cds--popover"
+              id="tooltip-_r_22_"
+              role="tooltip"
+            >
+              <span
+                class="cds--popover-content cds--tooltip-content"
+              >
+                Home
+              </span>
+              <span
+                class="cds--popover-caret"
+              />
+            </span>
+          </span>
+          <span
+            class="cds--popover-container cds--popover--caret cds--popover--high-contrast cds--popover--bottom cds--tooltip"
+          >
+            <div
+              class="cds--tooltip-trigger__wrapper"
+            >
+              <button
+                aria-label="Snapshot Editor"
+                aria-labelledby="tooltip-_r_24_"
+                class="global-tree-nav__icon-button"
+                type="button"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="currentColor"
+                  focusable="false"
+                  height="20"
+                  preserveAspectRatio="xMidYMid meet"
+                  viewBox="0 0 32 32"
+                  width="20"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
@@ -5120,71 +4948,54 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                     d="M28,3H4c-1.1028,0-2,.8975-2,2V21c0,1.1025,.8972,2,2,2H12v4h-4v2h12v-8H4V5H28v14h2V5c0-1.1025-.8972-2-2-2Zm-10,24h-4v-4h4v4Z"
                   />
                 </svg>
-              </span>
-              <span
-                class="global-tree-nav__hero-text"
-              >
                 <span
-                  class="global-tree-nav__hero-title-row"
-                >
-                  <span
-                    class="global-tree-nav__hero-title"
-                  >
-                    Snapshot Editor
-                  </span>
-                  <span
-                    class="global-tree-nav__hero-badge"
-                  >
-                    Signal Flow
-                  </span>
-                </span>
-                <span
-                  class="global-tree-nav__hero-status is-live"
-                >
-                  <span
-                    aria-hidden="true"
-                    class="global-tree-nav__hero-status-dot"
-                  />
-                  Live
-                </span>
-              </span>
-              <svg
-                aria-hidden="true"
-                class="global-tree-nav__hero-caret is-open"
-                fill="currentColor"
-                focusable="false"
-                height="12"
-                preserveAspectRatio="xMidYMid meet"
-                viewBox="0 0 32 32"
-                width="12"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M12 8 22 16 12 24z"
+                  aria-label="Live"
+                  class="global-tree-nav__icon-button-status is-live"
+                  title="Live"
                 />
-              </svg>
-            </button>
-          </div>
-          <div
-            class="global-tree-nav__hero"
-          >
-            <button
-              aria-expanded="true"
-              class="global-tree-nav__hero-header"
-              type="button"
+                <span
+                  class="global-tree-nav__icon-button-label"
+                >
+                  Snapshot Editor
+                </span>
+              </button>
+            </div>
+            <span
+              aria-hidden="true"
+              class="cds--popover"
+              id="tooltip-_r_24_"
+              role="tooltip"
             >
               <span
-                aria-hidden="true"
-                class="global-tree-nav__hero-icon-tile"
+                class="cds--popover-content cds--tooltip-content"
+              >
+                Snapshot Editor
+              </span>
+              <span
+                class="cds--popover-caret"
+              />
+            </span>
+          </span>
+          <span
+            class="cds--popover-container cds--popover--caret cds--popover--high-contrast cds--popover--bottom cds--tooltip"
+          >
+            <div
+              class="cds--tooltip-trigger__wrapper"
+            >
+              <button
+                aria-label="Sequencer"
+                aria-labelledby="tooltip-_r_26_"
+                class="global-tree-nav__icon-button"
+                type="button"
               >
                 <svg
                   aria-hidden="true"
                   fill="currentColor"
                   focusable="false"
-                  height="16"
+                  height="20"
                   preserveAspectRatio="xMidYMid meet"
                   viewBox="0 0 32 32"
-                  width="16"
+                  width="20"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
@@ -5200,126 +5011,29 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                     d="M26,18H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,26,18Zm0,8H20V20h6Z"
                   />
                 </svg>
-              </span>
-              <span
-                class="global-tree-nav__hero-text"
-              >
                 <span
-                  class="global-tree-nav__hero-title-row"
+                  class="global-tree-nav__icon-button-label"
                 >
-                  <span
-                    class="global-tree-nav__hero-title"
-                  >
-                    Sequencer
-                  </span>
+                  Sequencer
                 </span>
-                <span
-                  class="global-tree-nav__hero-subtitle"
-                >
-                  13
-                   
-                  sections
-                </span>
-              </span>
-              <svg
-                aria-hidden="true"
-                class="global-tree-nav__hero-caret is-open"
-                fill="currentColor"
-                focusable="false"
-                height="12"
-                preserveAspectRatio="xMidYMid meet"
-                viewBox="0 0 32 32"
-                width="12"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M12 8 22 16 12 24z"
-                />
-              </svg>
-            </button>
-            <div
-              class="global-tree-nav__hero-body"
-            >
-              <button
-                class="global-tree-nav__hero-child"
-                type="button"
-              >
-                Performance
-              </button>
-              <button
-                class="global-tree-nav__hero-child"
-                type="button"
-              >
-                Console
-              </button>
-              <button
-                class="global-tree-nav__hero-child"
-                type="button"
-              >
-                Step
-              </button>
-              <button
-                class="global-tree-nav__hero-child"
-                type="button"
-              >
-                Split
-              </button>
-              <button
-                class="global-tree-nav__hero-child"
-                type="button"
-              >
-                Perform
-              </button>
-              <button
-                class="global-tree-nav__hero-child"
-                type="button"
-              >
-                Layers
-              </button>
-              <button
-                class="global-tree-nav__hero-child"
-                type="button"
-              >
-                Sequence
-              </button>
-              <button
-                class="global-tree-nav__hero-child"
-                type="button"
-              >
-                Routing
-              </button>
-              <button
-                class="global-tree-nav__hero-child"
-                type="button"
-              >
-                Inputs
-              </button>
-              <button
-                class="global-tree-nav__hero-child"
-                type="button"
-              >
-                Library
-              </button>
-              <button
-                class="global-tree-nav__hero-child"
-                type="button"
-              >
-                Diagnostics
-              </button>
-              <button
-                class="global-tree-nav__hero-child"
-                type="button"
-              >
-                Session Media
-              </button>
-              <button
-                class="global-tree-nav__hero-child"
-                type="button"
-              >
-                Practice Coach
               </button>
             </div>
-          </div>
+            <span
+              aria-hidden="true"
+              class="cds--popover"
+              id="tooltip-_r_26_"
+              role="tooltip"
+            >
+              <span
+                class="cds--popover-content cds--tooltip-content"
+              >
+                Sequencer
+              </span>
+              <span
+                class="cds--popover-caret"
+              />
+            </span>
+          </span>
         </div>
         <div
           class="global-tree-nav__section-bar is-services"
@@ -5342,14 +5056,14 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
           class="global-tree-nav__dense-group"
         >
           <button
-            aria-expanded="true"
+            aria-expanded="false"
             class="global-tree-nav__dense-row"
             style="padding-left: 16px;"
             type="button"
           >
             <svg
               aria-hidden="true"
-              class="global-tree-nav__dense-caret is-open"
+              class="global-tree-nav__dense-caret"
               fill="currentColor"
               focusable="false"
               height="9"
@@ -5383,165 +5097,6 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
               MIDI Services
             </span>
           </button>
-          <div
-            class="global-tree-nav__dense-children"
-            style="padding-left: 20px;"
-          >
-            <div
-              aria-hidden="true"
-              class="global-tree-nav__dense-indent-guide"
-            />
-            <button
-              class="global-tree-nav__dense-row"
-              style="padding-left: 32px;"
-              type="button"
-            >
-              <span
-                aria-hidden="true"
-                class="global-tree-nav__dense-spacer"
-              />
-              <span
-                class="global-tree-nav__dense-label"
-              >
-                Connections
-              </span>
-            </button>
-            <button
-              class="global-tree-nav__dense-row"
-              style="padding-left: 32px;"
-              type="button"
-            >
-              <span
-                aria-hidden="true"
-                class="global-tree-nav__dense-spacer"
-              />
-              <span
-                class="global-tree-nav__dense-label"
-              >
-                Devices
-              </span>
-            </button>
-            <button
-              class="global-tree-nav__dense-row"
-              style="padding-left: 32px;"
-              type="button"
-            >
-              <span
-                aria-hidden="true"
-                class="global-tree-nav__dense-spacer"
-              />
-              <span
-                class="global-tree-nav__dense-label"
-              >
-                Bindings
-              </span>
-            </button>
-            <button
-              class="global-tree-nav__dense-row"
-              style="padding-left: 32px;"
-              type="button"
-            >
-              <span
-                aria-hidden="true"
-                class="global-tree-nav__dense-spacer"
-              />
-              <span
-                class="global-tree-nav__dense-label"
-              >
-                Routing
-              </span>
-            </button>
-            <button
-              class="global-tree-nav__dense-row"
-              style="padding-left: 32px;"
-              type="button"
-            >
-              <span
-                aria-hidden="true"
-                class="global-tree-nav__dense-spacer"
-              />
-              <span
-                class="global-tree-nav__dense-label"
-              >
-                Presets
-              </span>
-            </button>
-            <button
-              class="global-tree-nav__dense-row"
-              style="padding-left: 32px;"
-              type="button"
-            >
-              <span
-                aria-hidden="true"
-                class="global-tree-nav__dense-spacer"
-              />
-              <span
-                class="global-tree-nav__dense-label"
-              >
-                Transport
-              </span>
-            </button>
-            <button
-              class="global-tree-nav__dense-row"
-              style="padding-left: 32px;"
-              type="button"
-            >
-              <span
-                aria-hidden="true"
-                class="global-tree-nav__dense-spacer"
-              />
-              <span
-                class="global-tree-nav__dense-label"
-              >
-                Events
-              </span>
-            </button>
-            <button
-              class="global-tree-nav__dense-row"
-              style="padding-left: 32px;"
-              type="button"
-            >
-              <span
-                aria-hidden="true"
-                class="global-tree-nav__dense-spacer"
-              />
-              <span
-                class="global-tree-nav__dense-label"
-              >
-                Processing
-              </span>
-            </button>
-            <button
-              class="global-tree-nav__dense-row"
-              style="padding-left: 32px;"
-              type="button"
-            >
-              <span
-                aria-hidden="true"
-                class="global-tree-nav__dense-spacer"
-              />
-              <span
-                class="global-tree-nav__dense-label"
-              >
-                Network
-              </span>
-            </button>
-            <button
-              class="global-tree-nav__dense-row"
-              style="padding-left: 32px;"
-              type="button"
-            >
-              <span
-                aria-hidden="true"
-                class="global-tree-nav__dense-spacer"
-              />
-              <span
-                class="global-tree-nav__dense-label"
-              >
-                Lab
-              </span>
-            </button>
-          </div>
           <button
             aria-expanded="false"
             class="global-tree-nav__dense-row"
@@ -5582,6 +5137,36 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
               class="global-tree-nav__dense-label"
             >
               AVB
+            </span>
+          </button>
+          <button
+            class="global-tree-nav__dense-row"
+            style="padding-left: 16px;"
+            type="button"
+          >
+            <span
+              aria-hidden="true"
+              class="global-tree-nav__dense-spacer"
+            />
+            <svg
+              aria-hidden="true"
+              class="global-tree-nav__dense-icon"
+              fill="currentColor"
+              focusable="false"
+              height="14"
+              preserveAspectRatio="xMidYMid meet"
+              viewBox="0 0 32 32"
+              width="14"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M26,14a2,2,0,0,0,2-2V6a2,2,0,0,0-2-2H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h2v4.1A5,5,0,0,0,18.1,22H14V20a2,2,0,0,0-2-2H10V13.9a5,5,0,1,0-2,0V18H6a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V24h4.1A5,5,0,1,0,24,18.1V14ZM6,9a3,3,0,1,1,3,3A3,3,0,0,1,6,9Zm6,17H6V20h6Zm14-3a3,3,0,1,1-3-3A3,3,0,0,1,26,23ZM20,6h6v6H20Z"
+              />
+            </svg>
+            <span
+              class="global-tree-nav__dense-label"
+            >
+              SonoBus
             </span>
           </button>
           <button
@@ -5999,7 +5584,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                     >
                       <button
                         aria-label="Close"
-                        aria-labelledby="tooltip-_r_1u_"
+                        aria-labelledby="tooltip-_r_2a_"
                         class="cds--modal-close cds--btn cds--btn--primary cds--btn--icon-only"
                         type="button"
                       >
@@ -6023,7 +5608,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                     <span
                       aria-hidden="false"
                       class="cds--popover"
-                      id="tooltip-_r_1u_"
+                      id="tooltip-_r_2a_"
                       role="tooltip"
                     >
                       <span
@@ -6097,19 +5682,34 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                     <ol
                       class="hp2-welcome-notice__questions"
                     >
-                      <li>
+                      <li
+                        data-stagger-applied="true"
+                        data-stagger-run-id="1"
+                      >
                         What is MAP intended to demonstrate?
                       </li>
-                      <li>
+                      <li
+                        data-stagger-applied="true"
+                        data-stagger-run-id="1"
+                      >
                         Is MAP production ready?
                       </li>
-                      <li>
+                      <li
+                        data-stagger-applied="true"
+                        data-stagger-run-id="1"
+                      >
                         Should MAP be treated as a replacement for professional audio, broadcast, studio, live sound, AVB/TSN, DSP, or music infrastructure products?
                       </li>
-                      <li>
+                      <li
+                        data-stagger-applied="true"
+                        data-stagger-run-id="1"
+                      >
                         Why should users continue supporting professional music and audio infrastructure manufacturers?
                       </li>
-                      <li>
+                      <li
+                        data-stagger-applied="true"
+                        data-stagger-run-id="1"
+                      >
                         Do you acknowledge that MAP is provided for learning, experimentation, evaluation, and demonstration purposes only?
                       </li>
                     </ol>
@@ -7995,6 +7595,33 @@ python -m tui.node_console
                     Where the code lives.
                   </h2>
                   <div
+                    class="map2x-guide-section__meta"
+                  >
+                    <span
+                      class="map2x-tag"
+                    >
+                      v
+                      0000000000000001
+                    </span>
+                    <span
+                      class="map2x-tag"
+                    >
+                      00000000
+                    </span>
+                    <span
+                      class="map2x-tag map2x-tag--accent"
+                    >
+                      AGPL-3.0-only
+                    </span>
+                    <span
+                      class="map2x-tag"
+                      title="Currently deployed git commit"
+                    >
+                      commit 
+                      —
+                    </span>
+                  </div>
+                  <div
                     class="map2x-panel"
                   >
                     <div
@@ -8238,13 +7865,13 @@ python -m tui.node_console
                     >
                       <h2
                         class="cds--data-table-header__title"
-                        id="tc-_r_23_-title"
+                        id="tc-_r_2f_-title"
                       >
                         Operations table
                       </h2>
                       <p
                         class="cds--data-table-header__description"
-                        id="tc-_r_23_-description"
+                        id="tc-_r_2f_-description"
                       >
                         All live home telemetry collapsed into one searchable Carbon table. Select a row to open the owning workspace.
                       </p>
@@ -8285,15 +7912,15 @@ python -m tui.node_console
                         </div>
                         <label
                           class="cds--label"
-                          for="table-toolbar-search-_r_24_"
-                          id="table-toolbar-search-_r_24_-search"
+                          for="table-toolbar-search-_r_2g_"
+                          id="table-toolbar-search-_r_2g_-search"
                         >
                           Filter table
                         </label>
                         <input
                           autocomplete="off"
                           class="cds--search-input"
-                          id="table-toolbar-search-_r_24_"
+                          id="table-toolbar-search-_r_2g_"
                           placeholder="Filter table"
                           tabindex="0"
                           type="search"
@@ -8323,7 +7950,7 @@ python -m tui.node_console
                       </div>
                       <div
                         class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--cool-gray"
-                        id="tag-id-_r_26_"
+                        id="tag-id-_r_2i_"
                       >
                         <span
                           class="cds--tag__label"
@@ -8336,7 +7963,7 @@ python -m tui.node_console
                       </div>
                       <div
                         class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--cool-gray"
-                        id="tag-id-_r_27_"
+                        id="tag-id-_r_2j_"
                       >
                         <span
                           class="cds--tag__label"
@@ -8349,7 +7976,7 @@ python -m tui.node_console
                       </div>
                       <div
                         class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--green"
-                        id="tag-id-_r_28_"
+                        id="tag-id-_r_2k_"
                       >
                         <span
                           class="cds--tag__label"
@@ -8361,7 +7988,7 @@ python -m tui.node_console
                       </div>
                       <div
                         class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--warm-gray"
-                        id="tag-id-_r_29_"
+                        id="tag-id-_r_2l_"
                       >
                         <span
                           class="cds--tag__label"
@@ -8380,9 +8007,9 @@ python -m tui.node_console
                       class="cds--data-table-content"
                     >
                       <table
-                        aria-describedby="tc-_r_23_-description"
+                        aria-describedby="tc-_r_2f_-description"
                         aria-label="Home telemetry table"
-                        aria-labelledby="tc-_r_23_-title"
+                        aria-labelledby="tc-_r_2f_-title"
                         class="cds--data-table hp2-home-shell__table cds--data-table--sm cds--data-table--sort cds--data-table--zebra cds--data-table--visible-overflow-menu"
                       >
                         <thead>
@@ -8394,12 +8021,12 @@ python -m tui.node_console
                             >
                               <div
                                 class="cds--table-sort__description"
-                                id="table-sort-_r_2a_"
+                                id="table-sort-_r_2m_"
                               >
                                 Click to sort rows by Surface header in ascending order
                               </div>
                               <button
-                                aria-describedby="table-sort-_r_2a_"
+                                aria-describedby="table-sort-_r_2m_"
                                 class="cds--table-sort"
                                 type="button"
                               >
@@ -8457,12 +8084,12 @@ python -m tui.node_console
                             >
                               <div
                                 class="cds--table-sort__description"
-                                id="table-sort-_r_2b_"
+                                id="table-sort-_r_2n_"
                               >
                                 Click to sort rows by Signal header in ascending order
                               </div>
                               <button
-                                aria-describedby="table-sort-_r_2b_"
+                                aria-describedby="table-sort-_r_2n_"
                                 class="cds--table-sort"
                                 type="button"
                               >
@@ -8520,12 +8147,12 @@ python -m tui.node_console
                             >
                               <div
                                 class="cds--table-sort__description"
-                                id="table-sort-_r_2c_"
+                                id="table-sort-_r_2o_"
                               >
                                 Click to sort rows by Current state header in ascending order
                               </div>
                               <button
-                                aria-describedby="table-sort-_r_2c_"
+                                aria-describedby="table-sort-_r_2o_"
                                 class="cds--table-sort"
                                 type="button"
                               >
@@ -8583,12 +8210,12 @@ python -m tui.node_console
                             >
                               <div
                                 class="cds--table-sort__description"
-                                id="table-sort-_r_2d_"
+                                id="table-sort-_r_2p_"
                               >
                                 Click to sort rows by Scope header in ascending order
                               </div>
                               <button
-                                aria-describedby="table-sort-_r_2d_"
+                                aria-describedby="table-sort-_r_2p_"
                                 class="cds--table-sort"
                                 type="button"
                               >
@@ -8646,12 +8273,12 @@ python -m tui.node_console
                             >
                               <div
                                 class="cds--table-sort__description"
-                                id="table-sort-_r_2e_"
+                                id="table-sort-_r_2q_"
                               >
                                 Click to sort rows by Detail header in ascending order
                               </div>
                               <button
-                                aria-describedby="table-sort-_r_2e_"
+                                aria-describedby="table-sort-_r_2q_"
                                 class="cds--table-sort"
                                 type="button"
                               >
@@ -8709,12 +8336,12 @@ python -m tui.node_console
                             >
                               <div
                                 class="cds--table-sort__description"
-                                id="table-sort-_r_2f_"
+                                id="table-sort-_r_2r_"
                               >
                                 Click to sort rows by Workspace header in ascending order
                               </div>
                               <button
-                                aria-describedby="table-sort-_r_2f_"
+                                aria-describedby="table-sort-_r_2r_"
                                 class="cds--table-sort"
                                 type="button"
                               >
@@ -8779,7 +8406,7 @@ python -m tui.node_console
                             <td>
                               <div
                                 class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--cool-gray"
-                                id="tag-id-_r_2g_"
+                                id="tag-id-_r_2s_"
                               >
                                 <span
                                   class="cds--tag__label"
@@ -8808,7 +8435,7 @@ python -m tui.node_console
                                 </span>
                                 <div
                                   class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--green"
-                                  id="tag-id-_r_2h_"
+                                  id="tag-id-_r_2t_"
                                 >
                                   <span
                                     class="cds--tag__label"
@@ -8894,7 +8521,7 @@ python -m tui.node_console
               >
                 <button
                   aria-label="Close"
-                  aria-labelledby="tooltip-_r_2k_"
+                  aria-labelledby="tooltip-_r_30_"
                   class="cds--modal-close cds--btn cds--btn--primary cds--btn--icon-only"
                   type="button"
                 >
@@ -8918,7 +8545,7 @@ python -m tui.node_console
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_2k_"
+                id="tooltip-_r_30_"
                 role="tooltip"
               >
                 <span
@@ -8981,13 +8608,13 @@ python -m tui.node_console
             Cancel
           </button>
           <button
-            aria-describedby="danger-description-_r_2o_"
+            aria-describedby="danger-description-_r_34_"
             class="cds--btn cds--btn--danger"
             type="button"
           >
             <span
               class="cds--visually-hidden"
-              id="danger-description-_r_2o_"
+              id="danger-description-_r_34_"
             >
               danger
             </span>
@@ -9047,7 +8674,7 @@ python -m tui.node_console
               >
                 <button
                   aria-label="Close"
-                  aria-labelledby="tooltip-_r_2r_"
+                  aria-labelledby="tooltip-_r_37_"
                   class="cds--modal-close cds--btn cds--btn--primary cds--btn--icon-only"
                   type="button"
                 >
@@ -9071,7 +8698,7 @@ python -m tui.node_console
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_2r_"
+                id="tooltip-_r_37_"
                 role="tooltip"
               >
                 <span
@@ -9321,7 +8948,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                   </div>
                   <div
                     class="cds--tag cds--tag--cool-gray"
-                    id="tag-id-_r_31_"
+                    id="tag-id-_r_3d_"
                   >
                     <span
                       class="cds--tag__label"
@@ -9347,7 +8974,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                   </span>
                   <div
                     class="cds--tag cds--tag--green"
-                    id="tag-id-_r_32_"
+                    id="tag-id-_r_3e_"
                   >
                     <span
                       class="cds--tag__label"
@@ -9431,7 +9058,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
             >
               <button
                 aria-label="Refresh"
-                aria-labelledby="tooltip-_r_34_"
+                aria-labelledby="tooltip-_r_3g_"
                 class="global-tree-nav__quick-action global-tree-nav__quick-action--refresh"
                 type="button"
               >
@@ -9457,7 +9084,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
             <span
               aria-hidden="true"
               class="cds--popover"
-              id="tooltip-_r_34_"
+              id="tooltip-_r_3g_"
               role="tooltip"
             >
               <span
@@ -9478,7 +9105,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
             >
               <button
                 aria-label="Restart"
-                aria-labelledby="tooltip-_r_36_"
+                aria-labelledby="tooltip-_r_3i_"
                 class="global-tree-nav__quick-action global-tree-nav__quick-action--restart"
                 type="button"
               >
@@ -9501,7 +9128,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
             <span
               aria-hidden="true"
               class="cds--popover"
-              id="tooltip-_r_36_"
+              id="tooltip-_r_3i_"
               role="tooltip"
             >
               <span
@@ -9522,7 +9149,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
             >
               <button
                 aria-label="Log Out"
-                aria-labelledby="tooltip-_r_38_"
+                aria-labelledby="tooltip-_r_3k_"
                 class="global-tree-nav__quick-action global-tree-nav__quick-action--logout"
                 type="button"
               >
@@ -9548,7 +9175,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
             <span
               aria-hidden="true"
               class="cds--popover"
-              id="tooltip-_r_38_"
+              id="tooltip-_r_3k_"
               role="tooltip"
             >
               <span
@@ -9569,7 +9196,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
             >
               <button
                 aria-label="Full system reboot"
-                aria-labelledby="tooltip-_r_3a_"
+                aria-labelledby="tooltip-_r_3m_"
                 class="global-tree-nav__quick-action global-tree-nav__quick-action--reboot"
                 type="button"
               >
@@ -9595,7 +9222,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
             <span
               aria-hidden="true"
               class="cds--popover"
-              id="tooltip-_r_3a_"
+              id="tooltip-_r_3m_"
               role="tooltip"
             >
               <span
@@ -9613,58 +9240,80 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
       <div
         class="global-tree-nav__scroll"
       >
-        <button
-          class="global-tree-nav__home-row"
-          type="button"
-        >
-          <span
-            aria-hidden="true"
-            class="global-tree-nav__dense-spacer"
-          />
-          <svg
-            aria-hidden="true"
-            class="global-tree-nav__dense-icon"
-            fill="currentColor"
-            focusable="false"
-            height="14"
-            preserveAspectRatio="xMidYMid meet"
-            viewBox="0 0 32 32"
-            width="14"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M16.6123,2.2138a1.01,1.01,0,0,0-1.2427,0L1,13.4194l1.2427,1.5717L4,13.6209V26a2.0041,2.0041,0,0,0,2,2H26a2.0037,2.0037,0,0,0,2-2V13.63L29.7573,15,31,13.4282ZM18,26H14V18h4Zm2,0V18a2.0023,2.0023,0,0,0-2-2H14a2.002,2.002,0,0,0-2,2v8H6V12.0615l10-7.79,10,7.8005V26Z"
-            />
-          </svg>
-          <span
-            class="global-tree-nav__dense-label"
-          >
-            Home
-          </span>
-        </button>
         <div
-          class="global-tree-nav__hero-stack"
+          aria-label="Primary destinations"
+          class="global-tree-nav__icon-row"
+          role="group"
         >
-          <div
-            class="global-tree-nav__hero"
+          <span
+            class="cds--popover-container cds--popover--caret cds--popover--high-contrast cds--popover--bottom cds--tooltip"
           >
-            <button
-              aria-expanded="true"
-              class="global-tree-nav__hero-header"
-              type="button"
+            <div
+              class="cds--tooltip-trigger__wrapper"
             >
-              <span
-                aria-hidden="true"
-                class="global-tree-nav__hero-icon-tile"
+              <button
+                aria-label="Home"
+                aria-labelledby="tooltip-_r_3o_"
+                class="global-tree-nav__icon-button"
+                type="button"
               >
                 <svg
                   aria-hidden="true"
                   fill="currentColor"
                   focusable="false"
-                  height="16"
+                  height="20"
                   preserveAspectRatio="xMidYMid meet"
                   viewBox="0 0 32 32"
-                  width="16"
+                  width="20"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M16.6123,2.2138a1.01,1.01,0,0,0-1.2427,0L1,13.4194l1.2427,1.5717L4,13.6209V26a2.0041,2.0041,0,0,0,2,2H26a2.0037,2.0037,0,0,0,2-2V13.63L29.7573,15,31,13.4282ZM18,26H14V18h4Zm2,0V18a2.0023,2.0023,0,0,0-2-2H14a2.002,2.002,0,0,0-2,2v8H6V12.0615l10-7.79,10,7.8005V26Z"
+                  />
+                </svg>
+                <span
+                  class="global-tree-nav__icon-button-label"
+                >
+                  Home
+                </span>
+              </button>
+            </div>
+            <span
+              aria-hidden="true"
+              class="cds--popover"
+              id="tooltip-_r_3o_"
+              role="tooltip"
+            >
+              <span
+                class="cds--popover-content cds--tooltip-content"
+              >
+                Home
+              </span>
+              <span
+                class="cds--popover-caret"
+              />
+            </span>
+          </span>
+          <span
+            class="cds--popover-container cds--popover--caret cds--popover--high-contrast cds--popover--bottom cds--tooltip"
+          >
+            <div
+              class="cds--tooltip-trigger__wrapper"
+            >
+              <button
+                aria-label="Snapshot Editor"
+                aria-labelledby="tooltip-_r_3q_"
+                class="global-tree-nav__icon-button"
+                type="button"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="currentColor"
+                  focusable="false"
+                  height="20"
+                  preserveAspectRatio="xMidYMid meet"
+                  viewBox="0 0 32 32"
+                  width="20"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
@@ -9680,71 +9329,54 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                     d="M28,3H4c-1.1028,0-2,.8975-2,2V21c0,1.1025,.8972,2,2,2H12v4h-4v2h12v-8H4V5H28v14h2V5c0-1.1025-.8972-2-2-2Zm-10,24h-4v-4h4v4Z"
                   />
                 </svg>
-              </span>
-              <span
-                class="global-tree-nav__hero-text"
-              >
                 <span
-                  class="global-tree-nav__hero-title-row"
-                >
-                  <span
-                    class="global-tree-nav__hero-title"
-                  >
-                    Snapshot Editor
-                  </span>
-                  <span
-                    class="global-tree-nav__hero-badge"
-                  >
-                    Signal Flow
-                  </span>
-                </span>
-                <span
-                  class="global-tree-nav__hero-status is-live"
-                >
-                  <span
-                    aria-hidden="true"
-                    class="global-tree-nav__hero-status-dot"
-                  />
-                  Live
-                </span>
-              </span>
-              <svg
-                aria-hidden="true"
-                class="global-tree-nav__hero-caret is-open"
-                fill="currentColor"
-                focusable="false"
-                height="12"
-                preserveAspectRatio="xMidYMid meet"
-                viewBox="0 0 32 32"
-                width="12"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M12 8 22 16 12 24z"
+                  aria-label="Live"
+                  class="global-tree-nav__icon-button-status is-live"
+                  title="Live"
                 />
-              </svg>
-            </button>
-          </div>
-          <div
-            class="global-tree-nav__hero"
-          >
-            <button
-              aria-expanded="true"
-              class="global-tree-nav__hero-header"
-              type="button"
+                <span
+                  class="global-tree-nav__icon-button-label"
+                >
+                  Snapshot Editor
+                </span>
+              </button>
+            </div>
+            <span
+              aria-hidden="true"
+              class="cds--popover"
+              id="tooltip-_r_3q_"
+              role="tooltip"
             >
               <span
-                aria-hidden="true"
-                class="global-tree-nav__hero-icon-tile"
+                class="cds--popover-content cds--tooltip-content"
+              >
+                Snapshot Editor
+              </span>
+              <span
+                class="cds--popover-caret"
+              />
+            </span>
+          </span>
+          <span
+            class="cds--popover-container cds--popover--caret cds--popover--high-contrast cds--popover--bottom cds--tooltip"
+          >
+            <div
+              class="cds--tooltip-trigger__wrapper"
+            >
+              <button
+                aria-label="Sequencer"
+                aria-labelledby="tooltip-_r_3s_"
+                class="global-tree-nav__icon-button"
+                type="button"
               >
                 <svg
                   aria-hidden="true"
                   fill="currentColor"
                   focusable="false"
-                  height="16"
+                  height="20"
                   preserveAspectRatio="xMidYMid meet"
                   viewBox="0 0 32 32"
-                  width="16"
+                  width="20"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
@@ -9760,126 +9392,29 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                     d="M26,18H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,26,18Zm0,8H20V20h6Z"
                   />
                 </svg>
-              </span>
-              <span
-                class="global-tree-nav__hero-text"
-              >
                 <span
-                  class="global-tree-nav__hero-title-row"
+                  class="global-tree-nav__icon-button-label"
                 >
-                  <span
-                    class="global-tree-nav__hero-title"
-                  >
-                    Sequencer
-                  </span>
+                  Sequencer
                 </span>
-                <span
-                  class="global-tree-nav__hero-subtitle"
-                >
-                  13
-                   
-                  sections
-                </span>
-              </span>
-              <svg
-                aria-hidden="true"
-                class="global-tree-nav__hero-caret is-open"
-                fill="currentColor"
-                focusable="false"
-                height="12"
-                preserveAspectRatio="xMidYMid meet"
-                viewBox="0 0 32 32"
-                width="12"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M12 8 22 16 12 24z"
-                />
-              </svg>
-            </button>
-            <div
-              class="global-tree-nav__hero-body"
-            >
-              <button
-                class="global-tree-nav__hero-child"
-                type="button"
-              >
-                Performance
-              </button>
-              <button
-                class="global-tree-nav__hero-child"
-                type="button"
-              >
-                Console
-              </button>
-              <button
-                class="global-tree-nav__hero-child"
-                type="button"
-              >
-                Step
-              </button>
-              <button
-                class="global-tree-nav__hero-child"
-                type="button"
-              >
-                Split
-              </button>
-              <button
-                class="global-tree-nav__hero-child"
-                type="button"
-              >
-                Perform
-              </button>
-              <button
-                class="global-tree-nav__hero-child"
-                type="button"
-              >
-                Layers
-              </button>
-              <button
-                class="global-tree-nav__hero-child"
-                type="button"
-              >
-                Sequence
-              </button>
-              <button
-                class="global-tree-nav__hero-child"
-                type="button"
-              >
-                Routing
-              </button>
-              <button
-                class="global-tree-nav__hero-child"
-                type="button"
-              >
-                Inputs
-              </button>
-              <button
-                class="global-tree-nav__hero-child"
-                type="button"
-              >
-                Library
-              </button>
-              <button
-                class="global-tree-nav__hero-child"
-                type="button"
-              >
-                Diagnostics
-              </button>
-              <button
-                class="global-tree-nav__hero-child"
-                type="button"
-              >
-                Session Media
-              </button>
-              <button
-                class="global-tree-nav__hero-child"
-                type="button"
-              >
-                Practice Coach
               </button>
             </div>
-          </div>
+            <span
+              aria-hidden="true"
+              class="cds--popover"
+              id="tooltip-_r_3s_"
+              role="tooltip"
+            >
+              <span
+                class="cds--popover-content cds--tooltip-content"
+              >
+                Sequencer
+              </span>
+              <span
+                class="cds--popover-caret"
+              />
+            </span>
+          </span>
         </div>
         <div
           class="global-tree-nav__section-bar is-services"
@@ -9902,14 +9437,14 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
           class="global-tree-nav__dense-group"
         >
           <button
-            aria-expanded="true"
+            aria-expanded="false"
             class="global-tree-nav__dense-row"
             style="padding-left: 16px;"
             type="button"
           >
             <svg
               aria-hidden="true"
-              class="global-tree-nav__dense-caret is-open"
+              class="global-tree-nav__dense-caret"
               fill="currentColor"
               focusable="false"
               height="9"
@@ -9943,165 +9478,6 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
               MIDI Services
             </span>
           </button>
-          <div
-            class="global-tree-nav__dense-children"
-            style="padding-left: 20px;"
-          >
-            <div
-              aria-hidden="true"
-              class="global-tree-nav__dense-indent-guide"
-            />
-            <button
-              class="global-tree-nav__dense-row"
-              style="padding-left: 32px;"
-              type="button"
-            >
-              <span
-                aria-hidden="true"
-                class="global-tree-nav__dense-spacer"
-              />
-              <span
-                class="global-tree-nav__dense-label"
-              >
-                Connections
-              </span>
-            </button>
-            <button
-              class="global-tree-nav__dense-row"
-              style="padding-left: 32px;"
-              type="button"
-            >
-              <span
-                aria-hidden="true"
-                class="global-tree-nav__dense-spacer"
-              />
-              <span
-                class="global-tree-nav__dense-label"
-              >
-                Devices
-              </span>
-            </button>
-            <button
-              class="global-tree-nav__dense-row"
-              style="padding-left: 32px;"
-              type="button"
-            >
-              <span
-                aria-hidden="true"
-                class="global-tree-nav__dense-spacer"
-              />
-              <span
-                class="global-tree-nav__dense-label"
-              >
-                Bindings
-              </span>
-            </button>
-            <button
-              class="global-tree-nav__dense-row"
-              style="padding-left: 32px;"
-              type="button"
-            >
-              <span
-                aria-hidden="true"
-                class="global-tree-nav__dense-spacer"
-              />
-              <span
-                class="global-tree-nav__dense-label"
-              >
-                Routing
-              </span>
-            </button>
-            <button
-              class="global-tree-nav__dense-row"
-              style="padding-left: 32px;"
-              type="button"
-            >
-              <span
-                aria-hidden="true"
-                class="global-tree-nav__dense-spacer"
-              />
-              <span
-                class="global-tree-nav__dense-label"
-              >
-                Presets
-              </span>
-            </button>
-            <button
-              class="global-tree-nav__dense-row"
-              style="padding-left: 32px;"
-              type="button"
-            >
-              <span
-                aria-hidden="true"
-                class="global-tree-nav__dense-spacer"
-              />
-              <span
-                class="global-tree-nav__dense-label"
-              >
-                Transport
-              </span>
-            </button>
-            <button
-              class="global-tree-nav__dense-row"
-              style="padding-left: 32px;"
-              type="button"
-            >
-              <span
-                aria-hidden="true"
-                class="global-tree-nav__dense-spacer"
-              />
-              <span
-                class="global-tree-nav__dense-label"
-              >
-                Events
-              </span>
-            </button>
-            <button
-              class="global-tree-nav__dense-row"
-              style="padding-left: 32px;"
-              type="button"
-            >
-              <span
-                aria-hidden="true"
-                class="global-tree-nav__dense-spacer"
-              />
-              <span
-                class="global-tree-nav__dense-label"
-              >
-                Processing
-              </span>
-            </button>
-            <button
-              class="global-tree-nav__dense-row"
-              style="padding-left: 32px;"
-              type="button"
-            >
-              <span
-                aria-hidden="true"
-                class="global-tree-nav__dense-spacer"
-              />
-              <span
-                class="global-tree-nav__dense-label"
-              >
-                Network
-              </span>
-            </button>
-            <button
-              class="global-tree-nav__dense-row"
-              style="padding-left: 32px;"
-              type="button"
-            >
-              <span
-                aria-hidden="true"
-                class="global-tree-nav__dense-spacer"
-              />
-              <span
-                class="global-tree-nav__dense-label"
-              >
-                Lab
-              </span>
-            </button>
-          </div>
           <button
             aria-expanded="false"
             class="global-tree-nav__dense-row"
@@ -10142,6 +9518,36 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
               class="global-tree-nav__dense-label"
             >
               AVB
+            </span>
+          </button>
+          <button
+            class="global-tree-nav__dense-row"
+            style="padding-left: 16px;"
+            type="button"
+          >
+            <span
+              aria-hidden="true"
+              class="global-tree-nav__dense-spacer"
+            />
+            <svg
+              aria-hidden="true"
+              class="global-tree-nav__dense-icon"
+              fill="currentColor"
+              focusable="false"
+              height="14"
+              preserveAspectRatio="xMidYMid meet"
+              viewBox="0 0 32 32"
+              width="14"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M26,14a2,2,0,0,0,2-2V6a2,2,0,0,0-2-2H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h2v4.1A5,5,0,0,0,18.1,22H14V20a2,2,0,0,0-2-2H10V13.9a5,5,0,1,0-2,0V18H6a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V24h4.1A5,5,0,1,0,24,18.1V14ZM6,9a3,3,0,1,1,3,3A3,3,0,0,1,6,9Zm6,17H6V20h6Zm14-3a3,3,0,1,1-3-3A3,3,0,0,1,26,23ZM20,6h6v6H20Z"
+              />
+            </svg>
+            <span
+              class="global-tree-nav__dense-label"
+            >
+              SonoBus
             </span>
           </button>
           <button
@@ -10234,219 +9640,18 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
               class="global-tree-nav__dense-indent-guide"
             />
             <button
-              aria-expanded="false"
               class="global-tree-nav__dense-row is-active"
               style="padding-left: 32px;"
               type="button"
             >
-              <svg
+              <span
                 aria-hidden="true"
-                class="global-tree-nav__dense-caret"
-                fill="currentColor"
-                focusable="false"
-                height="9"
-                preserveAspectRatio="xMidYMid meet"
-                viewBox="0 0 32 32"
-                width="9"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M12 8 22 16 12 24z"
-                />
-              </svg>
+                class="global-tree-nav__dense-spacer"
+              />
               <span
                 class="global-tree-nav__dense-label"
               >
                 Overview
-              </span>
-            </button>
-            <button
-              aria-expanded="false"
-              class="global-tree-nav__dense-row"
-              style="padding-left: 32px;"
-              type="button"
-            >
-              <svg
-                aria-hidden="true"
-                class="global-tree-nav__dense-caret"
-                fill="currentColor"
-                focusable="false"
-                height="9"
-                preserveAspectRatio="xMidYMid meet"
-                viewBox="0 0 32 32"
-                width="9"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M12 8 22 16 12 24z"
-                />
-              </svg>
-              <span
-                class="global-tree-nav__dense-label"
-              >
-                LV2 Plugins
-              </span>
-            </button>
-            <button
-              aria-expanded="false"
-              class="global-tree-nav__dense-row"
-              style="padding-left: 32px;"
-              type="button"
-            >
-              <svg
-                aria-hidden="true"
-                class="global-tree-nav__dense-caret"
-                fill="currentColor"
-                focusable="false"
-                height="9"
-                preserveAspectRatio="xMidYMid meet"
-                viewBox="0 0 32 32"
-                width="9"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M12 8 22 16 12 24z"
-                />
-              </svg>
-              <span
-                class="global-tree-nav__dense-label"
-              >
-                NAM Models
-              </span>
-            </button>
-            <button
-              aria-expanded="false"
-              class="global-tree-nav__dense-row"
-              style="padding-left: 32px;"
-              type="button"
-            >
-              <svg
-                aria-hidden="true"
-                class="global-tree-nav__dense-caret"
-                fill="currentColor"
-                focusable="false"
-                height="9"
-                preserveAspectRatio="xMidYMid meet"
-                viewBox="0 0 32 32"
-                width="9"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M12 8 22 16 12 24z"
-                />
-              </svg>
-              <span
-                class="global-tree-nav__dense-label"
-              >
-                Cabinet IRs
-              </span>
-            </button>
-            <button
-              aria-expanded="false"
-              class="global-tree-nav__dense-row"
-              style="padding-left: 32px;"
-              type="button"
-            >
-              <svg
-                aria-hidden="true"
-                class="global-tree-nav__dense-caret"
-                fill="currentColor"
-                focusable="false"
-                height="9"
-                preserveAspectRatio="xMidYMid meet"
-                viewBox="0 0 32 32"
-                width="9"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M12 8 22 16 12 24z"
-                />
-              </svg>
-              <span
-                class="global-tree-nav__dense-label"
-              >
-                Reverb IRs
-              </span>
-            </button>
-            <button
-              aria-expanded="false"
-              class="global-tree-nav__dense-row"
-              style="padding-left: 32px;"
-              type="button"
-            >
-              <svg
-                aria-hidden="true"
-                class="global-tree-nav__dense-caret"
-                fill="currentColor"
-                focusable="false"
-                height="9"
-                preserveAspectRatio="xMidYMid meet"
-                viewBox="0 0 32 32"
-                width="9"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M12 8 22 16 12 24z"
-                />
-              </svg>
-              <span
-                class="global-tree-nav__dense-label"
-              >
-                SoundFonts
-              </span>
-            </button>
-            <button
-              aria-expanded="false"
-              class="global-tree-nav__dense-row"
-              style="padding-left: 32px;"
-              type="button"
-            >
-              <svg
-                aria-hidden="true"
-                class="global-tree-nav__dense-caret"
-                fill="currentColor"
-                focusable="false"
-                height="9"
-                preserveAspectRatio="xMidYMid meet"
-                viewBox="0 0 32 32"
-                width="9"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M12 8 22 16 12 24z"
-                />
-              </svg>
-              <span
-                class="global-tree-nav__dense-label"
-              >
-                Native JUCE
-              </span>
-            </button>
-            <button
-              aria-expanded="false"
-              class="global-tree-nav__dense-row"
-              style="padding-left: 32px;"
-              type="button"
-            >
-              <svg
-                aria-hidden="true"
-                class="global-tree-nav__dense-caret"
-                fill="currentColor"
-                focusable="false"
-                height="9"
-                preserveAspectRatio="xMidYMid meet"
-                viewBox="0 0 32 32"
-                width="9"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M12 8 22 16 12 24z"
-                />
-              </svg>
-              <span
-                class="global-tree-nav__dense-label"
-              >
-                Snapshots
               </span>
             </button>
             <button
@@ -10461,7 +9666,97 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
               <span
                 class="global-tree-nav__dense-label"
               >
-                Discover
+                LV2 Plugins
+              </span>
+            </button>
+            <button
+              class="global-tree-nav__dense-row"
+              style="padding-left: 32px;"
+              type="button"
+            >
+              <span
+                aria-hidden="true"
+                class="global-tree-nav__dense-spacer"
+              />
+              <span
+                class="global-tree-nav__dense-label"
+              >
+                NAM Models
+              </span>
+            </button>
+            <button
+              class="global-tree-nav__dense-row"
+              style="padding-left: 32px;"
+              type="button"
+            >
+              <span
+                aria-hidden="true"
+                class="global-tree-nav__dense-spacer"
+              />
+              <span
+                class="global-tree-nav__dense-label"
+              >
+                Cabinet IRs
+              </span>
+            </button>
+            <button
+              class="global-tree-nav__dense-row"
+              style="padding-left: 32px;"
+              type="button"
+            >
+              <span
+                aria-hidden="true"
+                class="global-tree-nav__dense-spacer"
+              />
+              <span
+                class="global-tree-nav__dense-label"
+              >
+                Reverb IRs
+              </span>
+            </button>
+            <button
+              class="global-tree-nav__dense-row"
+              style="padding-left: 32px;"
+              type="button"
+            >
+              <span
+                aria-hidden="true"
+                class="global-tree-nav__dense-spacer"
+              />
+              <span
+                class="global-tree-nav__dense-label"
+              >
+                SoundFonts
+              </span>
+            </button>
+            <button
+              class="global-tree-nav__dense-row"
+              style="padding-left: 32px;"
+              type="button"
+            >
+              <span
+                aria-hidden="true"
+                class="global-tree-nav__dense-spacer"
+              />
+              <span
+                class="global-tree-nav__dense-label"
+              >
+                Native JUCE
+              </span>
+            </button>
+            <button
+              class="global-tree-nav__dense-row"
+              style="padding-left: 32px;"
+              type="button"
+            >
+              <span
+                aria-hidden="true"
+                class="global-tree-nav__dense-spacer"
+              />
+              <span
+                class="global-tree-nav__dense-label"
+              >
+                Snapshots
               </span>
             </button>
           </div>
@@ -10515,14 +9810,14 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
             </span>
           </button>
           <button
-            aria-expanded="true"
+            aria-expanded="false"
             class="global-tree-nav__dense-row"
             style="padding-left: 16px;"
             type="button"
           >
             <svg
               aria-hidden="true"
-              class="global-tree-nav__dense-caret is-open"
+              class="global-tree-nav__dense-caret"
               fill="currentColor"
               focusable="false"
               height="9"
@@ -10559,96 +9854,6 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
               Hardware
             </span>
           </button>
-          <div
-            class="global-tree-nav__dense-children"
-            style="padding-left: 20px;"
-          >
-            <div
-              aria-hidden="true"
-              class="global-tree-nav__dense-indent-guide"
-            />
-            <button
-              class="global-tree-nav__dense-row"
-              style="padding-left: 32px;"
-              type="button"
-            >
-              <span
-                aria-hidden="true"
-                class="global-tree-nav__dense-spacer"
-              />
-              <span
-                class="global-tree-nav__dense-label"
-              >
-                Host Machine
-              </span>
-            </button>
-            <button
-              class="global-tree-nav__dense-row"
-              style="padding-left: 32px;"
-              type="button"
-            >
-              <span
-                aria-hidden="true"
-                class="global-tree-nav__dense-spacer"
-              />
-              <span
-                class="global-tree-nav__dense-label"
-              >
-                Device Manager
-              </span>
-            </button>
-            <button
-              aria-expanded="true"
-              class="global-tree-nav__dense-row"
-              style="padding-left: 32px;"
-              type="button"
-            >
-              <svg
-                aria-hidden="true"
-                class="global-tree-nav__dense-caret is-open"
-                fill="currentColor"
-                focusable="false"
-                height="9"
-                preserveAspectRatio="xMidYMid meet"
-                viewBox="0 0 32 32"
-                width="9"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M12 8 22 16 12 24z"
-                />
-              </svg>
-              <span
-                class="global-tree-nav__dense-label"
-              >
-                Devices
-              </span>
-            </button>
-            <div
-              class="global-tree-nav__dense-children"
-              style="padding-left: 36px;"
-            >
-              <div
-                aria-hidden="true"
-                class="global-tree-nav__dense-indent-guide"
-              />
-              <button
-                class="global-tree-nav__dense-row"
-                style="padding-left: 48px;"
-                type="button"
-              >
-                <span
-                  aria-hidden="true"
-                  class="global-tree-nav__dense-spacer"
-                />
-                <span
-                  class="global-tree-nav__dense-label"
-                >
-                  ➕ Browse devices…
-                </span>
-              </button>
-            </div>
-          </div>
           <button
             aria-expanded="false"
             class="global-tree-nav__dense-row"
@@ -10876,7 +10081,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
               >
                 <button
                   aria-label="Close"
-                  aria-labelledby="tooltip-_r_3e_"
+                  aria-labelledby="tooltip-_r_40_"
                   class="cds--modal-close cds--btn cds--btn--primary cds--btn--icon-only"
                   type="button"
                 >
@@ -10900,7 +10105,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_3e_"
+                id="tooltip-_r_40_"
                 role="tooltip"
               >
                 <span
@@ -10963,13 +10168,13 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
             Cancel
           </button>
           <button
-            aria-describedby="danger-description-_r_3i_"
+            aria-describedby="danger-description-_r_44_"
             class="cds--btn cds--btn--danger"
             type="button"
           >
             <span
               class="cds--visually-hidden"
-              id="danger-description-_r_3i_"
+              id="danger-description-_r_44_"
             >
               danger
             </span>
@@ -11029,7 +10234,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
               >
                 <button
                   aria-label="Close"
-                  aria-labelledby="tooltip-_r_3l_"
+                  aria-labelledby="tooltip-_r_47_"
                   class="cds--modal-close cds--btn cds--btn--primary cds--btn--icon-only"
                   type="button"
                 >
@@ -11053,7 +10258,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_3l_"
+                id="tooltip-_r_47_"
                 role="tooltip"
               >
                 <span

@@ -254,8 +254,10 @@ describe('MidiServicesTransportPage', () => {
 })
 
 describe('MidiServicesConnectionsPage', () => {
+  // T2500-MV: MidiServicesConnectionsTabs calls useLocation(), so this page
+  // needs a Router context to render.
   it('mounts the 4 connection panels', () => {
-    render(<MidiServicesConnectionsPage />)
+    render(withRouter(<MidiServicesConnectionsPage />))
     expect(screen.getByTestId('routing-matrix-panel')).toBeInTheDocument()
     expect(screen.getByTestId('quick-router-panel')).toBeInTheDocument()
     expect(screen.getByTestId('traffic-monitor-panel')).toBeInTheDocument()
@@ -263,7 +265,7 @@ describe('MidiServicesConnectionsPage', () => {
   })
 
   it('renders a Connections heading', () => {
-    render(<MidiServicesConnectionsPage />)
+    render(withRouter(<MidiServicesConnectionsPage />))
     expect(screen.getByText('Connections')).toBeInTheDocument()
   })
 })

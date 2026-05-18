@@ -84,6 +84,7 @@ export function PlatformGuideSections() {
   const [versionInfo, setVersionInfo] = useState<VersionInfo | null>(null)
 
   useEffect(() => {
+    if (typeof fetch !== 'function') return
     let cancelled = false
     fetch('/api/version')
       .then((r) => (r.ok ? r.json() : null))

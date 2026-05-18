@@ -29,6 +29,7 @@ const EXPECTED_DEVICE_KEYS = [
   'rocktron-intelfx',
   'edirol-ua1000',
   'hotone-jogg',
+  'tascam-us144mkii',
   'lcd-console',
   'ground-control-pro',
 ] as const

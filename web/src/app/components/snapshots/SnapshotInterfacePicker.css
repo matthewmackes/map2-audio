@@ -39,12 +39,6 @@
   align-items: center;
 }
 
-@media (max-width: 640px) {
-  .snapshot-interface-picker__toolbar {
-    grid-template-columns: 1fr;
-  }
-}
-
 .snapshot-interface-picker__default-tile {
   display: flex !important;
   justify-content: space-between;

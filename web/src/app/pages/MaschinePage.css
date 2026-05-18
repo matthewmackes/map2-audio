@@ -397,12 +397,6 @@
   align-items: start;
 }
 
-@media (max-width: 720px) {
-  .maschine-morph {
-    grid-template-columns: 1fr;
-  }
-}
-
 .maschine-morph__pad-wrap {
   display: flex;
   justify-content: center;
@@ -527,12 +521,6 @@
   grid-template-columns: minmax(240px, 1fr) minmax(320px, 1.5fr);
   gap: 1rem;
   align-items: start;
-}
-
-@media (max-width: 720px) {
-  .maschine-mapping__panes {
-    grid-template-columns: 1fr;
-  }
 }
 
 .maschine-mapping__sources,
@@ -856,12 +844,6 @@
   align-items: start;
 }
 
-@media (max-width: 1024px) {
-  .maschine-workbench__body {
-    grid-template-columns: 1fr;
-  }
-}
-
 .maschine-workbench__inspector,
 .maschine-workbench__editor {
   padding: 1rem 1.25rem !important;
@@ -1080,12 +1062,6 @@
   grid-template-columns: minmax(220px, 1fr) minmax(320px, 1.5fr);
   gap: 1.25rem;
   align-items: start;
-}
-
-@media (max-width: 720px) {
-  .maschine-curve-editor__body {
-    grid-template-columns: 1fr;
-  }
 }
 
 .maschine-curve-editor__controls {

@@ -40,6 +40,14 @@ const ROUTES_WITHOUT_PREFETCH = new Set<string>([
   '/grid-3d',
   '/tesira/*',
   '*',
+  // T2503 DAW retirement: /daw and /daw/* redirect to /artifacts.
+  '/daw',
+  '/daw/*',
+  // T2515: /tascam-us144mkii is a canonical-redirect alias to /devices/tascam-us144mkii.
+  '/tascam-us144mkii',
+  // T2504/T2509: /multitrack-recorder is a redirect-only legacy alias to /artifacts.
+  '/multitrack-recorder',
+  '/multitrack-recorder/*',
 ])
 
 function loadAppRoutes(): string[] {

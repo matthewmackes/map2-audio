@@ -1369,12 +1369,6 @@
   background: color-mix(in srgb, var(--cds-layer) 85%, transparent);
 }
 
-@media (max-width: 56rem) {
-  .theme-page__stagger-tuner {
-    grid-template-columns: 1fr;
-  }
-}
-
 .theme-page__stagger-tuner-controls {
   display: flex;
   flex-direction: column;
