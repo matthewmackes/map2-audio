@@ -42,7 +42,7 @@ export function checkMidiTrafficFrame(
   if (!isMidiTrafficFrame(frame)) {
     return { ok: false, error: 'frame is not a MidiTrafficFrame envelope' }
   }
-  const data = frame.data as Record<string, unknown>
+  const data = frame.data as unknown as Record<string, unknown>
   if (typeof data.timestamp_ns !== 'number') {
     return { ok: false, error: 'data.timestamp_ns must be a number' }
   }

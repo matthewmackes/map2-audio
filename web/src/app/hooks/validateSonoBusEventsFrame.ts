@@ -101,7 +101,7 @@ export function checkSonoBusDaemonEventFrame(
   if (!isSonoBusDaemonEventFrame(frame)) {
     return { ok: false, error: 'frame is not a SonoBusDaemonEventFrame envelope' }
   }
-  const data = frame.data as Record<string, unknown>
+  const data = frame.data as unknown as Record<string, unknown>
   if (typeof data.type !== 'string' || !data.type) {
     return {
       ok: false,

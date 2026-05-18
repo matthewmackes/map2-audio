@@ -58,7 +58,7 @@ export function checkRegistryFrame(
     return { ok: false, error: 'frame.data.devices must be an array' }
   }
   for (let i = 0; i < devices.length; i++) {
-    const d = devices[i] as Record<string, unknown>
+    const d = devices[i] as unknown as Record<string, unknown>
     if (typeof d?.device_id !== 'string') {
       return { ok: false, error: `frame.data.devices[${i}].device_id must be a string` }
     }
@@ -110,7 +110,7 @@ export function checkClusterRegistryFrame(
     return { ok: false, error: 'frame.data.peers must be an array' }
   }
   for (let i = 0; i < peers.length; i++) {
-    const p = peers[i] as Record<string, unknown>
+    const p = peers[i] as unknown as Record<string, unknown>
     if (typeof p?.node_id !== 'string') {
       return { ok: false, error: `frame.data.peers[${i}].node_id must be a string` }
     }
