@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/irs", tags=["impulse_responses"])
 
 
-class DownloadRequest(BaseModel):
+class IRDownloadRequest(BaseModel):
     """Request to start IR download."""
     sources: Optional[List[str]] = None  # None = all sources
     parallel: int = 4
@@ -654,7 +654,7 @@ async def scan_existing_irs() -> Dict:
 # ==================== Download Management ====================
 
 @router.post("/download")
-async def start_download(request: DownloadRequest) -> Dict:
+async def start_download(request: IRDownloadRequest) -> Dict:
     """Start IR library download.
 
     Args:

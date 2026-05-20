@@ -1,0 +1,12 @@
+=== Pre-stop state 2026-05-18T12:18:30Z ===
+active
+TASCAM US-144MKII Multichannel:capture_FL
+TASCAM US-144MKII Multichannel:capture_FR
+TASCAM US-144MKII Multichannel:capture_RL
+TASCAM US-144MKII Multichannel:capture_RR
+TASCAM US-144MKII Multichannel:playback_FL
+TASCAM US-144MKII Multichannel:playback_FR
+TASCAM US-144MKII Multichannel:playback_RL
+TASCAM US-144MKII Multichannel:playback_RR
+TASCAM US-144MKII Multichannel:monitor_FL
+TASCAM US-144MKII Multichannel:monitor_FR

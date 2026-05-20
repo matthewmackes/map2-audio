@@ -1,0 +1,29 @@
+=== Pre-soak latency snapshot 2026-05-18T12:06:15Z ===
+----- GET /api/audio/status -----
+{"running":true,"sample_rate":48000.0,"buffer_size":64,"cpu_load":0.0,"engine":"juce","version":"2.0.0-juce","plugin_count":9,"active_pedalboard":null,"audio_device":"EDIROL UA-1000 Pro","input_channel_mode":"stereo","input_gain_db":0.0,"output_gain_db":0.0,"input_device":null,"output_device":null,"available_input_devices":[],"available_output_devices":[],"available":true,"total_xruns":0,"xrun_rate_per_minute":0.0,"thread_state":"offline","signal_state":"unknown","buffer_health_pct":0.0,"latency_ms":null}
+----- GET /api/audio/latency -----
+{"latency_ms":1.3333333333333333}
+----- GET /api/v2/latency/status -----
+{"enabled":true,"max_latency_samples":8192,"max_latency_ms":170.66666666666666,"chain_latency_samples":0,"chain_latency_ms":0.0,"active_delay_lines":0,"compensated_plugins":[]}
+----- GET /api/v2/latency/jitter-stats -----
+{"p50_ms":0.0,"p95_ms":0.0,"p99_ms":0.0,"max_ms":0.0,"rtl_p95_ms":0.0,"xrun_count":0,"window_seconds":60,"sample_count":1,"running":true}
+----- GET /api/pipewire/latency -----
+{"settings":{"clock_rate":48000,"clock_force_rate":48000,"clock_quantum":64,"clock_force_quantum":64,"clock_min_quantum":32,"clock_max_quantum":256,"clock_allowed_rates":[48000]},"graph_latency_ms":1.333,"driver_latency_ms":1.333,"total_latency_ms":2.667}
+----- GET /api/metrics/latency -----
+{"history":[],"routes":{"health":{"count":2000,"p50_ms":42.836,"p95_ms":121.833,"p99_ms":142.195,"mean_ms":50.438,"max_ms":272.014},"chains":{"count":0,"p50_ms":0.0,"p95_ms":0.0,"p99_ms":0.0,"mean_ms":0.0,"max_ms":0.0},"plugins":{"count":2000,"p50_ms":0.498,"p95_ms":1.707,"p99_ms":55.577,"mean_ms":2.32,"max_ms":175.316},"audio":{"count":2000,"p50_ms":1.276,"p95_ms":2.888,"p99_ms":11.1,"mean_ms":2.327,"max_ms":234.979},"mpx1":{"count":0,"p50_ms":0.0,"p95_ms":0.0,"p99_ms":0.0,"mean_ms":0.0,"max_ms":0.0},"other":{"count":2000,"p50_ms":1.591,"p95_ms":54.792,"p99_ms":267.977,"mean_ms":32.816,"max_ms":9976.566}}}
+----- GET /api/metrics/jack/latency -----
+{"error":"Not connected to JACK"}
+----- GET /api/engine/audio/status -----
+{"running":true,"engine_running":true,"available":true}
+----- GET /api/engine/cpu/xruns -----
+{"xrun_count":0}
+----- GET /api/audio/diagnostics/latency -----
+{"buffer_latency_ms":1.333,"callback_budget_ms":1.333,"avg_callback_duration_ms":0.0,"device_input_latency_ms":0.0,"device_output_latency_ms":0.0,"device_total_latency_ms":1.333,"chain_latency_samples":0,"chain_latency_ms":0.0,"per_plugin_latency":[],"measured_round_trip_ms":-1.0,"last_measurement":null}
+----- GET /api/audio/diagnostics/xruns -----
+{"xrun_count":0,"xruns_since_reset":0,"last_xrun_timestamp":0,"callback_jitter_ms":0.0,"peak_callback_jitter_ms":0.0,"budget_utilization":0.0,"history":[]}
+----- GET /api/audio/health/xruns -----
+{"available":true,"total_xruns":0,"xrun_rate_per_minute":0,"status":"healthy","thresholds":{"warning":"1.0 XRuns/min","critical":"5.0 XRuns/min"}}
+----- GET /api/v1/devices/tascam-us144mkii/status -----
+{"module_loaded":true,"enumeration_stage":"operational","operational_path":"/sys/bus/usb/devices/3-13.4.1","remediation_hint":null,"vid_pid":"0644:8020","boot_vid_pid":"0644:800F","canonical_name":"TASCAM US-144MKII","tier1_sample_rate_hz":48000,"tier1_buffer_samples":64}
+----- GET /api/v1/devices/tascam-us144mkii/capabilities -----
+{"name":"TASCAM US-144MKII","manufacturer":"TASCAM","kernel_module":"snd-usb-us144mkii","input_channels":4,"output_channels":4,"format":"S24_3LE","sample_rate":48000,"buffer_size":64,"spdif_send_channels":[2,3],"spdif_return_channels":[2,3],"analog_send_channels":[0,1],"analog_return_channels":[0,1]}

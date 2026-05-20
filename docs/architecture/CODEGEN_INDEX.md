@@ -31,9 +31,9 @@ copy the pattern from one of the existing entries below.
 | Property | Value |
 |----------|-------|
 | **Generated file** | `web/src/map2/clients/snapshots.generated.ts` |
-| **Pydantic source** | `app/routes/unified_snapshots.py`, `app/services/snapshot/*`, `app/models/audio_state.py` (full OpenAPI surface) |
+| **Pydantic source** | `app/routes/unified_snapshots.py`, `app/services/snapshot/*`, `app/models/audio_state.py` (OpenAPI components filtered to the transitive closure of the snapshot schema roots consumed by `snapshots.contract.ts`) |
 | **Generator** | `scripts/generate_typescript_contracts.py` |
-| **Generator approach** | `openapi-typescript` (npm dep) consumes the live `/openapi.json` from a running backend, or falls back to spawning the FastAPI app in-process |
+| **Generator approach** | `openapi-typescript` (npm dep) consumes the live `/openapi.json` from a running backend, or falls back to spawning the FastAPI app in-process, then filters to the explicit snapshot schema roots before emission so unrelated route model-name collisions cannot drift this contract |
 | **npm scripts** | `generate:types` → emit; `verify:contracts` → --check |
 | **Codegen gate** | Included in `npm run typecheck` chain (run-14b pick #1) |
 | **Deploy gate** | Included in `scripts/build_web_dist_atomic.py` preflight (run-14c cycle 7) |

@@ -1,0 +1,89 @@
+=== Pre-soak baseline 2026-05-18T12:06:09Z ===
+--- USB ---
+Bus 003 Device 008: ID 0644:8020 TEAC Corp. US-144 MKII
+--- ALSA ---
+card 0: US144MKII [TASCAM US-144MKII], device 0: US144MKII PCM [US144MKII PCM]
+--- PipeWire driver ---
+	id: 0
+	permissions: r-xm-
+	type: PipeWire:Interface:Core/4
+	cookie: 2246766522
+	user-name: "mm"
+	host-name: "MAP2-TESTBED"
+	version: "1.4.10"
+	name: "pipewire-0"
+*	properties:
+*		config.name = "pipewire.conf"
+*		application.name = "pipewire"
+*		application.process.binary = "pipewire"
+*		application.language = "en_US.UTF-8"
+*		application.process.id = "2074"
+*		application.process.user = "mm"
+*		application.process.host = "MAP2-TESTBED"
+*		link.max-buffers = "16"
+*		core.daemon = "true"
+*		core.name = "pipewire-0"
+*		default.clock.rate = "48000"
+--- JACK ports (Tascam) ---
+TASCAM US-144MKII Multichannel:capture_FL
+TASCAM US-144MKII Multichannel:capture_FR
+TASCAM US-144MKII Multichannel:capture_RL
+TASCAM US-144MKII Multichannel:capture_RR
+JUCEJack:out_1
+JUCEJack:out_2
+JUCEJack:out_3
+JUCEJack:out_4
+JUCEJack:out_5
+JUCEJack:out_6
+JUCEJack:out_7
+JUCEJack:out_8
+JUCEJack:out_9
+JUCEJack:out_10
+TASCAM US-144MKII Multichannel:playback_FL
+TASCAM US-144MKII Multichannel:playback_FR
+TASCAM US-144MKII Multichannel:playback_RL
+TASCAM US-144MKII Multichannel:playback_RR
+TASCAM US-144MKII Multichannel:monitor_FL
+TASCAM US-144MKII Multichannel:monitor_FR
+TASCAM US-144MKII Multichannel:monitor_RL
+TASCAM US-144MKII Multichannel:monitor_RR
+JUCEJack:in_1
+JUCEJack:in_2
+JUCEJack:in_3
+JUCEJack:in_4
+JUCEJack:in_5
+JUCEJack:in_6
+JUCEJack:in_7
+JUCEJack:in_8
+JUCEJack:in_9
+JUCEJack:in_10
+JUCEJack:in_11
+JUCEJack:in_12
+JUCEJack:in_13
+JUCEJack:in_14
+JUCEJack:in_15
+JUCEJack:in_16
+JUCEJack:in_17
+JUCEJack:in_18
+JUCEJack:in_19
+JUCEJack:in_20
+JUCEJack:in_21
+JUCEJack:in_22
+Midi-Bridge:TASCAM US-144MKIIUS144MKII MIDI (capture)
+Midi-Bridge:TASCAM US-144MKIIUS144MKII MIDI (playback)
+--- map2-backend status ---
+active
+ActiveEnterTimestamp=Sun 2026-05-17 22:10:58 EDT
+MainPID=2395
+--- MAP2 env ---
+MAP2_ENABLE_LCD=false
+MAP2_LCD_SIMULATION=false
+PIPEWIRE_REMOTE=pipewire-0
+PIPEWIRE_LATENCY=64/48000
+PIPEWIRE_FALLBACK_PLAYBACK_DEVICE=alsa_output.usb-EDIROL_UA-1000_ZS22041-02.multichannel-output
+PIPEWIRE_FALLBACK_CAPTURE_DEVICE=alsa_input.usb-EDIROL_UA-1000_ZS22041-02.multichannel-input
+MAP2_AUDIO_PREFER_JACK=1
+--- Kernel cmdline (RT-relevant) ---
+BOOT_IMAGE=(hd0,gpt2)/vmlinuz-6.18.5-200.fc43.x86_64 root=UUID=1c9c2e24-e10c-459b-b8e7-bc306c24b231 ro rootflags=subvol=root isolcpus=4,5 nohz_full=4,5 rcu_nocbs=4,5 threadirqs intel_idle.max_cstate=1 processor.max_cstate=1 preempt=full
+--- CPU governor ---
+performance

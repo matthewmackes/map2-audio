@@ -1,8 +1,8 @@
 /**
  * T2455 — Generated snapshot contract surface.
  *
- * Thin re-export over the auto-generated `snapshots.generated.ts` (a 125k-line
- * dump of the entire OpenAPI schema). This module is the only file consumers
+ * Thin re-export over the auto-generated `snapshots.generated.ts` (the
+ * transitive closure of the snapshot schema roots below). This module is the only file consumers
  * should import from to get **server-of-truth** snapshot input/output types.
  *
  * The hand-mirrored types in `snapshots.ts` and `web/src/app/components/

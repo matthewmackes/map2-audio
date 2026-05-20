@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import platform
 import random
 import statistics
@@ -522,6 +523,7 @@ def build_markdown_report(result: dict[str, Any], output_json: Path, output_md: 
         f"- Duration actual: `{result['metadata']['duration_seconds_actual']}s`",
         f"- Sample rate: `{result['config']['sample_rate_hz']} Hz`",
         f"- Buffer size: `{result['config']['buffer_size_samples']}`",
+        f"- Audio device override: `{result['config']['audio_device'] or 'default'}`",
         f"- Flow rotation: `{result['config']['flow_rotation_seconds']}s`",
         f"- Blend step: `{result['config']['blend_step_seconds']}s`",
         f"- Live rewire: `{result['config']['live_rewire']}`",
@@ -759,6 +761,13 @@ def parse_args(repo_root: Path) -> argparse.Namespace:
     parser.add_argument("--sample-rate", type=int, default=48000, help="Engine sample rate.")
     parser.add_argument("--buffer-size", type=int, default=64, help="Engine buffer size.")
     parser.add_argument(
+        "--audio-device",
+        type=str,
+        default=None,
+        help="Optional JUCE audio device name to select before engine.initialize(). "
+             "If omitted, MAP2_SOAK_AUDIO_DEVICE is used when set.",
+    )
+    parser.add_argument(
         "--module-dir",
         type=Path,
         default=repo_root / "juce-engine" / "build",
@@ -881,6 +890,11 @@ def parse_args(repo_root: Path) -> argparse.Namespace:
     return parser.parse_args()
 
 
+def resolve_audio_device_override(args: argparse.Namespace) -> str:
+    """Return the requested JUCE device override, preferring explicit CLI state."""
+    return args.audio_device or os.environ.get("MAP2_SOAK_AUDIO_DEVICE") or ""
+
+
 def run() -> int:
     repo_root = Path(__file__).resolve().parents[4]
     args = parse_args(repo_root)
@@ -964,8 +978,14 @@ def run() -> int:
             socket_path=args.midi_host_socket,
         )
 
+    requested_audio_device = resolve_audio_device_override(args)
     engine.set_sample_rate(args.sample_rate)
     engine.set_buffer_size(args.buffer_size)
+    if requested_audio_device:
+        set_audio_device = getattr(engine, "set_audio_device", None)
+        if set_audio_device is None:
+            raise SystemExit("audio device override requested but engine lacks set_audio_device()")
+        set_audio_device(requested_audio_device)
 
     try:
         init_ok = bool(engine.initialize(""))
@@ -1319,6 +1339,7 @@ def run() -> int:
         "config": {
             "sample_rate_hz": args.sample_rate,
             "buffer_size_samples": args.buffer_size,
+            "audio_device": requested_audio_device or None,
             "flow_rotation_seconds": args.flow_rotation_seconds,
             "blend_step_seconds": args.blend_step_seconds,
             "live_rewire": bool(args.live_rewire),

@@ -3,10 +3,12 @@
 T2455 — generate TypeScript snapshot types directly from Pydantic via openapi-typescript.
 
 Produces `web/src/map2/clients/snapshots.generated.ts` from the live backend's
-`/openapi.json`. This eliminates silent TS/Pydantic drift on the snapshot
-surface (SnapshotCreateRequest, SnapshotUpdateRequest, SnapshotChainInput,
+`/openapi.json`, filtered to the snapshot schema contract roots. This
+eliminates silent TS/Pydantic drift on the snapshot surface
+(SnapshotCreateRequest, SnapshotUpdateRequest, SnapshotChainInput,
 SnapshotChannelInput, SnapshotRoutingInput, SnapshotPluginInput,
-SnapshotLoopInsertionInput).
+SnapshotLoopInsertionInput) without making unrelated OpenAPI schema-name
+collisions part of the snapshot type gate.
 
 Modes:
   * --check : exit non-zero if the generated file would change. Used by CI.
@@ -36,6 +38,19 @@ WEB_ROOT = REPO_ROOT / "web"
 GENERATED_PATH = WEB_ROOT / "src" / "map2" / "clients" / "snapshots.generated.ts"
 OPENAPI_TS_BIN = WEB_ROOT / "node_modules" / ".bin" / "openapi-typescript"
 LOCAL_BACKEND_URL = "http://localhost:8080/openapi.json"
+SCHEMA_REF_PREFIX = "#/components/schemas/"
+SNAPSHOT_CONTRACT_SCHEMA_ROOTS = (
+    "SnapshotCreateRequest",
+    "SnapshotUpdateRequest",
+    "SnapshotChainInput",
+    "SnapshotChannelInput",
+    "SnapshotPluginInput",
+    "SnapshotRoutingInput",
+    "SnapshotLoopInsertionInput",
+    "SnapshotIOBindingsInput",
+    "SnapshotControlsInput",
+    "SnapshotPathInput",
+)
 
 
 def fetch_live_openapi() -> dict | None:
@@ -65,13 +80,73 @@ def generate_openapi_in_process() -> dict:
 TS_HEADER = (
     "// AUTO-GENERATED — do not edit. Source: backend Pydantic models via\n"
     "// scripts/generate_typescript_contracts.py (T2455).\n"
-    "// @ts-nocheck — the OpenAPI surface contains duplicate operation ids on\n"
-    "//   cluster-proxy routes (one id per method); openapi-typescript emits\n"
-    "//   them as duplicate keys which trip TS2300 under `tsc -b`. This module\n"
-    "//   is consumed only through `snapshots.contract.ts` (type-only re-exports\n"
-    "//   for snapshot endpoints), so type checking happens at the contract\n"
-    "//   surface, not on the raw schema dump.\n"
+    "// @ts-nocheck — this raw OpenAPI dump is consumed only through\n"
+    "//   `snapshots.contract.ts` (type-only re-exports for snapshot endpoints),\n"
+    "//   so type checking happens at the contract surface, not on the generated\n"
+    "//   schema implementation details.\n"
 )
+
+
+def iter_schema_refs(value: object) -> set[str]:
+    refs: set[str] = set()
+    if isinstance(value, dict):
+        maybe_ref = value.get("$ref")
+        if isinstance(maybe_ref, str) and maybe_ref.startswith(SCHEMA_REF_PREFIX):
+            refs.add(maybe_ref.removeprefix(SCHEMA_REF_PREFIX))
+        for child in value.values():
+            refs.update(iter_schema_refs(child))
+    elif isinstance(value, list):
+        for child in value:
+            refs.update(iter_schema_refs(child))
+    return refs
+
+
+def filter_snapshot_contract_openapi(openapi_doc: dict) -> dict:
+    """Trim the full OpenAPI document to the schema contract closure.
+
+    `snapshots.contract.ts` consumes only type-only schema exports.
+    Filtering avoids unrelated route model-name collisions (for example
+    independent `DownloadRequest` classes) making this gate nondeterministic.
+    """
+    components = openapi_doc.get("components", {})
+    schemas = components.get("schemas", {})
+    missing_roots = [
+        schema_name
+        for schema_name in SNAPSHOT_CONTRACT_SCHEMA_ROOTS
+        if schema_name not in schemas
+    ]
+    if missing_roots:
+        raise RuntimeError(
+            "OpenAPI document is missing snapshot contract schemas: "
+            + ", ".join(missing_roots)
+        )
+
+    needed = set(SNAPSHOT_CONTRACT_SCHEMA_ROOTS)
+    queue = list(needed)
+    while queue:
+        schema_name = queue.pop()
+        schema = schemas.get(schema_name)
+        if schema is None:
+            continue
+        for ref in iter_schema_refs(schema):
+            if ref not in needed:
+                needed.add(ref)
+                queue.append(ref)
+
+    filtered = {
+        key: value
+        for key, value in openapi_doc.items()
+        if key not in {"paths", "components"}
+    }
+    filtered["paths"] = {}
+    filtered_components = {}
+    filtered_components["schemas"] = {
+        name: schemas[name]
+        for name in sorted(needed)
+        if name in schemas
+    }
+    filtered["components"] = filtered_components
+    return filtered
 
 
 def write_typescript(openapi_doc: dict, output_path: Path) -> None:
@@ -103,6 +178,15 @@ def write_typescript(openapi_doc: dict, output_path: Path) -> None:
 
 
 def main() -> int:
+    # FastAPI/Pydantic schema-name collision handling can consult hash-ordered
+    # containers when duplicate model class names exist in independent route
+    # modules. Pinning the interpreter hash seed makes this generated contract
+    # deterministic across the normal write pass and the CI --check pass.
+    if os.environ.get("PYTHONHASHSEED") != "0":
+        env = os.environ.copy()
+        env["PYTHONHASHSEED"] = "0"
+        os.execvpe(sys.executable, [sys.executable, *sys.argv], env)
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--check",
@@ -121,6 +205,7 @@ def main() -> int:
                 f"localhost:8080 and in-process fallback failed: {exc}\n"
             )
             return 3
+    openapi_doc = filter_snapshot_contract_openapi(openapi_doc)
 
     if args.check:
         with tempfile.NamedTemporaryFile(

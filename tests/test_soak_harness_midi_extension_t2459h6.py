@@ -63,6 +63,7 @@ def test_midi_flags_default_preserves_legacy_behavior(monkeypatch: pytest.Monkey
     assert args.midi_message_mix == "mixed"
     assert args.midi_host_socket is None
     assert args.soak_tag == ""
+    assert args.audio_device is None
 
 
 def test_midi_flags_accept_host_driver_and_overrides(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -78,6 +79,7 @@ def test_midi_flags_accept_host_driver_and_overrides(monkeypatch: pytest.MonkeyP
             "--midi-message-mix", "clock",
             "--midi-host-socket", "/tmp/test-controller-host.sock",
             "--soak-tag", "t2459h6-shm-ring",
+            "--audio-device", "TASCAM US-144MKII Multichannel",
         ],
     )
     args = soak.parse_args(REPO_ROOT)
@@ -87,6 +89,20 @@ def test_midi_flags_accept_host_driver_and_overrides(monkeypatch: pytest.MonkeyP
     assert args.midi_message_mix == "clock"
     assert args.midi_host_socket == Path("/tmp/test-controller-host.sock")
     assert args.soak_tag == "t2459h6-shm-ring"
+    assert args.audio_device == "TASCAM US-144MKII Multichannel"
+
+
+def test_audio_device_override_prefers_cli_then_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    soak = _load_soak_module()
+
+    monkeypatch.setenv("MAP2_SOAK_AUDIO_DEVICE", "Env Device")
+    monkeypatch.setattr(sys, "argv", ["soak"])
+    args = soak.parse_args(REPO_ROOT)
+    assert soak.resolve_audio_device_override(args) == "Env Device"
+
+    monkeypatch.setattr(sys, "argv", ["soak", "--audio-device", "CLI Device"])
+    args = soak.parse_args(REPO_ROOT)
+    assert soak.resolve_audio_device_override(args) == "CLI Device"
 
 
 def test_midi_message_mix_choices_are_locked() -> None:

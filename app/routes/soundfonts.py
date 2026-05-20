@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/soundfonts", tags=["soundfonts"])
 
 
-class DownloadRequest(BaseModel):
+class SoundFontDownloadRequest(BaseModel):
     """Request to start SoundFont download."""
     sources: Optional[List[str]] = None  # None = all sources
     parallel: int = 4
@@ -242,7 +242,7 @@ async def get_download_status() -> Dict:
 
 
 @router.post("/download")
-async def start_download(request: DownloadRequest) -> Dict:
+async def start_download(request: SoundFontDownloadRequest) -> Dict:
     """Start SoundFont library download.
 
     Args:

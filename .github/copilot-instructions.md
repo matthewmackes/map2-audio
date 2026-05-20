@@ -3,7 +3,7 @@
 > Gemini-specific instructions are available at [../.gemini/instructions.md](../.gemini/instructions.md).
 
 
-> **Last Updated**: April 19, 2026 (LCD PlatformEvent hard cutover landed)
+> **Last Updated**: May 20, 2026 (snapshot codegen contract filter landed)
 > **Purpose**: Central reference for AI assistants working on the MAP2 Audio codebase
 > **Maintained by**: GitHub Copilot AI Assistants
 
@@ -1020,6 +1020,14 @@ These files represent best practices and architectural patterns to follow:
 - **Fix**: Add a project-wide no-gradient rule to the shared guidance, replace guidance examples that showed gradient backgrounds, and record the current hotspot inventory in the canonical worklist (`AppShell.css`, `PageHeader.css`, `OutboardHardwareShell.css`, `posterFallbacks.css`, `CPUPerformancePage*`, `MOTURMEPage.tsx`, routing panels, metering/visualization components, and category-style helpers/tests).
 - **Verification**: `rg -n "gradient|bg-gradient|linearGradient|createLinearGradient" .github/copilot-instructions.md .gemini/instructions.md docs/PROJECT_WORKLIST.md`
 - **Lesson**: “Use Carbon” is not strong enough on its own; the repo needs an explicit no-gradient rule so follow-on UI work fails closed.
+
+**117. Snapshot OpenAPI Codegen Must Stay Contract-Scoped**
+- **Files**: `scripts/generate_typescript_contracts.py`, `web/src/map2/clients/snapshots.contract.ts`, `docs/architecture/CODEGEN_INDEX.md`
+- **Problem**: Release builds could fail with `snapshots.generated.ts is out of date` immediately after regeneration when the snapshot generator consumed the full OpenAPI document.
+- **Root Cause**: Full OpenAPI generation pulled unrelated route models with duplicate class names into a snapshot-only type gate; FastAPI/Pydantic component-name collision handling made the emitted schema unstable across processes.
+- **Fix**: Filter the OpenAPI document to the transitive closure of the explicit snapshot schema roots consumed by `snapshots.contract.ts` before running `openapi-typescript`.
+- **Verification**: `python3 scripts/generate_typescript_contracts.py --check`; `npm --prefix web run typecheck`; `npm --prefix web run build`.
+- **Lesson**: Generated files should enforce their consumer contract, not every unrelated backend route. Keep type-only codegen surfaces scoped to the schema roots they export.
 
 **90. Home Visual Smoke Harnesses Must Mock Realtime Telemetry Layers**
 - **Files**: `scripts/run_home_visual_smoke.mjs`, `docs/HOME_VISUAL_SMOKE.md`

@@ -43,6 +43,20 @@ python3 .codex/skills/juce-random-effects-soak/scripts/run_juce_random_fx_soak.p
   --threshold-max-budget-utilization-percent 80
 ```
 
+Device-targeted bench run (use the exact JUCE/JACK device name):
+
+```bash
+python3 .codex/skills/juce-random-effects-soak/scripts/run_juce_random_fx_soak.py \
+  --audio-device "TASCAM US-144MKII Multichannel" \
+  --duration-seconds 1800 \
+  --flow-rotation-seconds 20 \
+  --sample-interval-seconds 1.0 \
+  --reset-stats-after-warmup \
+  --threshold-max-xruns 0 \
+  --threshold-max-peak-jitter-ms 0.35 \
+  --threshold-max-budget-utilization-percent 80
+```
+
 Aggressive crash-repro variant (live rewire while callback is running):
 
 ```bash
@@ -69,6 +83,7 @@ Default output path:
 - Keep blend strategy rotation enabled between flow epochs.
 - Default to safe rewire mode (stop/start audio around graph rewires); enable `--live-rewire` only when intentionally probing race/crash behavior.
 - Use `--reuse-effects` only for focused callback-only triage where plugin load/unload churn is intentionally excluded.
+- Use `--audio-device` for bench evidence that must bind a specific interface. `MAP2_SOAK_AUDIO_DEVICE` is kept as an environment fallback for legacy runbooks, but the CLI flag is preferred because it is captured in the generated JSON/Markdown artifacts.
 
 ## References
 

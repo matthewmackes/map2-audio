@@ -43,7 +43,7 @@ class ParameterRequest(BaseModel):
     value: float
 
 
-class BypassRequest(BaseModel):
+class EngineBypassRequest(BaseModel):
     instance_id: int
     bypass: bool
 
@@ -406,7 +406,7 @@ async def get_parameter(instance_id: int, param_name: str):
 
 
 @router.post("/bypass")
-async def set_bypass(request: BypassRequest):
+async def set_bypass(request: EngineBypassRequest):
     """Set plugin bypass state"""
     service = get_engine_service()
     

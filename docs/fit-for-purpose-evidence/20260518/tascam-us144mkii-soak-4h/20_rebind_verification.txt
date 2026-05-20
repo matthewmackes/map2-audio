@@ -1,0 +1,114 @@
+=== Post-rebind verification 2026-05-18T12:10:17Z ===
+--- /api/audio/status ---
+{
+    "running": true,
+    "sample_rate": 48000.0,
+    "buffer_size": 64,
+    "cpu_load": 0.0,
+    "engine": "juce",
+    "version": "2.0.0-juce",
+    "plugin_count": 9,
+    "active_pedalboard": null,
+    "audio_device": "TASCAM US-144MKII Multichannel",
+    "input_channel_mode": "stereo",
+    "input_gain_db": 0.0,
+    "output_gain_db": 0.0,
+    "input_device": null,
+    "output_device": null,
+    "available_input_devices": [],
+    "available_output_devices": [],
+    "available": true,
+    "total_xruns": 0,
+    "xrun_rate_per_minute": 0.0,
+    "thread_state": "offline",
+    "signal_state": "unknown",
+    "buffer_health_pct": 0.0,
+    "latency_ms": null
+}
+--- /api/audio/latency ---
+{"latency_ms":1.3333333333333333}
+--- /api/audio/diagnostics/latency ---
+{"buffer_latency_ms":1.333,"callback_budget_ms":1.333,"avg_callback_duration_ms":0.0,"device_input_latency_ms":1.333,"device_output_latency_ms":1.0,"device_total_latency_ms":3.667,"chain_latency_samples":0,"chain_latency_ms":0.0,"per_plugin_latency":[],"measured_round_trip_ms":-1.0,"last_measurement":null}
+--- /api/pipewire/latency ---
+{"settings":{"clock_rate":48000,"clock_force_rate":48000,"clock_quantum":64,"clock_force_quantum":64,"clock_min_quantum":32,"clock_max_quantum":256,"clock_allowed_rates":[48000]},"graph_latency_ms":1.333,"driver_latency_ms":1.333,"total_latency_ms":2.667}
+--- JACK port connections (Tascam only) ---
+TASCAM US-144MKII Multichannel:capture_FL
+   JUCEJack-44:in_1
+TASCAM US-144MKII Multichannel:capture_FR
+   JUCEJack-44:in_2
+TASCAM US-144MKII Multichannel:capture_RL
+   JUCEJack-44:in_3
+TASCAM US-144MKII Multichannel:capture_RR
+   JUCEJack-44:in_4
+--
+JUCEJack-44:out_1
+   TASCAM US-144MKII Multichannel:playback_FL
+JUCEJack-44:out_2
+   TASCAM US-144MKII Multichannel:playback_FR
+JUCEJack-44:out_3
+   TASCAM US-144MKII Multichannel:playback_RL
+JUCEJack-44:out_4
+   TASCAM US-144MKII Multichannel:playback_RR
+JUCEJack:out_1
+--
+Built-in Audio Analog Stereo:monitor_FR
+TASCAM US-144MKII Multichannel:playback_FL
+   JUCEJack-44:out_1
+TASCAM US-144MKII Multichannel:playback_FR
+   JUCEJack-44:out_2
+TASCAM US-144MKII Multichannel:playback_RL
+   JUCEJack-44:out_3
+TASCAM US-144MKII Multichannel:playback_RR
+   JUCEJack-44:out_4
+TASCAM US-144MKII Multichannel:monitor_FL
+   JUCEJack-44:in_5
+TASCAM US-144MKII Multichannel:monitor_FR
+   JUCEJack-44:in_6
+TASCAM US-144MKII Multichannel:monitor_RL
+   JUCEJack-44:in_7
+TASCAM US-144MKII Multichannel:monitor_RR
+   JUCEJack-44:in_8
+JUCEJack-44:in_1
+   TASCAM US-144MKII Multichannel:capture_FL
+JUCEJack-44:in_2
+   TASCAM US-144MKII Multichannel:capture_FR
+JUCEJack-44:in_3
+   TASCAM US-144MKII Multichannel:capture_RL
+JUCEJack-44:in_4
+   TASCAM US-144MKII Multichannel:capture_RR
+JUCEJack-44:in_5
+   TASCAM US-144MKII Multichannel:monitor_FL
+JUCEJack-44:in_6
+   TASCAM US-144MKII Multichannel:monitor_FR
+JUCEJack-44:in_7
+   TASCAM US-144MKII Multichannel:monitor_RL
+JUCEJack-44:in_8
+   TASCAM US-144MKII Multichannel:monitor_RR
+JUCEJack:in_1
+--
+   libremidi client-276:map2-controller-host input
+Midi-Bridge:TASCAM US-144MKIIUS144MKII MIDI (capture)
+   libremidi client-182:map2-controller-host input
+--
+Midi-Bridge:Midi Through Port-0 (playback)
+Midi-Bridge:TASCAM US-144MKIIUS144MKII MIDI (playback)
+Midi-Bridge:MAP2 Audio EngineMIDI In (playback)-224113
+--
+libremidi client-95:map2-controller-host input
+   Midi-Bridge:TASCAM US-144MKIIUS144MKII MIDI (capture)
+libremidi client-98:map2-controller-host input
+--
+libremidi client-171:map2-controller-host input
+   Midi-Bridge:TASCAM US-144MKIIUS144MKII MIDI (capture)
+libremidi client-178:map2-controller-host input
+--
+libremidi client-182:map2-controller-host input
+   Midi-Bridge:TASCAM US-144MKIIUS144MKII MIDI (capture)
+libremidi client-186:map2-controller-host input
+--
+libremidi client-210:map2-controller-host input
+   Midi-Bridge:TASCAM US-144MKIIUS144MKII MIDI (capture)
+libremidi client-214:map2-controller-host input
+--
+libremidi client-226:map2-controller-host input
+   Midi-Bridge:TASCAM US-144MKIIUS144MKII MIDI (capture)

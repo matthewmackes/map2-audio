@@ -1,0 +1,52 @@
+=== Sample 20 @ 20260518T140046Z ===
+--- soak process state ---
+    PID     ELAPSED %CPU %MEM   RSS
+1366907    01:40:40  0.3  1.6 554940
+--- JACK Tascam connections ---
+TASCAM US-144MKII Multichannel:capture_FL
+   JUCEJack:in_1
+TASCAM US-144MKII Multichannel:capture_FR
+   JUCEJack:in_2
+TASCAM US-144MKII Multichannel:capture_RL
+TASCAM US-144MKII Multichannel:capture_RR
+Built-in Audio Analog Stereo:capture_FL
+--
+   TASCAM US-144MKII Multichannel:playback_FL
+JUCEJack:out_2
+   TASCAM US-144MKII Multichannel:playback_FR
+JUCEJack:out_3
+--
+TASCAM US-144MKII Multichannel:playback_FL
+   JUCEJack:out_1
+TASCAM US-144MKII Multichannel:playback_FR
+   JUCEJack:out_2
+TASCAM US-144MKII Multichannel:playback_RL
+TASCAM US-144MKII Multichannel:playback_RR
+TASCAM US-144MKII Multichannel:monitor_FL
+TASCAM US-144MKII Multichannel:monitor_FR
+TASCAM US-144MKII Multichannel:monitor_RL
+TASCAM US-144MKII Multichannel:monitor_RR
+JUCEJack:in_1
+   TASCAM US-144MKII Multichannel:capture_FL
+JUCEJack:in_2
+   TASCAM US-144MKII Multichannel:capture_FR
+JUCEJack:in_3
+--- JACK xrun count (cumulative since jackd start) ---
+S   ID  QUANT   RATE    WAIT    BUSY   W/Q   B/Q  ERR FORMAT           NAME 
+C   63      0      0    ---     ---   ---   ---     0                  alsa_output.pci-0000_00_14.0-usb-0_13.4.1.multichannel-output
+C   64      0      0    ---     ---   ---   ---     0                  alsa_input.pci-0000_00_14.0-usb-0_13.4.1.multichannel-input
+C   65      0      0    ---     ---   ---   ---     0                  alsa_output.pci-0000_00_1b.0.analog-stereo
+C   66      0      0    ---     ---   ---   ---     0                  alsa_input.pci-0000_00_1b.0.analog-stereo
+C   44      0      0    ---     ---   ---   ---     0                  JUCEJack
+--- PipeWire driver status ---
+*		default.clock.rate = "48000"
+*		default.clock.allowed-rates = "[ 48000 ]"
+*		default.clock.min-quantum = "32"
+*		default.clock.quantum = "64"
+*		default.clock.max-quantum = "256"
+*		default.clock.quantum-limit = "8192"
+*		default.clock.quantum-floor = "4"
+*		default.video.rate.num = "25"
+*		default.video.rate.denom = "1"
+*		clock.power-of-two-quantum = "true"
+--- Device USB error counter ---

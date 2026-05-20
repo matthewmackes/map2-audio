@@ -79,7 +79,8 @@ Each task/subtask should contain these fields:
 - `[✓]` `T2497` — Audio Artifacts global tree nav: remove duplicated "Discover" entries under every subcategory (shipped 2026-05-05)
 - `[✓]` `T2498` — Baked `MAP2_AUDIO_PREFER_JACK=1` into repo `systemd/map2-backend.service` (closed 2026-05-08). Fresh installs no longer regress to ALSA-via-PipeWire on JUCE device open. Live bench unit already had this via `15-prefer-jack.conf` drop-in; repo copy now matches.
 - `[>]` `T2499` — Sequencer Setup "Coming Soon" cards epic. **T2499-A 8/8 code slices SHIPPED in autonomous-10 run 2026-05-08/09** (framework primitives + Carbon shell + MeloAudio adapter + device-pack picker + MIDI Learn fallback + bindings writer + Setup card flip + e2e integration test; 75 jest + 33 pytest = 108 net new tests). T2499-A stays `[>] In Progress` pending UI swap (framework shell mount on a route), HIL parity bench gate, and pack-picker integration with MIDI Services. T2499-B (Maschine MK1) and T2499-C (AVDECC) still `[ ] Todo`.
-- `[>]` `T2515` — **TASCAM US-144MKII tier-1 native support** (filed 2026-05-12). 8 sub-tasks. Greenfield integration of `0644:8020` (operational PID) + `0644:800F` (boot-mode PID intentionally unmapped). In-tree kernel ≥6.x driver `snd-usb-us144mkii`; no DKMS. Pinned 48 kHz / 64-sample to match Tier A locks; S/PDIF ch 3-4 first-class; full-custom Carbon Devices panel mirroring UA-1000 richness. **No C++** — mirrors UA-1000/Jogg precedent (Python constants + device-pack + React). Estimated 15-17 h active + 0.5 h soak.
+- `[✓]` `T2530` — Release-prep update loop closed 2026-05-20. Hardened targeted JUCE soak device binding, curated the 2026-05-18 TASCAM US-144MKII 4h evidence, fixed snapshot contract codegen determinism, ran focused validation + licensing/platform-layer audit, and prepared the tree for the `update` shorthand (commit, dual-push, rebuild/restart port 3000; final hash/deploy proof reported in the release response).
+- `[✓]` `T2515` — **TASCAM US-144MKII tier-1 native support** closed 2026-05-20. Core code/routes/UI plus T2515-7 physical bench soak evidence are complete; accepted 4h US-144MKII random-FX PASS (0 xruns, peak jitter 0.0 ms, 720 flow transitions) at `docs/fit-for-purpose-evidence/20260518/tascam-us144mkii-soak-4h/`. T2515-8 DoD close completed by T2530's release-prep validation/update loop. Non-blocking follow-up remains tracked separately: engine-backed meter source injection (`T2515-Follow-up-METER-WIRE`).
 - `[>]` `T2517` — **MPX-1 as effects-chooser block + AES/S/PDIF dual-connection** (filed 2026-05-12). 9 sub-tasks. Generalize existing `LexiconHardwareProcessor` (drop hardcoded UA-1000 channel constexprs → per-instance atomic channel-config); wire existing `hardware://lexicon-mpx1-spdif` descriptor into `/api/plugins/discover` (currently defined but never returned); add interface-capability registry (`digital_io_stereo`, `aes_ebu`, `spdif_coax`); singleton-instance enforcement with structured 409; per-instance side-panel + measured-latency calibration wizard. AES preferred, S/PDIF fallback, both per-instance. Estimated 19-21 h active + 1.5 h soak.
 - `[>]` `T2518` — **Snapshot interface binding — world-class picker** (filed 2026-05-12). Snapshot publish UI only shows "Use rig default" because there's no unified enumeration. New `AudioInterfaceRegistry` merges PipeWire (local) + AVB endpoints + cluster nodes into a single stable-ID model (`pipewire:<vendor>:<product>:<serial>`, `avb:<endpoint_id>`, `cluster:<node_id>:<sub_id>`); new `GET /api/audio/interfaces` route; `AudioStateDesiredIO` gains `input_interface_id` / `output_interface_id` (display-name kept as resolver fallback for back-compat); new Carbon `SnapshotInterfacePicker` card-grid with transport chips, vendor/product, port counts, live availability tag, search/filter; wired into `SnapshotPublishPage` Devices section. Per-snapshot binding (all chains share). Estimated 8-10 h active.
 - `[✓]` `T2519` — **Unified device meter-source primitive** (filed + shipped 2026-05-13 in tenth Continue run, 4 cycles). Generalized the Tascam-specific meter-source seam from run 9 into a multi-device `DeviceMeterSourceRegistry` (`app/services/devices/_meter_source.py`) and migrated all four audio-interface + hardware-bridge devices onto it via thin facade modules: `tascam_us144mkii_meters.py` (rewritten, public API preserved verbatim), `edirol_ua1000_meters.py` (new, 10×10), `hotone_jogg_meters.py` (new, 2×2), `lexicon_mpx1_meters.py` (new, 2×2). New `GET /api/v1/devices/{device_id}/peak-meters` route serves every registered device through a single handler. New TascamUS144MKII StatusTab metering-source row surfaces the source state in the top-level panel without needing the Metering tab. 54 Python tests across 5 suites + 13 web tests across 3 Tascam suites green; legacy `/api/v1/devices/tascam-us144mkii/meters` route preserved for backwards-compat.
@@ -105,6 +106,28 @@ Each task/subtask should contain these fields:
 
 - Completed and cancelled history remains in the archive file listed above.
 - This active worklist intentionally contains only unfinished work (`Todo`, `In Progress`, `Blocked`).
+
+
+## T2530 — Release-prep update loop (2026-05-20)
+
+ID: T2530
+Status: [✓] Done
+Title: Prepare MAP2 for the next release by sealing validation evidence and running the update ship loop
+Description:
+- Goal / acceptance criteria: Convert the current dirty tree and bench artifacts into a release-ready state: harden the JUCE random-FX soak harness's device targeting into a documented CLI/environment contract; curate the 2026-05-18 TASCAM US-144MKII 4h soak evidence without transient PID files; update T2515 worklist closeout status; run focused tests, release build/deploy checks, and licensing audit; then commit to master, push to both `origin` and `gitlab`, rebuild the frontend bundle, restart port 3000, and verify the live server.
+- Why it matters: The user requested `update, and prepare for release`; per MAP2 workflow, release readiness requires committed evidence, synchronized remotes, a current production web build, and no platform-layer drift from new runtime assumptions.
+- Dependencies: T2515 bench evidence exists at `docs/fit-for-purpose-evidence/20260518/tascam-us144mkii-soak-4h/`; no new packages/services required.
+- Estimated effort: Medium.
+- Required outputs/deliverables: Soak harness CLI/doc/test updates, curated evidence directory, worklist closeout notes, validation command evidence, licensing status summary, commit hash, dual-push confirmation, and port-3000 deployment verification.
+Subtasks: None
+Assigned to: Codex
+Completion notes:
+- 2026-05-20 12:40 EDT - Codex: hardened the JUCE random-FX soak harness with a documented `--audio-device` CLI selector plus `MAP2_SOAK_AUDIO_DEVICE` fallback and artifact capture; accepted and curated the 2026-05-18 US-144MKII 4h soak evidence after removing transient PID markers.
+- Validation PASS: `python3 -m pytest -q tests/test_soak_harness_midi_extension_t2459h6.py tests/test_platform_version.py tests/test_version_manifest_resilience.py tests/test_typecheck_gate_wires_codegen_checks.py tests/test_codegen_index_doc.py` (39 passed), `python3 scripts/generate_typescript_contracts.py --check`, `npm --prefix web run typecheck`, and `npm --prefix web run build`.
+- Release build fix: snapshot OpenAPI codegen is now filtered to the explicit snapshot contract schema roots, and duplicate request-model names on unrelated routes were made unique so release builds are deterministic.
+- Licensing/platform-layer review PASS: no new packages, services, runtime daemons, build requirements, installer changes, or environment artifacts are required; MAP2-owned AGPL-3.0-only posture and third-party notices remain consistent.
+- Update loop: this closeout is ready to be committed, dual-pushed to `origin` and `gitlab`, rebuilt/restarted on port 3000, and verified; exact commit/deploy proof is reported in the release response.
+Last updated: 2026-05-20 12:40 EDT - Codex: release-prep validation complete; ready for commit, dual-push, rebuild/restart, and live port-3000 verification.
 
 
 ## T2524 — React GUI release-readiness audit replay (software-only, no SubC)
@@ -3776,7 +3799,7 @@ Last updated: 2026-05-11 — Claude.
 ## T2515 — TASCAM US-144MKII tier-1 native support (filed 2026-05-12)
 
 ID: T2515
-Status: [>] In Progress
+Status: [✓] Done
 Title: Promote the TASCAM US-144MKII to a tier-1, natively supported audio interface (peer to UA-1000 / Jogg).
 Description:
 - **Goal:** First-class platform support for the US-144MKII. VID/PID `0644:8020` (operational; firmware-loaded by `snd-usb-us144mkii`) recognized everywhere UA-1000/Jogg are. Boot/loader PID `0644:800F` intentionally **not** mapped — the kernel module handles the firmware-upload re-enumeration; we surface "device in boot mode" state in the UI instead of treating it as connected.
@@ -3809,12 +3832,12 @@ Description:
   - `T2515-4` [✓] Engine wiring — `app/services/devices/tascam_us144mkii_engine.py::ensure_jack_direct_or_raise()` enforces `MAP2_AUDIO_PREFER_JACK=1`; sample-rate-change safety inherited from the 2026-02-17 RT-safety pattern.
   - `T2515-5` [✓] React panel — `web/src/app/components/Devices/TascamUS144MKII/` with 6 tabs (Status / I/O / Metering / Clock / Diagnostics / Bridge) + hardware banner. ClockTab now fetches `/clock-source` live (run 9). MeteringTab now distinguishes placeholder vs engine source via Tag + em-dash sentinel rendering (run 9).
   - `T2515-6` [✓] Backend routes — `GET /status`, `GET /capabilities`, `GET /meters`, `GET /clock-source`, `POST /reset` all live; OpenAPI audit + 22 route tests green.
-  - `T2515-7` [ ] Soak + fit-for-purpose evidence — gated on a physical bench session with the US-144MKII connected. Target: 30 min @ 48k/64-sample, 0 xruns, ≤0.35 ms peak jitter. Evidence dir `docs/fit-for-purpose-evidence/<date>/tascam-us144mkii/`.
-  - `T2515-8` [ ] DoD close — gated on T2515-7.
+  - `T2515-7` [✓] Soak + fit-for-purpose evidence — physical US-144MKII bench evidence captured 2026-05-18 at `docs/fit-for-purpose-evidence/20260518/tascam-us144mkii-soak-4h/`. The run exceeded the original 30-minute target with a 4h random-FX soak at 48 kHz / 64 samples, 10 effects active per flow, 720 flow transitions, 0 xruns, 0 flow errors, and peak callback jitter 0.0 ms (threshold ≤0.35 ms). Evidence includes pre-soak environment, rebind verification, latency baseline/samples, stdout, JSON, and Markdown summary.
+  - `T2515-8` [✓] DoD close — completed by T2530 release-prep update loop: focused soak-harness/version/codegen tests passed, snapshot contract codegen check passed, `npm --prefix web run typecheck` and `npm --prefix web run build` passed, licensing/platform-layer audit found no new installer/environment requirements, and release update commit/dual-push/deploy proof is reported in the release response.
 
 **T2515-Follow-up-METER-WIRE** [>] In Progress — Python injection seam for the per-device peak-dBFS source shipped run 9: `app/services/devices/tascam_us144mkii_meters.py` defines `TascamMeterSource` Protocol + `PlaceholderMeterSource` + module-level singleton seam. Route reads through `read_snapshot()` (awaitable-aware). Lifespan startup will register a `JuceEngineMeterSource` once the C++ binding for the per-device peak ring is wired; the route + UI both flip from `placeholder` to `engine` automatically without further edits.
 
-Last updated: 2026-05-13 — Claude (run 9).
+Last updated: 2026-05-20 12:40 EDT - Codex: T2515 closed; T2515-7 bench evidence accepted from the 2026-05-18 4h US-144MKII random-FX soak and T2515-8 completed through the T2530 release-prep validation/update loop. Non-blocking engine-backed meter source injection remains tracked separately as T2515-Follow-up-METER-WIRE.
 
 ---
 

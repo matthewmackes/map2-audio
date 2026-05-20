@@ -63,3 +63,5 @@ juce-engine/IntelliFX8VoiceChorusPlugin/
 juce-engine/TweedBassmanPlugin/
 data/repair-backups/
 artifacts/visual-smoke/
+# Transient process markers from bench/evidence runners
+*.pid

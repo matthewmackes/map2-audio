@@ -135,7 +135,7 @@ class InstanceConfigResponse(BaseModel):
     calibration: Optional[CalibrationResult] = None
 
 
-class BypassRequest(BaseModel):
+class Mpx1BypassRequest(BaseModel):
     bypass: bool
 
 
@@ -301,7 +301,7 @@ async def delete_mpx1_instance(chain_id: str) -> None:
 
 
 @mpx1_router.post("/instance/{chain_id}/bypass", response_model=InstanceConfigResponse)
-async def set_mpx1_bypass(chain_id: str, body: BypassRequest) -> InstanceConfigResponse:
+async def set_mpx1_bypass(chain_id: str, body: Mpx1BypassRequest) -> InstanceConfigResponse:
     with _STATE_FILE_LOCK:
         state = _read_state()
         raw = state["instances"].get(chain_id)

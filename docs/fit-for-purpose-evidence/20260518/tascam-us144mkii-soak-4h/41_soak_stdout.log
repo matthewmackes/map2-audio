@@ -1,0 +1,1960 @@
+Initializing MAP2 Audio Engine v2.0.0-juce (JUCE)
+Scanning for plugins...
+lilv_world_add_plugin(): warning: Reloading plugin <http://distrho.sf.net/plugins/MVerb>
+lilv_world_add_plugin(): warning: Reloading plugin <http://www.niallmoody.com/ndcplugs/soulforce.htm>
+lilv_world_add_plugin(): warning: Reloading plugin <https://github.com/michaelwillis/dragonfly-reverb>
+lilv_world_add_plugin(): warning: Reloading plugin <urn:dragonfly:plate>
+lilv_world_add_plugin(): warning: Reloading plugin <urn:dragonfly:room>
+lilv_world_add_plugin(): warning: Reloading plugin <urn:dragonfly:early>
+lilv_world_add_plugin(): warning: Reloading plugin <http://tomszilagyi.github.io/plugins/lv2/ir>
+lilv_world_add_plugin(): warning: Reloading plugin <https://www.auburnsounds.com/products/Graillon.html40733133#mono>
+lilv_world_add_plugin(): warning: Reloading plugin <https://www.auburnsounds.com/products/Graillon.html40733133#stereo>
+  [11%] urn:dragonfly:room
+  [22%] urn:dragonfly:plate
+  [33%] urn:dragonfly:early
+  [44%] https://www.auburnsounds.com/products/Graillon.html40733133#stereo
+  [55%] https://www.auburnsounds.com/products/Graillon.html40733133#mono
+  [66%] https://github.com/michaelwillis/dragonfly-reverb
+  [77%] http://www.niallmoody.com/ndcplugs/soulforce.htm
+  [88%] http://tomszilagyi.github.io/plugins/lv2/ir
+  Configuring audio: 2 inputs, 2 outputs
+  Available audio device types:
+    - ALSA
+    - JACK
+  >> Selected JACK audio device type (PipeWire JACK)
+  All memory locked to RAM (mlockall)
+MIDI Handler initialized with enhanced features
+  NAM (Neural Amp Modeler): Available
+  Modulation processors: Chorus, Phaser, Pitch Shifter, IntelliFX 8-Voice, ShoeGaze, LexiLove, H3000, Peavey5150, TweedBassman, PassionFX
+  SynthForge: Graph-registered instrument (16-part MIDI/voice core)
+  Drum Machine: Graph-registered instrument (16-pad sequencer)
+MAP2 Audio Engine initialized successfully
+  Sample Rate: 48000 Hz
+  Buffer Size: 64 samples
+  Audio Device: TASCAM US-144MKII Multichannel
+  Plugins Found: 9
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Shutting down MAP2 Audio Engine
+progress elapsed=30s flow=2 template=parallel5x5 blend=sine:0.654 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.168ms
+progress elapsed=60s flow=3 template=serial2_parallel4x4 blend=step_ab:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.168ms
+progress elapsed=90s flow=5 template=parallel3x2_then3x2 blend=random_jump:0.342 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.168ms
+progress elapsed=120s flow=6 template=serial4_parallel3x3 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.168ms
+progress elapsed=150s flow=8 template=serial4_parallel3x3 blend=random_jump:0.795 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.175ms
+progress elapsed=180s flow=9 template=serial2_parallel4x4 blend=step_ab:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.175ms
+progress elapsed=210s flow=11 template=serial4_parallel3x3 blend=sine:0.654 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.175ms
+progress elapsed=240s flow=12 template=parallel5x5 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.175ms
+progress elapsed=270s flow=14 template=parallel5x5 blend=random_jump:0.737 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.175ms
+progress elapsed=300s flow=15 template=serial2_parallel4x4 blend=step_ab:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.175ms
+progress elapsed=330s flow=17 template=serial2_parallel4x4 blend=random_jump:0.499 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.205ms
+progress elapsed=360s flow=18 template=parallel5x5 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.205ms
+progress elapsed=390s flow=20 template=parallel5x5 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.205ms
+progress elapsed=420s flow=21 template=serial2_parallel4x4 blend=triangle:0.099 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.205ms
+progress elapsed=450s flow=23 template=serial4_parallel3x3 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.205ms
+progress elapsed=480s flow=24 template=parallel5x5 blend=sine:0.347 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.205ms
+progress elapsed=510s flow=26 template=serial2_parallel4x4 blend=random_jump:0.967 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.205ms
+progress elapsed=540s flow=27 template=parallel5x5 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.205ms
+progress elapsed=570s flow=29 template=parallel5x5 blend=random_jump:0.913 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.205ms
+progress elapsed=600s flow=30 template=serial4_parallel3x3 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.205ms
+progress elapsed=630s flow=32 template=serial4_parallel3x3 blend=random_jump:0.282 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.205ms
+progress elapsed=660s flow=33 template=parallel5x5 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.205ms
+progress elapsed=690s flow=35 template=parallel5x5 blend=triangle:0.901 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.205ms
+progress elapsed=720s flow=36 template=serial2_parallel4x4 blend=sine:0.385 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.205ms
+progress elapsed=750s flow=38 template=parallel5x5 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.205ms
+progress elapsed=780s flow=39 template=serial2_parallel4x4 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.205ms
+progress elapsed=810s flow=41 template=serial2_parallel4x4 blend=sine:0.616 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.205ms
+progress elapsed=840s flow=42 template=serial4_parallel3x3 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.205ms
+progress elapsed=870s flow=44 template=serial2_parallel4x4 blend=step_ab:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.205ms
+progress elapsed=900s flow=45 template=parallel3x2_then3x2 blend=triangle:0.074 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.205ms
+progress elapsed=930s flow=47 template=serial2_parallel4x4 blend=triangle:0.926 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.205ms
+progress elapsed=960s flow=48 template=parallel5x5 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.205ms
+progress elapsed=990s flow=50 template=parallel5x5 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=1020s flow=51 template=parallel3x2_then3x2 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=1050s flow=53 template=parallel3x2_then3x2 blend=triangle:0.926 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=1080s flow=54 template=serial2_parallel4x4 blend=sine:0.385 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=1110s flow=56 template=serial2_parallel4x4 blend=sine:0.616 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=1140s flow=57 template=parallel3x2_then3x2 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=1170s flow=59 template=parallel5x5 blend=random_jump:0.505 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=1200s flow=60 template=serial4_parallel3x3 blend=triangle:0.074 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=1230s flow=62 template=serial4_parallel3x3 blend=step_ab:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=1260s flow=63 template=parallel3x2_then3x2 blend=sine:0.424 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=1290s flow=65 template=parallel5x5 blend=step_ab:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=1320s flow=66 template=serial4_parallel3x3 blend=triangle:0.049 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=1350s flow=68 template=parallel5x5 blend=step_ab:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=1380s flow=69 template=serial2_parallel4x4 blend=random_jump:0.489 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=1410s flow=71 template=parallel3x2_then3x2 blend=sine:0.577 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=1440s flow=72 template=serial2_parallel4x4 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=1470s flow=74 template=serial4_parallel3x3 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=1500s flow=75 template=serial2_parallel4x4 blend=triangle:0.049 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=1530s flow=77 template=parallel3x2_then3x2 blend=triangle:0.951 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=1560s flow=78 template=serial4_parallel3x3 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=1590s flow=80 template=serial4_parallel3x3 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=1620s flow=81 template=serial2_parallel4x4 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=1650s flow=83 template=parallel5x5 blend=random_jump:0.249 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=1680s flow=84 template=serial4_parallel3x3 blend=triangle:0.049 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=1710s flow=86 template=serial2_parallel4x4 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=1740s flow=87 template=serial4_parallel3x3 blend=step_ab:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=1770s flow=89 template=parallel3x2_then3x2 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=1800s flow=90 template=serial2_parallel4x4 blend=random_jump:0.806 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=1830s flow=92 template=serial4_parallel3x3 blend=sine:0.538 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=1860s flow=93 template=parallel5x5 blend=random_jump:0.554 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=1890s flow=95 template=serial2_parallel4x4 blend=random_jump:0.541 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=1920s flow=96 template=parallel5x5 blend=triangle:0.024 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=1950s flow=98 template=parallel5x5 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=1980s flow=99 template=serial4_parallel3x3 blend=triangle:0.024 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=2010s flow=101 template=serial4_parallel3x3 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=2040s flow=102 template=serial2_parallel4x4 blend=sine:0.462 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=2070s flow=104 template=parallel3x2_then3x2 blend=triangle:0.976 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=2100s flow=105 template=serial4_parallel3x3 blend=random_jump:0.525 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=2130s flow=107 template=serial4_parallel3x3 blend=random_jump:0.143 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=2160s flow=108 template=serial2_parallel4x4 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=2190s flow=110 template=serial2_parallel4x4 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=2220s flow=111 template=parallel5x5 blend=sine:0.462 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=2250s flow=113 template=parallel3x2_then3x2 blend=sine:0.538 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=2280s flow=114 template=parallel5x5 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=2310s flow=116 template=parallel5x5 blend=sine:0.538 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=2340s flow=118 template=parallel5x5 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=2370s flow=119 template=parallel3x2_then3x2 blend=triangle:0.999 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=2400s flow=121 template=serial2_parallel4x4 blend=sine:0.500 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=2430s flow=122 template=parallel5x5 blend=step_ab:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=2460s flow=124 template=parallel3x2_then3x2 blend=random_jump:0.467 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=2490s flow=125 template=serial2_parallel4x4 blend=triangle:0.999 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=2520s flow=127 template=parallel3x2_then3x2 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=2550s flow=128 template=parallel5x5 blend=triangle:0.999 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=2580s flow=130 template=serial2_parallel4x4 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=2610s flow=131 template=parallel3x2_then3x2 blend=triangle:0.999 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=2640s flow=133 template=parallel3x2_then3x2 blend=sine:0.500 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=2670s flow=134 template=serial4_parallel3x3 blend=step_ab:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=2700s flow=136 template=serial4_parallel3x3 blend=random_jump:0.992 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=2730s flow=137 template=parallel5x5 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=2760s flow=139 template=parallel5x5 blend=triangle:0.025 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=2790s flow=140 template=serial4_parallel3x3 blend=sine:0.460 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=2820s flow=142 template=parallel3x2_then3x2 blend=random_jump:0.391 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=2850s flow=143 template=serial4_parallel3x3 blend=triangle:0.974 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=2880s flow=145 template=parallel3x2_then3x2 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=2910s flow=146 template=parallel5x5 blend=triangle:0.974 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=2940s flow=148 template=serial2_parallel4x4 blend=step_ab:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=2970s flow=149 template=serial4_parallel3x3 blend=random_jump:0.508 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=3000s flow=151 template=parallel3x2_then3x2 blend=step_ab:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=3030s flow=152 template=serial2_parallel4x4 blend=random_jump:0.599 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=3060s flow=153 template=parallel5x5 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=3090s flow=155 template=serial4_parallel3x3 blend=step_ab:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=3120s flow=156 template=parallel3x2_then3x2 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=3150s flow=158 template=parallel3x2_then3x2 blend=triangle:0.926 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=3180s flow=159 template=serial4_parallel3x3 blend=sine:0.385 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=3210s flow=161 template=serial4_parallel3x3 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=3240s flow=162 template=serial2_parallel4x4 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=3270s flow=164 template=parallel5x5 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=3300s flow=165 template=parallel3x2_then3x2 blend=random_jump:0.779 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=3330s flow=167 template=parallel5x5 blend=random_jump:0.479 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=3360s flow=168 template=parallel3x2_then3x2 blend=step_ab:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=3390s flow=170 template=parallel5x5 blend=step_ab:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=3420s flow=171 template=serial2_parallel4x4 blend=random_jump:0.952 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=3450s flow=173 template=parallel3x2_then3x2 blend=sine:0.577 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=3480s flow=174 template=parallel5x5 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=3510s flow=176 template=parallel5x5 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=3540s flow=177 template=serial2_parallel4x4 blend=step_ab:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=3570s flow=179 template=parallel5x5 blend=random_jump:0.446 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=3600s flow=180 template=serial4_parallel3x3 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=3630s flow=182 template=serial2_parallel4x4 blend=sine:0.577 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=3660s flow=183 template=parallel5x5 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=3690s flow=185 template=parallel5x5 blend=triangle:0.951 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=3720s flow=186 template=parallel3x2_then3x2 blend=random_jump:0.411 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=3750s flow=188 template=parallel5x5 blend=sine:0.538 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=3780s flow=189 template=parallel3x2_then3x2 blend=triangle:0.024 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=3810s flow=191 template=parallel3x2_then3x2 blend=step_ab:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=3840s flow=192 template=serial2_parallel4x4 blend=random_jump:0.688 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=3870s flow=194 template=serial2_parallel4x4 blend=triangle:0.976 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=3900s flow=195 template=parallel3x2_then3x2 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=3930s flow=197 template=parallel3x2_then3x2 blend=triangle:0.976 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=3960s flow=198 template=parallel5x5 blend=random_jump:0.120 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=3990s flow=200 template=parallel3x2_then3x2 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=4020s flow=201 template=serial2_parallel4x4 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=4050s flow=203 template=parallel3x2_then3x2 blend=sine:0.538 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=4080s flow=204 template=parallel5x5 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=4110s flow=206 template=serial4_parallel3x3 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=4140s flow=207 template=parallel3x2_then3x2 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=4170s flow=209 template=parallel3x2_then3x2 blend=step_ab:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=4200s flow=210 template=serial4_parallel3x3 blend=random_jump:0.602 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=4230s flow=212 template=serial4_parallel3x3 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=4260s flow=214 template=parallel3x2_then3x2 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=4290s flow=215 template=serial2_parallel4x4 blend=triangle:0.999 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=4320s flow=217 template=serial2_parallel4x4 blend=random_jump:0.103 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=4350s flow=218 template=parallel5x5 blend=sine:0.499 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=4380s flow=220 template=serial4_parallel3x3 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=4410s flow=221 template=serial2_parallel4x4 blend=random_jump:0.819 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=4440s flow=223 template=parallel5x5 blend=step_ab:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=4471s flow=224 template=serial4_parallel3x3 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=4501s flow=226 template=parallel5x5 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=4531s flow=227 template=parallel3x2_then3x2 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=4561s flow=229 template=serial4_parallel3x3 blend=random_jump:0.822 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=4591s flow=230 template=parallel3x2_then3x2 blend=step_ab:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=4621s flow=232 template=parallel5x5 blend=triangle:0.025 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=4651s flow=233 template=serial2_parallel4x4 blend=step_ab:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=4681s flow=235 template=serial4_parallel3x3 blend=random_jump:0.223 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=4711s flow=236 template=serial2_parallel4x4 blend=sine:0.460 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=4741s flow=238 template=serial4_parallel3x3 blend=step_ab:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=4771s flow=239 template=parallel3x2_then3x2 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=4801s flow=241 template=serial4_parallel3x3 blend=step_ab:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=4831s flow=242 template=parallel3x2_then3x2 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=4861s flow=244 template=serial4_parallel3x3 blend=sine:0.539 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=4891s flow=245 template=parallel3x2_then3x2 blend=step_ab:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=4921s flow=247 template=parallel3x2_then3x2 blend=random_jump:0.797 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=4951s flow=248 template=serial2_parallel4x4 blend=triangle:0.974 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=4981s flow=250 template=parallel3x2_then3x2 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=5011s flow=251 template=parallel5x5 blend=sine:0.460 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=5041s flow=253 template=serial4_parallel3x3 blend=triangle:0.025 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=5071s flow=254 template=parallel3x2_then3x2 blend=random_jump:0.198 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=5101s flow=256 template=serial4_parallel3x3 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=5131s flow=257 template=parallel3x2_then3x2 blend=random_jump:0.286 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=5161s flow=259 template=parallel3x2_then3x2 blend=random_jump:0.995 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=5191s flow=260 template=serial2_parallel4x4 blend=sine:0.421 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=5221s flow=262 template=serial2_parallel4x4 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=5251s flow=263 template=parallel5x5 blend=sine:0.421 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=5281s flow=265 template=parallel3x2_then3x2 blend=step_ab:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=5311s flow=266 template=serial2_parallel4x4 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=5341s flow=268 template=parallel5x5 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=5371s flow=269 template=parallel3x2_then3x2 blend=sine:0.421 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=5401s flow=271 template=serial2_parallel4x4 blend=random_jump:0.140 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=5431s flow=272 template=parallel5x5 blend=triangle:0.949 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=5461s flow=274 template=serial4_parallel3x3 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=5491s flow=275 template=serial2_parallel4x4 blend=sine:0.421 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=5521s flow=277 template=serial2_parallel4x4 blend=triangle:0.050 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=5551s flow=278 template=serial4_parallel3x3 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=5581s flow=280 template=parallel5x5 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=5611s flow=281 template=serial4_parallel3x3 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=5641s flow=283 template=serial2_parallel4x4 blend=sine:0.617 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=5671s flow=284 template=parallel5x5 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=5701s flow=286 template=parallel3x2_then3x2 blend=triangle:0.075 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=5731s flow=287 template=parallel5x5 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=5761s flow=288 template=parallel3x2_then3x2 blend=random_jump:0.966 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=5791s flow=290 template=parallel5x5 blend=triangle:0.976 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=5821s flow=291 template=serial4_parallel3x3 blend=step_ab:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=5851s flow=293 template=serial2_parallel4x4 blend=step_ab:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=5881s flow=294 template=parallel5x5 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=5911s flow=296 template=serial4_parallel3x3 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=5941s flow=297 template=parallel3x2_then3x2 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=5971s flow=299 template=parallel3x2_then3x2 blend=step_ab:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=6001s flow=300 template=serial2_parallel4x4 blend=sine:0.463 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=6031s flow=302 template=serial2_parallel4x4 blend=triangle:0.976 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=6061s flow=303 template=parallel3x2_then3x2 blend=sine:0.463 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=6091s flow=305 template=serial4_parallel3x3 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=6121s flow=307 template=parallel5x5 blend=random_jump:0.171 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=6151s flow=308 template=parallel3x2_then3x2 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=6181s flow=310 template=parallel5x5 blend=sine:0.500 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=6211s flow=311 template=serial2_parallel4x4 blend=step_ab:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=6241s flow=313 template=serial2_parallel4x4 blend=step_ab:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=6271s flow=314 template=serial4_parallel3x3 blend=triangle:0.999 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=6301s flow=316 template=serial4_parallel3x3 blend=step_ab:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=6331s flow=317 template=serial2_parallel4x4 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=6361s flow=319 template=parallel3x2_then3x2 blend=random_jump:0.471 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=6391s flow=320 template=parallel5x5 blend=step_ab:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=6421s flow=322 template=serial2_parallel4x4 blend=random_jump:0.595 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=6451s flow=323 template=serial4_parallel3x3 blend=sine:0.499 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=6481s flow=325 template=serial4_parallel3x3 blend=triangle:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=6511s flow=326 template=parallel3x2_then3x2 blend=random_jump:0.473 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=6541s flow=328 template=serial2_parallel4x4 blend=sine:0.539 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=6571s flow=329 template=serial4_parallel3x3 blend=step_ab:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=6601s flow=331 template=parallel5x5 blend=step_ab:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=6631s flow=332 template=serial4_parallel3x3 blend=random_jump:0.668 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=6661s flow=334 template=parallel5x5 blend=random_jump:0.744 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=6691s flow=335 template=serial2_parallel4x4 blend=triangle:0.974 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=6721s flow=337 template=parallel3x2_then3x2 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=6751s flow=338 template=serial4_parallel3x3 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=6781s flow=340 template=parallel3x2_then3x2 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=6811s flow=341 template=serial2_parallel4x4 blend=random_jump:0.714 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=6841s flow=343 template=parallel5x5 blend=triangle:0.025 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=6871s flow=344 template=serial4_parallel3x3 blend=step_ab:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=6901s flow=346 template=serial4_parallel3x3 blend=sine:0.539 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=6931s flow=347 template=parallel3x2_then3x2 blend=triangle:0.974 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=6961s flow=349 template=serial4_parallel3x3 blend=triangle:0.025 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=6991s flow=350 template=serial2_parallel4x4 blend=step_ab:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=7021s flow=352 template=serial2_parallel4x4 blend=triangle:0.050 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=7051s flow=353 template=serial4_parallel3x3 blend=step_ab:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=7081s flow=355 template=serial4_parallel3x3 blend=step_ab:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=7111s flow=356 template=serial2_parallel4x4 blend=triangle:0.949 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=7141s flow=358 template=parallel5x5 blend=triangle:0.050 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=7171s flow=359 template=parallel3x2_then3x2 blend=step_ab:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=7201s flow=361 template=serial4_parallel3x3 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=7231s flow=362 template=serial2_parallel4x4 blend=triangle:0.949 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=7261s flow=364 template=parallel3x2_then3x2 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=7291s flow=365 template=serial2_parallel4x4 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=7321s flow=367 template=parallel3x2_then3x2 blend=sine:0.578 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=7351s flow=368 template=serial2_parallel4x4 blend=random_jump:0.377 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=7381s flow=370 template=serial4_parallel3x3 blend=triangle:0.050 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=7411s flow=371 template=parallel3x2_then3x2 blend=step_ab:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=7441s flow=373 template=serial4_parallel3x3 blend=random_jump:0.770 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=7471s flow=374 template=serial2_parallel4x4 blend=triangle:0.949 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=7501s flow=376 template=serial2_parallel4x4 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=7531s flow=377 template=parallel3x2_then3x2 blend=random_jump:0.663 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=7561s flow=379 template=parallel5x5 blend=sine:0.617 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=7591s flow=380 template=parallel3x2_then3x2 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=7621s flow=382 template=serial2_parallel4x4 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=7651s flow=383 template=parallel3x2_then3x2 blend=triangle:0.924 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=7681s flow=385 template=parallel3x2_then3x2 blend=sine:0.617 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=7711s flow=386 template=parallel5x5 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=7741s flow=388 template=parallel3x2_then3x2 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=7771s flow=389 template=serial4_parallel3x3 blend=step_ab:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=7801s flow=391 template=serial2_parallel4x4 blend=step_ab:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=7831s flow=392 template=parallel3x2_then3x2 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=7861s flow=394 template=serial2_parallel4x4 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=7891s flow=395 template=serial4_parallel3x3 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=7921s flow=397 template=parallel5x5 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=7951s flow=398 template=parallel3x2_then3x2 blend=sine:0.382 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=7981s flow=400 template=parallel3x2_then3x2 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=8011s flow=401 template=serial2_parallel4x4 blend=sine:0.382 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=8041s flow=403 template=parallel5x5 blend=random_jump:0.684 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=8071s flow=404 template=serial4_parallel3x3 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=8101s flow=406 template=parallel5x5 blend=triangle:0.100 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=8131s flow=407 template=parallel3x2_then3x2 blend=random_jump:0.311 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=8161s flow=409 template=serial4_parallel3x3 blend=sine:0.655 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=8191s flow=410 template=serial2_parallel4x4 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=8221s flow=412 template=parallel5x5 blend=step_ab:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=8251s flow=413 template=serial4_parallel3x3 blend=sine:0.344 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=8281s flow=415 template=serial2_parallel4x4 blend=step_ab:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=8311s flow=416 template=parallel3x2_then3x2 blend=triangle:0.899 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=8341s flow=418 template=parallel3x2_then3x2 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=8371s flow=419 template=serial4_parallel3x3 blend=sine:0.345 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=8401s flow=421 template=parallel5x5 blend=triangle:0.100 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=8431s flow=422 template=serial4_parallel3x3 blend=sine:0.460 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=8461s flow=424 template=serial2_parallel4x4 blend=triangle:0.025 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=8491s flow=425 template=serial4_parallel3x3 blend=sine:0.460 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=8522s flow=427 template=serial4_parallel3x3 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=8552s flow=428 template=parallel3x2_then3x2 blend=triangle:0.974 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=8582s flow=430 template=parallel5x5 blend=sine:0.539 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=8612s flow=431 template=serial2_parallel4x4 blend=triangle:0.974 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=8642s flow=433 template=serial4_parallel3x3 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=8672s flow=434 template=serial2_parallel4x4 blend=random_jump:0.008 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=8702s flow=436 template=serial4_parallel3x3 blend=step_ab:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=8732s flow=437 template=parallel5x5 blend=triangle:0.974 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=8762s flow=439 template=parallel5x5 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=8792s flow=440 template=parallel3x2_then3x2 blend=step_ab:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=8822s flow=442 template=serial2_parallel4x4 blend=random_jump:0.320 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=8852s flow=443 template=parallel3x2_then3x2 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=8882s flow=445 template=serial2_parallel4x4 blend=triangle:0.025 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=8912s flow=446 template=serial4_parallel3x3 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=8942s flow=448 template=serial2_parallel4x4 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=8972s flow=449 template=parallel5x5 blend=step_ab:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=9002s flow=451 template=serial2_parallel4x4 blend=step_ab:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=9032s flow=452 template=serial4_parallel3x3 blend=triangle:0.949 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=9062s flow=454 template=parallel3x2_then3x2 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=9092s flow=455 template=parallel5x5 blend=sine:0.421 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=9122s flow=457 template=serial2_parallel4x4 blend=random_jump:0.725 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=9152s flow=458 template=parallel5x5 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=9182s flow=460 template=parallel5x5 blend=random_jump:0.644 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=9212s flow=461 template=serial4_parallel3x3 blend=sine:0.421 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=9242s flow=463 template=parallel3x2_then3x2 blend=sine:0.578 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=9272s flow=464 template=parallel5x5 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=9302s flow=466 template=serial4_parallel3x3 blend=sine:0.578 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=9332s flow=467 template=parallel3x2_then3x2 blend=triangle:0.949 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=9362s flow=469 template=serial2_parallel4x4 blend=triangle:0.050 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=9392s flow=470 template=parallel5x5 blend=sine:0.421 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=9422s flow=472 template=parallel5x5 blend=random_jump:0.338 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=9452s flow=473 template=serial4_parallel3x3 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=9482s flow=475 template=serial4_parallel3x3 blend=sine:0.617 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=9512s flow=476 template=serial2_parallel4x4 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=9542s flow=478 template=serial2_parallel4x4 blend=step_ab:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=9572s flow=479 template=parallel3x2_then3x2 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=9602s flow=481 template=parallel3x2_then3x2 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=9632s flow=482 template=parallel5x5 blend=step_ab:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=9662s flow=484 template=serial2_parallel4x4 blend=step_ab:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=9692s flow=485 template=serial4_parallel3x3 blend=sine:0.382 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=9722s flow=487 template=serial4_parallel3x3 blend=sine:0.617 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=9752s flow=488 template=parallel3x2_then3x2 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=9782s flow=490 template=serial2_parallel4x4 blend=sine:0.617 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=9812s flow=491 template=parallel3x2_then3x2 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=9842s flow=493 template=parallel3x2_then3x2 blend=random_jump:0.243 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=9872s flow=494 template=serial2_parallel4x4 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=9902s flow=496 template=parallel5x5 blend=sine:0.617 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=9932s flow=497 template=serial2_parallel4x4 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=9962s flow=499 template=serial2_parallel4x4 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=9992s flow=500 template=parallel3x2_then3x2 blend=step_ab:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=10022s flow=502 template=serial2_parallel4x4 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=10052s flow=503 template=parallel3x2_then3x2 blend=step_ab:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=10082s flow=505 template=parallel5x5 blend=step_ab:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=10112s flow=506 template=parallel3x2_then3x2 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=10142s flow=508 template=parallel3x2_then3x2 blend=triangle:0.100 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=10172s flow=509 template=serial2_parallel4x4 blend=random_jump:0.068 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=10202s flow=511 template=serial4_parallel3x3 blend=random_jump:0.485 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=10232s flow=512 template=parallel5x5 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=10262s flow=514 template=parallel5x5 blend=step_ab:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=10292s flow=515 template=serial4_parallel3x3 blend=triangle:0.899 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=10322s flow=517 template=parallel5x5 blend=sine:0.692 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=10352s flow=518 template=parallel3x2_then3x2 blend=triangle:0.874 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=10382s flow=520 template=serial4_parallel3x3 blend=triangle:0.125 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=10412s flow=521 template=serial2_parallel4x4 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=10442s flow=523 template=parallel3x2_then3x2 blend=triangle:0.125 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=10472s flow=524 template=serial4_parallel3x3 blend=sine:0.308 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=10502s flow=526 template=serial4_parallel3x3 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=10532s flow=527 template=parallel3x2_then3x2 blend=sine:0.308 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=10562s flow=529 template=parallel5x5 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=10592s flow=530 template=serial4_parallel3x3 blend=step_ab:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=10622s flow=532 template=serial4_parallel3x3 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=10652s flow=533 template=parallel5x5 blend=random_jump:0.793 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=10682s flow=535 template=serial2_parallel4x4 blend=random_jump:0.242 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=10712s flow=536 template=serial4_parallel3x3 blend=step_ab:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=10742s flow=538 template=serial2_parallel4x4 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=10772s flow=539 template=serial4_parallel3x3 blend=step_ab:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=10802s flow=541 template=parallel3x2_then3x2 blend=sine:0.692 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=10832s flow=542 template=serial2_parallel4x4 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=10862s flow=544 template=parallel5x5 blend=step_ab:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=10892s flow=545 template=parallel3x2_then3x2 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=10922s flow=547 template=serial4_parallel3x3 blend=random_jump:0.246 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=10952s flow=548 template=parallel5x5 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=10982s flow=550 template=parallel5x5 blend=step_ab:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=11012s flow=551 template=serial4_parallel3x3 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=11042s flow=553 template=serial4_parallel3x3 blend=step_ab:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=11072s flow=554 template=parallel3x2_then3x2 blend=random_jump:0.539 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=11102s flow=556 template=serial2_parallel4x4 blend=step_ab:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=11132s flow=557 template=parallel5x5 blend=sine:0.272 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=11162s flow=559 template=parallel5x5 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=11192s flow=560 template=parallel3x2_then3x2 blend=triangle:0.849 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=11222s flow=562 template=parallel3x2_then3x2 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=11252s flow=563 template=serial2_parallel4x4 blend=sine:0.421 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=11282s flow=565 template=serial2_parallel4x4 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=11312s flow=566 template=parallel3x2_then3x2 blend=triangle:0.949 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=11342s flow=568 template=parallel3x2_then3x2 blend=random_jump:0.826 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=11372s flow=569 template=parallel5x5 blend=step_ab:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=11402s flow=571 template=parallel3x2_then3x2 blend=random_jump:0.461 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=11432s flow=572 template=serial2_parallel4x4 blend=sine:0.382 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=11462s flow=574 template=parallel3x2_then3x2 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=11492s flow=575 template=parallel5x5 blend=random_jump:0.733 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=11522s flow=577 template=serial4_parallel3x3 blend=random_jump:0.667 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=11552s flow=578 template=serial2_parallel4x4 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=11582s flow=580 template=parallel5x5 blend=step_ab:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=11612s flow=581 template=serial2_parallel4x4 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=11642s flow=583 template=parallel5x5 blend=triangle:0.075 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=11672s flow=584 template=parallel3x2_then3x2 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=11702s flow=586 template=parallel3x2_then3x2 blend=step_ab:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=11732s flow=587 template=serial2_parallel4x4 blend=sine:0.382 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=11762s flow=589 template=serial4_parallel3x3 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=11792s flow=590 template=parallel5x5 blend=triangle:0.924 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=11822s flow=592 template=serial4_parallel3x3 blend=triangle:0.100 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=11852s flow=593 template=parallel5x5 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=11882s flow=595 template=serial2_parallel4x4 blend=step_ab:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=11912s flow=596 template=parallel5x5 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=11942s flow=598 template=parallel5x5 blend=random_jump:0.870 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=11972s flow=599 template=serial2_parallel4x4 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=12002s flow=601 template=serial4_parallel3x3 blend=sine:0.655 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=12032s flow=602 template=parallel3x2_then3x2 blend=triangle:0.899 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=12062s flow=604 template=parallel3x2_then3x2 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=12092s flow=605 template=parallel5x5 blend=triangle:0.899 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=12122s flow=607 template=parallel3x2_then3x2 blend=triangle:0.100 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=12152s flow=608 template=serial4_parallel3x3 blend=random_jump:0.283 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=12182s flow=610 template=serial2_parallel4x4 blend=random_jump:0.968 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=12212s flow=611 template=parallel3x2_then3x2 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=12242s flow=613 template=parallel3x2_then3x2 blend=triangle:0.125 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=12272s flow=614 template=serial4_parallel3x3 blend=sine:0.308 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=12302s flow=616 template=serial4_parallel3x3 blend=random_jump:0.348 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=12332s flow=617 template=parallel5x5 blend=sine:0.308 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=12362s flow=619 template=serial2_parallel4x4 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=12392s flow=620 template=serial4_parallel3x3 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=12422s flow=622 template=parallel5x5 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=12453s flow=623 template=serial2_parallel4x4 blend=triangle:0.874 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=12483s flow=625 template=parallel3x2_then3x2 blend=sine:0.692 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=12513s flow=626 template=parallel5x5 blend=step_ab:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=12543s flow=628 template=serial4_parallel3x3 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=12573s flow=629 template=parallel3x2_then3x2 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=12603s flow=631 template=serial4_parallel3x3 blend=triangle:0.125 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=12633s flow=632 template=parallel3x2_then3x2 blend=step_ab:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=12663s flow=634 template=parallel3x2_then3x2 blend=step_ab:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=12693s flow=635 template=parallel5x5 blend=sine:0.308 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=12723s flow=637 template=serial2_parallel4x4 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=12753s flow=638 template=parallel3x2_then3x2 blend=random_jump:0.631 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=12783s flow=640 template=parallel3x2_then3x2 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=12813s flow=641 template=parallel5x5 blend=sine:0.272 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=12843s flow=643 template=parallel3x2_then3x2 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=12873s flow=644 template=parallel5x5 blend=triangle:0.849 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=12903s flow=646 template=serial4_parallel3x3 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=12933s flow=647 template=parallel3x2_then3x2 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=12963s flow=649 template=parallel3x2_then3x2 blend=random_jump:0.159 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=12993s flow=650 template=parallel5x5 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=13023s flow=652 template=parallel5x5 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=13053s flow=653 template=parallel3x2_then3x2 blend=random_jump:0.613 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=13083s flow=655 template=parallel5x5 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=13113s flow=656 template=serial2_parallel4x4 blend=step_ab:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=13143s flow=658 template=parallel3x2_then3x2 blend=step_ab:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=13173s flow=659 template=serial2_parallel4x4 blend=sine:0.272 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=13203s flow=661 template=serial4_parallel3x3 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=13233s flow=662 template=serial2_parallel4x4 blend=triangle:0.824 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=13263s flow=664 template=serial2_parallel4x4 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=13293s flow=665 template=serial4_parallel3x3 blend=triangle:0.824 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=13323s flow=667 template=serial2_parallel4x4 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=13353s flow=668 template=parallel3x2_then3x2 blend=random_jump:0.775 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=13383s flow=670 template=parallel3x2_then3x2 blend=random_jump:0.986 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=13413s flow=671 template=serial2_parallel4x4 blend=sine:0.238 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=13443s flow=673 template=parallel3x2_then3x2 blend=step_ab:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=13473s flow=674 template=serial2_parallel4x4 blend=random_jump:0.426 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=13503s flow=676 template=parallel3x2_then3x2 blend=random_jump:0.178 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=13533s flow=677 template=serial2_parallel4x4 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=13563s flow=679 template=parallel3x2_then3x2 blend=step_ab:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=13593s flow=680 template=parallel5x5 blend=sine:0.238 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=13623s flow=682 template=serial2_parallel4x4 blend=random_jump:0.548 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=13653s flow=683 template=parallel3x2_then3x2 blend=step_ab:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=13683s flow=685 template=parallel3x2_then3x2 blend=step_ab:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=13713s flow=686 template=serial4_parallel3x3 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=13743s flow=688 template=serial4_parallel3x3 blend=sine:0.794 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=13773s flow=689 template=serial2_parallel4x4 blend=random_jump:0.987 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=13803s flow=691 template=serial2_parallel4x4 blend=random_jump:0.826 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=13833s flow=692 template=serial4_parallel3x3 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=13863s flow=694 template=parallel5x5 blend=triangle:0.200 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=13893s flow=695 template=serial2_parallel4x4 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=13923s flow=697 template=serial4_parallel3x3 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=13953s flow=698 template=serial2_parallel4x4 blend=sine:0.345 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=13983s flow=700 template=serial2_parallel4x4 blend=triangle:0.100 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=14013s flow=701 template=parallel3x2_then3x2 blend=sine:0.344 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=14043s flow=703 template=serial4_parallel3x3 blend=triangle:0.100 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=14073s flow=704 template=parallel3x2_then3x2 blend=random_jump:0.287 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=14103s flow=706 template=parallel3x2_then3x2 blend=random_jump:0.921 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=14133s flow=707 template=parallel5x5 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=14163s flow=709 template=parallel5x5 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=14193s flow=710 template=parallel3x2_then3x2 blend=random_jump:0.415 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=14223s flow=712 template=parallel5x5 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=14253s flow=713 template=serial4_parallel3x3 blend=step_ab:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=14283s flow=715 template=serial2_parallel4x4 blend=step_ab:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=14313s flow=716 template=parallel3x2_then3x2 blend=hard_b:1.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=14343s flow=718 template=serial2_parallel4x4 blend=random_jump:0.899 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+progress elapsed=14373s flow=719 template=parallel3x2_then3x2 blend=hard_a:0.000 effects=10 xruns=0 cpu=0.00% jitter_peak=0.000ms topo_peak=0.264ms
+wrote_json=docs/fit-for-purpose-evidence/20260518/tascam-us144mkii-soak-4h/40_soak_result.json
+wrote_md=docs/fit-for-purpose-evidence/20260518/tascam-us144mkii-soak-4h/40_soak_result.md
+overall_pass=True
