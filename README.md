@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1714** Python | **1765** TypeScript | **235** C++/H | **149** Docs | **4693** total commits | **4** stars | **0** forks | **0** open issues
+**1714** Python | **1765** TypeScript | **235** C++/H | **149** Docs | **4694** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,6 +206,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`f01546017`](https://github.com/matthewmackes/map2-audio/commit/f015460173c58626699e94d69478411a500c0d67) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-21 |
 | [`b7c772205`](https://github.com/matthewmackes/map2-audio/commit/b7c772205c958064f17fc3eb86705193bfff84a8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-20 |
 | [`e542634de`](https://github.com/matthewmackes/map2-audio/commit/e542634de23dbe390dcea1feafe19ec4f1ac3352) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-05-20 |
 | [`50bdbc930`](https://github.com/matthewmackes/map2-audio/commit/50bdbc930976d87b35452fe9dee39277d99c77dd) | chore(release): seal tascam evidence and stabilize codegen | Map2 Audio | 2026-05-20 |
@@ -213,7 +214,6 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | [`67855fa07`](https://github.com/matthewmackes/map2-audio/commit/67855fa077f46c28a84cededaa1934057e3b31ae) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-19 |
 | [`6f13c342e`](https://github.com/matthewmackes/map2-audio/commit/6f13c342e41b6639ceab58cdba85f972074d220f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-18 |
 | [`574df5cc7`](https://github.com/matthewmackes/map2-audio/commit/574df5cc7449e16e577a6d28dd5c93395d7e3c21) | feat(web): NodeNav icon + /node page; sequencer tab-anim;... | Map2 Audio | 2026-05-17 |
-| [`0a306b5a5`](https://github.com/matthewmackes/map2-audio/commit/0a306b5a54ed5b48345320a83d723a02907a94fa) | fix(web): repair 4 TS cast errors blocking atomic build o... | Map2 Audio | 2026-05-17 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
