@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1714** Python | **1765** TypeScript | **235** C++/H | **149** Docs | **4694** total commits | **4** stars | **0** forks | **0** open issues
+**1714** Python | **1765** TypeScript | **235** C++/H | **149** Docs | **4695** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,6 +206,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`62d480eba`](https://github.com/matthewmackes/map2-audio/commit/62d480eba192d5e6f2f9174dec51573900704c91) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-22 |
 | [`f01546017`](https://github.com/matthewmackes/map2-audio/commit/f015460173c58626699e94d69478411a500c0d67) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-21 |
 | [`b7c772205`](https://github.com/matthewmackes/map2-audio/commit/b7c772205c958064f17fc3eb86705193bfff84a8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-20 |
 | [`e542634de`](https://github.com/matthewmackes/map2-audio/commit/e542634de23dbe390dcea1feafe19ec4f1ac3352) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-05-20 |
@@ -213,7 +214,6 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | [`60fed1686`](https://github.com/matthewmackes/map2-audio/commit/60fed1686781492a13f2426cbb7ffcfde75709a2) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-20 |
 | [`67855fa07`](https://github.com/matthewmackes/map2-audio/commit/67855fa077f46c28a84cededaa1934057e3b31ae) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-19 |
 | [`6f13c342e`](https://github.com/matthewmackes/map2-audio/commit/6f13c342e41b6639ceab58cdba85f972074d220f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-18 |
-| [`574df5cc7`](https://github.com/matthewmackes/map2-audio/commit/574df5cc7449e16e577a6d28dd5c93395d7e3c21) | feat(web): NodeNav icon + /node page; sequencer tab-anim;... | Map2 Audio | 2026-05-17 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
