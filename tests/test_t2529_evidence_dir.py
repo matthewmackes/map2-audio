@@ -46,7 +46,7 @@ def test_evidence_dir_has_verification_runbook() -> None:
 
 def test_evidence_dir_has_pytest_gate_capture() -> None:
     """The captured pytest output must exist; this is the audit trail
-    that 648 tests passed at the lock date."""
+    that 704 tests passed at the lock date."""
     pytest_file = EVIDENCE_DIR / "pytest-gate-suite" / "t2529-tests.txt"
     assert pytest_file.is_file(), (
         f"missing pytest gate capture at {pytest_file}"

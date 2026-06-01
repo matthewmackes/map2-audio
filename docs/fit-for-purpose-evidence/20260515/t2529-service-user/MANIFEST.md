@@ -1,7 +1,7 @@
 # T2529 Evidence — Manifest
 
 **Date filed:** 2026-05-15
-**Cycles covered:** T2529-A1 through T2529-V2 (20 cycles, 648 pytest cases)
+**Cycles covered:** T2529-A1 through T2529-V2 (20 cycles, 704 pytest cases)
 
 Each row is a deliverable. Status is one of:
 
@@ -66,7 +66,7 @@ Each row is a deliverable. Status is one of:
 | V1 | This evidence dir + `README.md` + `MANIFEST.md` | ✅ Filed |
 | V1 | `verification-runbook.md` (manual verification procedure) | ✅ Filed |
 | V1 | Non-mm operator dev-host install + verification | 🔬 Manual |
-| V1 | `pytest-gate-suite/t2529-tests.txt` (648 cases) | ✅ Filed |
+| V1 | `pytest-gate-suite/t2529-tests.txt` (704 cases) | ✅ Filed |
 | V2 | `rt-audio-gates/jack-direct-verify.txt` (JACK direct path) | 🚧 Bench-gated |
 | V2 | `rt-audio-gates/pw-metadata.txt` (PipeWire quantum + rate) | 🚧 Bench-gated |
 | V2 | `rt-audio-gates/ps-rt-threads.txt` (SCHED_FIFO threads) | 🚧 Bench-gated |

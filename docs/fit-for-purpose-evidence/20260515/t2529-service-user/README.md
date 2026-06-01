@@ -35,7 +35,7 @@ must produce verifiable artefacts in this directory.
 │   ├── self-test-full.log                 ← `map2-self-test --full` output
 │   └── operator-account.txt               ← which non-mm operator was used + their UID
 ├── pytest-gate-suite/                     ← The 11-suite pytest gate output
-│   └── t2529-tests.txt                    ← 648 tests green
+│   └── t2529-tests.txt                    ← 704 tests green
 └── rt-audio-gates/                        ← T2529-V2 outputs
     ├── jack-direct-verify.txt             ← MAP2_AUDIO_PREFER_JACK=1 verification
     ├── pw-metadata.txt                    ← rate=48000 + quantum=64 lock-in
@@ -77,7 +77,7 @@ Procedure: see `verification-runbook.md` § 3.
 
 ### `pytest-gate-suite/`
 
-The output of `python3 -m pytest tests/test_t2529_*.py -q`. 648 tests
+The output of `python3 -m pytest tests/test_t2529_*.py -q`. 704 tests
 across 14 test files (cycles 2-18). Captured at HEAD on 2026-05-15.
 
 ### `rt-audio-gates/`

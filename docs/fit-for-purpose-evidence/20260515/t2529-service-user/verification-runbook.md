@@ -17,7 +17,7 @@
 
 ## 1. Pytest gate suite (every cycle)
 
-Run the full T2529 pytest gate suite and confirm 648 tests green:
+Run the full T2529 pytest gate suite and confirm 704 tests green:
 
 ```bash
 cd /home/mm/map2-audio
@@ -28,7 +28,7 @@ python3 -m pytest tests/test_t2529_*.py -q --tb=line | tee \
 Expected end of output:
 
 ```
-648 passed in <N>.<N>s
+704 passed in <N>.<N>s
 ```
 
 If any test fails, do NOT proceed with the rest of the verification — the
