@@ -2,7 +2,7 @@
  * PitchCategoryLayout — AXE-FX Edit structural parity for pitch effects
  *
  * Standard layout: Pitch Display → Pitch → Character → Mix → Accordion(Advanced) → Footer
- * Used by: IntervalShifter, EVHPitchShifter, BossXS1, Whammy, GlitchShifter, Outotune
+ * Used by: IntervalShifter, EVHPitchShifter, BossXS1, Whammy, GlitchShifter, and pitch-template fallbacks
  */
 
 import type { ReactNode } from 'react'

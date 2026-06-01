@@ -2,7 +2,7 @@
  * ReverbCategoryLayout — AXE-FX Edit structural parity for reverb effects
  *
  * Standard layout: Decay Curve → Space → Time → Tone → Mix → Accordion(Advanced) → Footer
- * Used by: LexiLoveCard, DragonflyRoom/Hall/Plate, REEVRCard, ReverbIRCard
+ * Used by: LexiLoveCard, Dragonfly template fallbacks, ReverbIRCard, and reverb-template fallbacks
  */
 
 import type { ReactNode } from 'react'

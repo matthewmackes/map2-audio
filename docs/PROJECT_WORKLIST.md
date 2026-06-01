@@ -153,7 +153,7 @@ Subtasks:
     - Required outputs/deliverables: Candidate inventory with evidence commands and a prioritized cleanup queue for T2524-B.
     Subtasks: None
     Assigned to: Codex
-    Last updated: 2026-05-14 20:26 EDT - Codex: initial inventory found high-confidence unreferenced CSS leftovers: orphaned `LabsPage.css`, unused poster fallback CSS, unused NodeAlerts stack CSS, and four IntelFX view CSS files whose TSX wrappers now delegate to styled child components without class/import references.
+    Last updated: 2026-06-01 17:33 EDT - Codex: follow-up inventory found stale `OutotuneCard.tsx`; registry already routes Outotune through the utility template fallback, so the custom card file is safe to retire.
   - ID: T2524-B
     Status: [>] In Progress
     Title: Implement safe software-only React GUI cleanup slices from the audit
@@ -165,11 +165,12 @@ Subtasks:
     - Required outputs/deliverables: Cleanup diffs, focused validation evidence, worklist progress notes, and follow-up tasks for anything unsafe or bench-dependent.
     Subtasks: None
     Assigned to: Codex
-    Last updated: 2026-05-14 20:26 EDT - Codex: Slice 1 shipped; deleted 7 unreferenced CSS files (`LabsPage.css`, `posterFallbacks.css`, `NodeAlerts.css`, `IntelFX{Library,MidiMap,Panel,Perform}View.css`). Validation: `npm --prefix web run typecheck` PASS. Platform-layer review: no new packages, services, runtime assumptions, installer, or environment updates required.
+    Last updated: 2026-06-01 17:33 EDT - Codex: Slice 4 shipped; deleted stale `web/src/app/components/PluginCards/Custom/LV2/OutotuneCard.tsx`, updated active audit/layout comments so no live docs point at the retired card, and preserved the existing registry utility-template fallback. Validation: `npm --prefix web test -- --runInBand --runTestsByPath src/app/components/PluginCards/registry.test.ts` PASS; `npm --prefix web run typecheck` PASS. Platform-layer review: no new packages, services, runtime assumptions, installer, or environment updates required.
 Assigned to: Codex
-Last updated: 2026-05-14 20:26 EDT - Codex: filed per operator request and shipped first software-only cleanup slice; no SubC by design; no platform-layer artifact changes required.
+Last updated: 2026-06-01 17:33 EDT - Codex: continued software-only cleanup; slice 4 retired stale Outotune custom plugin-card code and refreshed validation evidence; no SubC by design; no platform-layer artifact changes required.
 Progress notes:
 - 2026-05-14 20:26 EDT - Codex: T2524-A initial audit commands checked route/lazy-import references, tracked debug-like files, orphan CSS imports, and legacy/stale-name surfaces. T2524-B slice 1 deleted seven high-confidence unreferenced CSS files: `web/src/app/pages/LabsPage.css` (TSX already removed by archived T847), `web/src/app/pages/posterFallbacks.css` (no imports or class references), `web/src/app/components/NodeAlerts/NodeAlerts.css` (NodeAlertToast is toast-store side-effect only; no class/import references), and `web/src/app/components/Devices/IntelFX/views/IntelFX{Library,MidiMap,Panel,Perform}View.css` (wrapper TSX files delegate to child components and no non-CSS class references remain). Validation: `npm --prefix web run typecheck` PASS. Existing unrelated dirty worktree files were not touched.
+- 2026-06-01 17:33 EDT - Codex: T2524-B slice 4 deleted `web/src/app/components/PluginCards/Custom/LV2/OutotuneCard.tsx` after confirming `PluginCards/registry.ts` already routes Outotune through the utility-template fallback (`registry.test.ts` pins stale REEV-R/Outotune fallback behavior). Updated `docs/audits/numeric-controls-audit.md` PC-14 and plugin-card layout comments so active docs no longer point at retired Outotune/REEV-R custom-card files. Validation: `npm --prefix web test -- --runInBand --runTestsByPath src/app/components/PluginCards/registry.test.ts` PASS; `npm --prefix web run typecheck` PASS (contract generators clean; existing Failover Monitor circular-import warning remains non-fatal). Platform-layer review: code/doc cleanup only; no new packages, services, runtime assumptions, installer, or environment updates required.
 
 
 
