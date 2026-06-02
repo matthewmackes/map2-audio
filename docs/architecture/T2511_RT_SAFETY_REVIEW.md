@@ -3,11 +3,34 @@
 | Field | Value |
 |---|---|
 | **Task ID** | T2511 (parent epic T2504 — Multi-Track Recorder + Playback) |
-| **Status** | **RT-safety review — DRAFT for bench sign-off** |
+| **Status** | **Design review APPROVED 2026-06-02 by the operator.** Graph-wiring code still gated on the post-implementation §7 walk + §8 soak (see Approval note). |
 | **Date** | 2026-06-02 |
 | **Author** | Claude (analysis artifact, zero code) |
 | **Depends on** | T2507 (recording taps + io_uring writer — *shipped*), T2508 (routes + dispatcher), T2509 (UI transport surface) |
-| **Reviewer** | _(bench RT reviewer — sign §7 + §8 below)_ |
+| **Reviewer** | _(bench RT reviewer — sign §7 + §8 below against the implemented code)_ |
+
+> **APPROVAL NOTE (2026-06-02).** The operator approved this document. That approval clears the
+> **design contract**: the audio-thread invariants (§2), the `ChainInputSwitch` atomic-swap +
+> deferred-free reclamation discipline (§3), the off-thread playback-refill guarantee (§4), the
+> separate-io_uring-instance recommendation (§5), and the sample-accurate-trigger discipline (§6)
+> are accepted as the design T2511 must implement. **Approval of the design is necessary but NOT
+> sufficient to merge** — per the gate statement below, T2511 graph-wiring code may only ship after
+> the §7 per-line audit and §8 verification gates are walked and green **against the real
+> implementation** (30-min punch-in soak: 0 xruns / <0.35 ms peak jitter, TSan-clean, perf shows no
+> blocking syscalls in the callback, heap-snapshot start==end). Those gates require the bench.
+>
+> Open follow-ups flagged during review (to resolve when the code lands, do not block the design):
+> 1. **§4.3 cushion units** — restate the playback ring cushion in *milliseconds at the actual
+>    playback frame size*, not by borrowing the record-side 16×1024 frame count. At a 64-sample
+>    playback frame, 16 frames is ~21 ms, not the ~340 ms the 1024-sample record frames give; the
+>    real-ms cushion is the number that determines reader-thread hiccup tolerance.
+> 2. **Historical re-amp (R2.A1 option c) graph rebuild** — rebuilding the chain's plugin nodes from
+>    a fetched State-Authority revision is a larger RT hazard than the atomic switch (live
+>    `AudioProcessorGraph` mutation: allocation + node/connection changes). It needs its own analysis
+>    deciding stop-audio-before-reconfig vs. atomic-switch-only; the single §7 row understates it.
+> 3. **§6 `apply_at_sample` clamp policy** — clamping a late trigger to sample 0 of the current
+>    buffer means punch-in can fire up to one buffer (~1.33 ms) early under clock skew. Accepted as a
+>    tradeoff; noted so it is a conscious one.
 
 > **GATE STATEMENT — read first.**
 > **No T2511 graph-wiring code ships until this document is signed.** That means: no
