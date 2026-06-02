@@ -2681,6 +2681,8 @@ Status reconciliation (2026-06-02 — Claude, ship loop): was marked `[ ] Todo` 
 - `T2509-8` ✓ DONE (2026-05-13, Codex).
 Parent stays `[>] In Progress` — NOT `[✓]` — solely because CLAUDE.md §0.8 mandates in-browser visual verification for a UI task, which is operator-bench-gated. All code + tests are shipped; the remaining gate is a visual confirm of the recordings tab + RecordingPanel + the inline take-audition surface. The transport/routing/punch-in affordances ride T2511.
 
+2026-06-02 — Claude (ship loop): added an automated §0.8 verification artifact — `web/src/app/components/Recordings/RecordingPanel.snapshot.test.tsx` captures render snapshots of all four lifecycle states (idle/armed/rolling/stopped), each asserting the real Carbon Tag text + button labels before snapshotting so it can't certify the wrong state. 15/15 RecordingPanel tests + 4/4 snapshots green under the canonical jest invocation (`node node_modules/jest/bin/jest.js --config package.json`). This proves structural correctness without a live server; a human/bench still owns the pixel-level visual sign-off before `[✓]`, but the structural surface is now regression-pinned.
+
 Description:
 - Goal: All recorder GUI is grafted onto existing surfaces — no new top-level pages. `AudioArtifactsPage` gains an 8th category tab (recordings) with the per-chain routing toggles and full transport. `SnapshotEditorPageContent` gains a `<RecordingPanel />` sibling for live session state (arm / level meters / take counter).
 - Why: Per the artifacts/GUI directive, recordings are artifacts. Per the established design (NodeNavChip pattern, AudioArtifacts unified categories), one canonical artifact surface is preferable to a parallel page.
@@ -2770,7 +2772,9 @@ Sub-tasks:
 
 Acceptance: Punch-in soak gate green; manual: play a take → trigger punch-in mid-playback → verify child WAV created + parent untouched + manifest region list reflects seam → stop → reload take → playback assembly correctly stitches parent+child; switching the per-chain playback routing toggle (R2.A1) audibly changes the signal (post-FX wet vs. live re-amp vs. historical re-amp).
 
-Last updated: 2026-05-11 — Claude.
+RT-safety review doc PRE-AUTHORED (2026-06-02 — Claude, ship loop): `docs/architecture/T2511_RT_SAFETY_REVIEW.md` (457 lines). Pure-analysis artifact (zero code, zero engine touch) so the operator's bench RT-safety review has a concrete document to sign against BEFORE any C++ graph-wiring ships. Covers: audio-thread invariants (1.33 ms @ cores 4,5), ChainInputSwitch atomic-swap correctness (grounded in the real `armed_` acquire/release pattern at `TapNode.h:136`/`:80-86`), THE KEY RISK (playback buffer refill MUST be fully off-thread — BufferingAudioSource/io_uring read-completion must never block the callback; references T2507's 16×1024 ring cushion), io_uring bidirectional contention under punch-in (T2507 SQ depth 32 analysis), a per-line alloc/lock/syscall audit-checklist table, and bench-reviewer verification gates (ThreadSanitizer/heap-snapshot/perf-syscall/SQ-overflow/30-min-soak + sign-off block). **State-of-tree finding flagged for T2511-1:** the worklist calls `FileInputProcessor.{h,cpp}` a "salvage" from `_archive/Daw_2026-05-11/Deck/`, but that directory contains only BeatGrid/ClipLauncher/CueModel/SlipMode/SyncEngine — **there is no `FileInputProcessor` to salvage**, and neither `ChainInputSwitch` nor `LiveInputSource` exists in `Source/` yet. T2511-1 is therefore a fresh write, not a revive; the audit-checklist rows describe target contracts for code that does not yet exist. T2511 stays `[ ] Todo` — the doc is bench-prep, not the task; all C++ work remains behind the standing RT-safety gate.
+
+Last updated: 2026-06-02 — Claude.
 
 ---
 

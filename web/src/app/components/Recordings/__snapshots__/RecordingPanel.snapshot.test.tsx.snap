@@ -1,0 +1,469 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`RecordingPanel render snapshots renders armed-state snapshot 1`] = `
+<div>
+  <div
+    class="recording-panel"
+    data-testid="recording-panel"
+  >
+    <div
+      class="recording-panel__header"
+    >
+      <h3
+        class="recording-panel__title"
+      >
+        Recorder
+      </h3>
+      <div
+        class="recording-panel__badges"
+      >
+        <div
+          class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--warm-gray"
+          data-testid="recording-panel-connection-badge"
+          id="tag-id-_r_3_"
+        >
+          <span
+            class="cds--tag__label"
+            dir="auto"
+            title="Offline"
+          >
+            Offline
+          </span>
+        </div>
+        <div
+          class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--green"
+          data-testid="recording-panel-state-badge"
+          id="tag-id-_r_4_"
+        >
+          <span
+            class="cds--tag__label"
+            dir="auto"
+            title="Armed"
+          >
+            Armed
+          </span>
+        </div>
+      </div>
+    </div>
+    <div
+      class="recording-panel__controls"
+    >
+      <button
+        class="cds--btn cds--btn--md cds--layout--size-md cds--btn--primary"
+        data-testid="recording-panel-roll-button"
+        type="button"
+      >
+        Start rolling
+        <svg
+          aria-hidden="true"
+          class="cds--btn__icon"
+          fill="currentColor"
+          focusable="false"
+          height="16"
+          preserveAspectRatio="xMidYMid meet"
+          viewBox="0 0 16 16"
+          width="16"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M8,1C4.1,1,1,4.1,1,8s3.1,7,7,7s7-3.1,7-7S11.9,1,8,1z M11.7,8.4l-5.5,3c-0.2,0.1-0.3,0.1-0.5,0c-0.2-0.1-0.2-0.3-0.2-0.4V5 c0-0.2,0.1-0.3,0.2-0.4c0.2-0.1,0.3-0.1,0.5,0l5.5,3C12,7.7,12.1,8,11.9,8.2C11.9,8.3,11.8,8.4,11.7,8.4L11.7,8.4z"
+          />
+        </svg>
+      </button>
+      <button
+        class="cds--btn cds--btn--md cds--layout--size-md cds--btn--ghost"
+        data-testid="recording-panel-disarm-button"
+        type="button"
+      >
+        Disarm
+        <svg
+          aria-hidden="true"
+          class="cds--btn__icon"
+          fill="currentColor"
+          focusable="false"
+          height="16"
+          preserveAspectRatio="xMidYMid meet"
+          viewBox="0 0 32 32"
+          width="16"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M17.4141 16 24 9.4141 22.5859 8 16 14.5859 9.4143 8 8 9.4141 14.5859 16 8 22.5859 9.4143 24 16 17.4141 22.5859 24 24 22.5859 17.4141 16z"
+          />
+        </svg>
+      </button>
+    </div>
+    <dl
+      class="recording-panel__metadata"
+      data-testid="recording-panel-metadata"
+    >
+      <div
+        class="recording-panel__metadata-row"
+      >
+        <dt>
+          Session ID
+        </dt>
+        <dd
+          class="recording-panel__metadata-mono"
+        >
+          sess-A
+        </dd>
+      </div>
+      <div
+        class="recording-panel__metadata-row"
+      >
+        <dt>
+          Armed at
+        </dt>
+        <dd>
+          2026-05-11T18:00:00+00:00
+        </dd>
+      </div>
+      <div
+        class="recording-panel__metadata-row"
+      >
+        <dt>
+          Taps
+        </dt>
+        <dd>
+          0
+           chain(s)
+        </dd>
+      </div>
+    </dl>
+  </div>
+</div>
+`;
+
+exports[`RecordingPanel render snapshots renders idle-state snapshot 1`] = `
+<div>
+  <div
+    class="recording-panel"
+    data-testid="recording-panel"
+  >
+    <div
+      class="recording-panel__header"
+    >
+      <h3
+        class="recording-panel__title"
+      >
+        Recorder
+      </h3>
+      <div
+        class="recording-panel__badges"
+      >
+        <div
+          class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--warm-gray"
+          data-testid="recording-panel-connection-badge"
+          id="tag-id-_r_0_"
+        >
+          <span
+            class="cds--tag__label"
+            dir="auto"
+            title="Offline"
+          >
+            Offline
+          </span>
+        </div>
+        <div
+          class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--cool-gray"
+          data-testid="recording-panel-state-badge"
+          id="tag-id-_r_1_"
+        >
+          <span
+            class="cds--tag__label"
+            dir="auto"
+            title="Idle"
+          >
+            Idle
+          </span>
+        </div>
+      </div>
+    </div>
+    <div
+      class="recording-panel__controls"
+    >
+      <button
+        class="cds--btn cds--btn--md cds--layout--size-md cds--btn--primary"
+        data-testid="recording-panel-arm-button"
+        type="button"
+      >
+        Arm session
+        <svg
+          aria-hidden="true"
+          class="cds--btn__icon"
+          fill="currentColor"
+          focusable="false"
+          height="16"
+          preserveAspectRatio="xMidYMid meet"
+          viewBox="0 0 32 32"
+          width="16"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <circle
+            cx="16"
+            cy="16"
+            r="4"
+          />
+          <path
+            d="M16,2C8.3,2,2,8.3,2,16s6.3,14,14,14s14-6.3,14-14S23.7,2,16,2z M16,22c-3.3,0-6-2.7-6-6s2.7-6,6-6s6,2.7,6,6 S19.3,22,16,22z"
+          />
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`RecordingPanel render snapshots renders rolling-state snapshot 1`] = `
+<div>
+  <div
+    class="recording-panel"
+    data-testid="recording-panel"
+  >
+    <div
+      class="recording-panel__header"
+    >
+      <h3
+        class="recording-panel__title"
+      >
+        Recorder
+      </h3>
+      <div
+        class="recording-panel__badges"
+      >
+        <div
+          class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--warm-gray"
+          data-testid="recording-panel-connection-badge"
+          id="tag-id-_r_7_"
+        >
+          <span
+            class="cds--tag__label"
+            dir="auto"
+            title="Offline"
+          >
+            Offline
+          </span>
+        </div>
+        <div
+          class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--red"
+          data-testid="recording-panel-state-badge"
+          id="tag-id-_r_8_"
+        >
+          <span
+            class="cds--tag__label"
+            dir="auto"
+            title="Rolling"
+          >
+            Rolling
+          </span>
+        </div>
+      </div>
+    </div>
+    <div
+      class="recording-panel__controls"
+    >
+      <button
+        aria-describedby="danger-description-_r_9_"
+        class="cds--btn cds--btn--md cds--layout--size-md cds--btn--danger"
+        data-testid="recording-panel-stop-button"
+        type="button"
+      >
+        <span
+          class="cds--visually-hidden"
+          id="danger-description-_r_9_"
+        >
+          danger
+        </span>
+        Stop
+        <svg
+          aria-hidden="true"
+          class="cds--btn__icon"
+          fill="currentColor"
+          focusable="false"
+          height="16"
+          preserveAspectRatio="xMidYMid meet"
+          viewBox="0 0 16 16"
+          width="16"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M8,1C4.1,1,1,4.1,1,8s3.1,7,7,7s7-3.1,7-7S11.9,1,8,1z M11,10c0,0.6-0.4,1-1,1H6c-0.6,0-1-0.4-1-1V6c0-0.6,0.4-1,1-1h4 c0.6,0,1,0.4,1,1V10z"
+          />
+        </svg>
+      </button>
+    </div>
+    <dl
+      class="recording-panel__metadata"
+      data-testid="recording-panel-metadata"
+    >
+      <div
+        class="recording-panel__metadata-row"
+      >
+        <dt>
+          Session ID
+        </dt>
+        <dd
+          class="recording-panel__metadata-mono"
+        >
+          sess-A
+        </dd>
+      </div>
+      <div
+        class="recording-panel__metadata-row"
+      >
+        <dt>
+          Armed at
+        </dt>
+        <dd>
+          2026-05-11T18:00:00+00:00
+        </dd>
+      </div>
+      <div
+        class="recording-panel__metadata-row"
+      >
+        <dt>
+          Rolling at
+        </dt>
+        <dd>
+          2026-05-11T18:01:00+00:00
+        </dd>
+      </div>
+      <div
+        class="recording-panel__metadata-row"
+      >
+        <dt>
+          Taps
+        </dt>
+        <dd>
+          0
+           chain(s)
+        </dd>
+      </div>
+    </dl>
+  </div>
+</div>
+`;
+
+exports[`RecordingPanel render snapshots renders stopped-state snapshot 1`] = `
+<div>
+  <div
+    class="recording-panel"
+    data-testid="recording-panel"
+  >
+    <div
+      class="recording-panel__header"
+    >
+      <h3
+        class="recording-panel__title"
+      >
+        Recorder
+      </h3>
+      <div
+        class="recording-panel__badges"
+      >
+        <div
+          class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--warm-gray"
+          data-testid="recording-panel-connection-badge"
+          id="tag-id-_r_a_"
+        >
+          <span
+            class="cds--tag__label"
+            dir="auto"
+            title="Offline"
+          >
+            Offline
+          </span>
+        </div>
+        <div
+          class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--warm-gray"
+          data-testid="recording-panel-state-badge"
+          id="tag-id-_r_b_"
+        >
+          <span
+            class="cds--tag__label"
+            dir="auto"
+            title="Stopped"
+          >
+            Stopped
+          </span>
+        </div>
+      </div>
+    </div>
+    <div
+      class="recording-panel__controls"
+    >
+      <button
+        class="cds--btn cds--btn--md cds--layout--size-md cds--btn--ghost"
+        data-testid="recording-panel-disarm-button"
+        type="button"
+      >
+        Release session
+        <svg
+          aria-hidden="true"
+          class="cds--btn__icon"
+          fill="currentColor"
+          focusable="false"
+          height="16"
+          preserveAspectRatio="xMidYMid meet"
+          viewBox="0 0 32 32"
+          width="16"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M17.4141 16 24 9.4141 22.5859 8 16 14.5859 9.4143 8 8 9.4141 14.5859 16 8 22.5859 9.4143 24 16 17.4141 22.5859 24 24 22.5859 17.4141 16z"
+          />
+        </svg>
+      </button>
+    </div>
+    <dl
+      class="recording-panel__metadata"
+      data-testid="recording-panel-metadata"
+    >
+      <div
+        class="recording-panel__metadata-row"
+      >
+        <dt>
+          Session ID
+        </dt>
+        <dd
+          class="recording-panel__metadata-mono"
+        >
+          sess-A
+        </dd>
+      </div>
+      <div
+        class="recording-panel__metadata-row"
+      >
+        <dt>
+          Armed at
+        </dt>
+        <dd>
+          2026-05-11T18:00:00+00:00
+        </dd>
+      </div>
+      <div
+        class="recording-panel__metadata-row"
+      >
+        <dt>
+          Stopped at
+        </dt>
+        <dd>
+          2026-05-11T18:02:00+00:00
+        </dd>
+      </div>
+      <div
+        class="recording-panel__metadata-row"
+      >
+        <dt>
+          Taps
+        </dt>
+        <dd>
+          0
+           chain(s)
+        </dd>
+      </div>
+    </dl>
+  </div>
+</div>
+`;
