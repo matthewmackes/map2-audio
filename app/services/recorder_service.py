@@ -299,11 +299,19 @@ class RecorderService:
         *,
         snapshot_id: int,
         tap_matrix: dict[str, Any],
+        session_id: Optional[str] = None,
     ) -> RecorderSessionStatus:
         """Allocate a new session and arm capture for the given snapshot.
 
         Emits ``recorder.arm`` over the transport. Session starts in
         ``ARMED`` state. ``snapshot_id`` is validated as int.
+
+        ``session_id`` is normally allocated locally via the injected
+        factory. T2510-2 cluster followers pass an explicit
+        ``session_id`` so the whole cluster shares the leader's id for
+        a snapshot's recording session (followers must NOT mint their
+        own). Re-arming an already-known session id is idempotent — the
+        existing session is returned without a second arm.
         """
         if not isinstance(snapshot_id, int) or snapshot_id < 0:
             raise RecorderServiceError(
@@ -312,10 +320,16 @@ class RecorderService:
             )
 
         normalized_matrix = _coerce_tap_matrix(tap_matrix)
-        session_id = self._session_id_factory()
+        session_id = session_id if session_id else self._session_id_factory()
         now = self._clock()
 
         async with self._lock:
+            existing = self._sessions.get(session_id)
+            if existing is not None:
+                # Idempotent: a session with this id is already armed
+                # (e.g. a re-applied Raft recording mutation). Return the
+                # current projection without re-emitting ARM.
+                return self._project(existing)
             session = RecorderSession(
                 session_id=session_id,
                 snapshot_id=snapshot_id,

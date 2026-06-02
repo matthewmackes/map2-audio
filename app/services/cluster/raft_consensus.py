@@ -119,6 +119,18 @@ class RaftStateMachine:
                 )
                 return True
 
+            elif entry.command == "update_snapshot_recording":
+                # T2510-2 — snapshot recording arm/disarm replication.
+                snapshot_id = entry.data.get("snapshot_id")
+                self.state[f"recording:{snapshot_id}"] = entry.data
+                recording = entry.data.get("recording") or {}
+                self.logger.info(
+                    f"Applied: snapshot recording updated (snapshot_id={snapshot_id}, "
+                    f"armed={recording.get('armed')}, "
+                    f"session_id={recording.get('session_id')})"
+                )
+                return True
+
             else:
                 self.logger.warning(f"Unknown command: {entry.command}")
                 return False
@@ -585,6 +597,27 @@ class RaftConsensus(Singleton):
                 await self._apply_special_settings_to_db(entry)
             except Exception as e:
                 logger.error(f"Failed to apply special settings to DB: {e}")
+                return False
+
+        if entry.command == "update_snapshot_recording":
+            # T2510-2 — arm/disarm this node's local writers for the chains
+            # it owns. The apply hook never raises, but guard anyway so a
+            # side-effect failure does not advance last_applied past the
+            # entry (mirrors the special_settings branch).
+            try:
+                from app.services.recording_raft import get_recording_state_manager
+
+                applied_recording = await get_recording_state_manager().apply_entry(
+                    entry.data, self.node_id
+                )
+                if not applied_recording:
+                    logger.error(
+                        "Recording apply hook reported failure for snapshot "
+                        f"{entry.data.get('snapshot_id')}"
+                    )
+                    return False
+            except Exception as e:
+                logger.error(f"Failed to apply snapshot recording side effect: {e}")
                 return False
 
         applied = await asyncio.to_thread(self.state_machine.apply_entry, entry)
