@@ -107,20 +107,27 @@ class ConfigValidator:
         warnings = []
         
         try:
-            # Use jsonschema for validation if available
+            # jsonschema is a pinned hard dependency (see
+            # requirements-backend-runtime.txt). If it is ever missing the
+            # install is broken — fail loud rather than silently degrade to a
+            # partial fallback validator that only covered a handful of keys.
             try:
                 import jsonschema
-                validator = jsonschema.Draft7Validator(self.schema)
-                schema_errors = list(validator.iter_errors(config))
-                
-                for error in schema_errors:
-                    path = ".".join(str(p) for p in error.path)
-                    errors.append(f"{path}: {error.message}")
-                    
-            except ImportError:
-                # Fallback to manual validation
-                errors.extend(self._validate_manual(config))
-            
+            except ImportError as exc:  # pragma: no cover - install is broken
+                logger.critical(
+                    "jsonschema is unavailable but is a required dependency; "
+                    "config validation cannot run: %s",
+                    exc,
+                )
+                raise
+
+            validator = jsonschema.Draft7Validator(self.schema)
+            schema_errors = list(validator.iter_errors(config))
+
+            for error in schema_errors:
+                path = ".".join(str(p) for p in error.path)
+                errors.append(f"{path}: {error.message}")
+
             # Additional custom validations
             warnings.extend(self._validate_custom(config))
             
@@ -145,26 +152,6 @@ class ConfigValidator:
                 warnings=[],
                 timestamp=utc_now(),
             )
-    
-    def _validate_manual(self, config: Dict[str, Any]) -> List[str]:
-        """Manual validation fallback."""
-        errors = []
-        
-        # Validate audio settings
-        if "audio" in config:
-            audio = config["audio"]
-            if "sample_rate" in audio and audio["sample_rate"] not in [44100, 48000, 96000, 192000]:
-                errors.append("audio.sample_rate: Invalid sample rate")
-            if "buffer_size" in audio and audio["buffer_size"] not in [64, 128, 256, 512, 1024, 2048]:
-                errors.append("audio.buffer_size: Invalid buffer size")
-        
-        # Validate backend settings
-        if "backend" in config:
-            backend = config["backend"]
-            if "port" in backend and not (1024 <= backend["port"] <= 65535):
-                errors.append("backend.port: Port must be between 1024 and 65535")
-        
-        return errors
     
     def _validate_custom(self, config: Dict[str, Any]) -> List[str]:
         """Custom validation rules."""
