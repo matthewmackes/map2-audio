@@ -1,21 +1,32 @@
-# vendor/aoo VERSION
+# vendor/aoo VERSION — MAP2 vendor-pull metadata (T2521-4)
+#
+# This file is MAP2-authored (NOT part of the upstream AOO tree). It
+# records the provenance of the vendored AOO source so the copy can be
+# diffed against / re-pulled from upstream.
 
-status: PLACEHOLDER
-filed_under: T2521-8b
-landed: 2026-05-13
-expected_full_vendor: T2521-4
-
-When the full AOO source tree lands here under T2521-4, this VERSION
-file MUST carry:
-
-  - upstream_repo: https://git.iem.at/cm/aoo
-  - upstream_tag_or_commit: <git ref the vendor copy matches>
-  - vendored_at: <UTC ISO timestamp of the vendor pull>
-  - license: BSD-3-Clause (same as upstream)
-
-Until then the bare placeholder fields below hold the slot.
+status: VENDORED
+filed_under: T2521-4
 
 upstream_repo: https://git.iem.at/cm/aoo
-upstream_tag_or_commit: <pending>
-vendored_at: <pending>
-license: BSD-3-Clause
+upstream_tag_or_commit: v2.0-pre4 (commit dc2a5be2962ba02d6cebe297f31f2774f34e7bc7)
+vendored_at: 2026-06-02
+license: BSD-3-Clause ("Standard Improved BSD License" — see vendor/aoo/LICENSE)
+
+# Notes:
+#   - Full upstream tree vendored verbatim (~2.8 MB) minus the upstream
+#     .git directory. pd/ sc/ examples/ doc/ doxygen/ tests/ are present
+#     but NOT built — upstream CMakeLists gates them behind
+#     AOO_BUILD_{PD_EXTERNAL,SC_EXTENSION,EXAMPLES,DOCUMENTATION,TESTS}
+#     (all default OFF). MAP2 links only the core aoo/ library.
+#   - LICENSE.placeholder (pre-pull skeleton) removed; real upstream
+#     LICENSE now at vendor/aoo/LICENSE.
+#   - The pytest guards (test_sonobus_cmake_option / test_sonobus_packaging)
+#     are updated in lockstep (now assert the CMakeLists + real LICENSE are
+#     PRESENT and the placeholder is gone).
+#   - SUBMODULES NOT VENDORED: upstream ships deps/opus + deps/portaudio as
+#     git submodules. The shallow vendor pull did not recurse them; the empty
+#     stub dirs + upstream .gitmodules were removed. MAP2 builds AOO with
+#     AOO_LOCAL_OPUS=OFF → find_package(Opus REQUIRED) against SYSTEM libopus
+#     (documented as a system dependency in docs/THIRD_PARTY_NOTICES.md;
+#     verified present: libopus 1.5.2). portaudio is only used by upstream
+#     examples/tests, which MAP2 does not build (AOO_BUILD_EXAMPLES/TESTS OFF).

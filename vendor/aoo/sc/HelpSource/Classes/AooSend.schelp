@@ -1,0 +1,52 @@
+TITLE:: AooSend
+summary:: Send an AOO stream
+categories:: UGens>Streaming, External Control>AOO
+related:: Classes/AooSendCtl, Classes/AooReceive, Classes/AooReceiveCtl, Classes/AooAddr, Classes/AooClient, Classes/Aoo, Guides/AOO_Introduction
+
+DESCRIPTION::
+
+This UGen creates an AOO source on the Server. It takes an array of input signals and streams them over the network to one or more AOO sinks (e.g. link::Classes/AooReceive::).
+
+See link::Classes/AooSendCtl:: for how to add/remove sinks, change the streaming format, receive events, etc.
+
+CLASSMETHODS::
+
+METHOD:: ar
+
+ARGUMENT:: port
+the (fixed) UDP port number.
+
+The port number must be an Integer, i.e. you cannot set it with a Synth argument.
+
+note::The port number can be shared among several instances of code::AooSend:: and/or code::AooReceive:: emphasis::within the same application::.::
+
+ARGUMENT:: id
+a fixed positive Integer which uniquely identifies the AOO source on the given port.
+
+The ID can be set with a Synth argument so you can use the same SynthDef for multiple AOO sources on the same port.
+
+note::There must be no code::AooSend:: objects with the same ID on the same port. You can, however, have two code::AooSend:: objects with the same ID but on different ports!::
+
+ARGUMENT:: channels
+one or more UGen inputs. The size of code::channels:: determines the max. number of channels that you can send. You can, however, send fewer channels by setting the code::channels:: argument in link::Classes/AooFormat::, see link::Classes/AooSendCtl#-format::.
+
+ARGUMENT:: gate
+turn streaming on (1) or off (0).
+
+This allows to start and stop streams with a UGen input, as opposed to the link::Classes/AooSendCtl#-start:: and link::Classes/AooSendCtl#-stop:: methods. The input can be control rate or audio rate.
+
+ARGUMENT:: tag
+(optional) a Symbol which uniquely identifies this UGen within a SynthDef.
+
+This is only required if you have more than one code::AooSend:: instance in a given SynthDef. See the corresponding code::tag:: argument in link::Classes/AooSendCtl#*new:: or link::Classes/AooSendCtl#*collect::.
+
+
+EXAMPLES::
+
+code::
+// a SynthDef with a single AooSend that
+// reads two channels from the given bus.
+SynthDef(\aoo_send, { |bus|
+	AooSend.ar(9998, 1, In.ar(bus, 2));
+}).add;
+::

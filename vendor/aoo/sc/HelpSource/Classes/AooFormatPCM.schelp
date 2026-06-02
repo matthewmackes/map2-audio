@@ -1,0 +1,58 @@
+TITLE:: AooFormatPCM
+summary:: PCM streaming format
+categories:: External Control>AOO
+related:: Classes/AooSendCtl, Classes/AooReceiveCtl, Classes/AooFormatOpus, Classes/AooFormatNull, Classes/AooFormat
+
+DESCRIPTION::
+Uncompressed PCM audio.
+
+PCM enables the highest possible audio quality and lowest latency at the expense of a rather high bitrate.
+
+strong::TIP::: If you want to stream over the internet, you should consider link::Classes/AooFormatOpus::.
+
+
+CLASSMETHODS::
+
+METHOD:: new
+All arguments are optional.
+
+ARGUMENT:: channels
+the number of channels, between 1 and 255.
+
+Default (code::nil::) = same as input channel count
+
+ARGUMENT:: blockSize
+the block size in samples. (All values allowed.)
+
+Larger block sizes require less bandwidth and - depending on the network - can give more stable results, but increase the latency.
+
+Default (code::nil::) = same as Server block size (no latency!)
+
+ARGUMENT:: sampleRate
+the sample rate. (All values allowed.)
+
+Default (code::nil::) = same as Server sample rate.
+
+ARGUMENT:: bitDepth
+the bit depth, see link::#-bitDepth::.
+
+INSTANCEMETHODS::
+
+COPYMETHOD:: AooFormat -codec
+
+COPYMETHOD:: AooFormat -channels
+
+COPYMETHOD:: AooFormat -blockSize
+
+COPYMETHOD:: AooFormat -sampleRate
+
+METHOD:: bitDepth
+the bit depth as a Symbol. Possible values:
+
+table::
+## code::\int8:: || 8-bit integer
+## code::\int16:: || 16-bit integer
+## code::\int24:: || 24-bit integer
+## code::\float32:: || 32-bit float
+## code::\float64:: || 64-bit float
+::

@@ -139,30 +139,35 @@ def test_packaging_systemd_directory_has_sonobus_unit_copy():
     assert "/opt/map2-audio" in pkg_text, "packaged unit must use /opt/map2-audio (T2529)"
 
 
-def test_vendor_aoo_placeholder_files_present():
-    """The vendor/aoo/ skeleton must carry a VERSION + LICENSE
-    placeholder so the licensing posture is visible before the full
-    source pull lands in T2521-4."""
+def test_vendor_aoo_real_source_metadata_present():
+    """T2521-4 (2026-06-02): the real AOO source is vendored, so
+    vendor/aoo/ now carries the MAP2 VERSION metadata + the real
+    upstream LICENSE (the pre-pull LICENSE.placeholder is removed)."""
     version = REPO_ROOT / "vendor" / "aoo" / "VERSION"
-    license_placeholder = REPO_ROOT / "vendor" / "aoo" / "LICENSE.placeholder"
-    assert version.is_file(), "vendor/aoo/VERSION placeholder missing"
-    assert license_placeholder.is_file(), (
-        "vendor/aoo/LICENSE.placeholder missing"
+    license_file = REPO_ROOT / "vendor" / "aoo" / "LICENSE"
+    placeholder = REPO_ROOT / "vendor" / "aoo" / "LICENSE.placeholder"
+    assert version.is_file(), "vendor/aoo/VERSION missing"
+    assert license_file.is_file(), "vendor/aoo/LICENSE (real upstream) missing"
+    assert not placeholder.is_file(), (
+        "vendor/aoo/LICENSE.placeholder should be removed once the real "
+        "upstream LICENSE is vendored."
     )
     version_text = version.read_text()
     assert "BSD-3-Clause" in version_text
     assert "T2521-4" in version_text
+    # The VERSION must now record the concrete provenance, not <pending>.
+    assert "v2.0-pre4" in version_text
+    assert "<pending>" not in version_text
 
 
-def test_vendor_aoo_has_no_cmakelists_yet():
-    """The CMake guard at juce-engine/CMakeLists.txt checks for
-    vendor/aoo/CMakeLists.txt to flip SONOBUS_AVAILABLE=TRUE. Until
-    the full source vendor lands in T2521-4, that file must NOT
-    exist so the engine build correctly logs PLANNED instead of
-    ENABLED."""
+def test_vendor_aoo_carries_cmakelists():
+    """T2521-4 (2026-06-02): the CMake guard at juce-engine/CMakeLists.txt
+    flips SONOBUS_AVAILABLE=TRUE when vendor/aoo/CMakeLists.txt is present.
+    Now that the full upstream source is vendored, the file MUST exist
+    (it ships with the AOO tree). Flipped from the pre-pull
+    asserts-absence guard in lockstep with the source pull."""
     cmake = REPO_ROOT / "vendor" / "aoo" / "CMakeLists.txt"
-    assert not cmake.exists(), (
-        "vendor/aoo/CMakeLists.txt landed before the T2521-4 source pull. "
-        "The CMake guard would now claim SONOBUS_AVAILABLE=TRUE without a "
-        "real AOO source tree — that's a contract regression."
+    assert cmake.exists(), (
+        "vendor/aoo/CMakeLists.txt missing; the real AOO source tree must "
+        "be vendored as part of T2521-4 so SONOBUS_AVAILABLE can flip TRUE."
     )

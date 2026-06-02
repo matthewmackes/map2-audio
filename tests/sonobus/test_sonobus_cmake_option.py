@@ -66,14 +66,28 @@ def test_vendor_readme_notes_agplv3_compatibility():
     assert "BSD-3" in text
 
 
-def test_vendor_aoo_does_not_yet_carry_a_cmakelists():
-    """T2521-4 lands the real AOO source; the placeholder must not
-    accidentally provide a CMakeLists.txt that lets the engine link
-    against nothing. This catches the failure mode where someone seeds
-    a stub CMakeLists.txt without an actual AOO source tree."""
-    cmake = REPO_ROOT / "vendor" / "aoo" / "CMakeLists.txt"
-    assert not cmake.exists(), (
-        f"vendor/aoo/CMakeLists.txt unexpectedly present at {cmake}; "
-        "either land the full AOO source tree as part of T2521-4 or "
-        "remove the stub."
+def test_vendor_aoo_carries_real_source_tree():
+    """T2521-4 (2026-06-02): the real AOO source is now vendored, so the
+    upstream-shipped CMakeLists.txt MUST be present — and it must be the
+    genuine upstream tree, not a hand-seeded stub. Guards against the
+    failure mode of a CMakeLists with no actual AOO library behind it.
+
+    (Before the source pull this test asserted ABSENCE; it flipped to
+    asserting PRESENCE in lockstep with the vendor pull, exactly as the
+    SONOBUS_BENCH_HANDOFF.md "What still needs to land" note specified.)"""
+    aoo_dir = REPO_ROOT / "vendor" / "aoo"
+    cmake = aoo_dir / "CMakeLists.txt"
+    assert cmake.exists(), (
+        f"vendor/aoo/CMakeLists.txt missing at {cmake}; the real AOO "
+        "source tree must be vendored as part of T2521-4."
+    )
+    # Sanity: the genuine upstream tree carries the core library + headers,
+    # not just a lone CMakeLists.
+    assert (aoo_dir / "aoo").is_dir(), "vendor/aoo/aoo/ (core library) missing"
+    assert (aoo_dir / "include").is_dir(), "vendor/aoo/include/ (headers) missing"
+    assert (aoo_dir / "LICENSE").exists(), "vendor/aoo/LICENSE (BSD-3) missing"
+    # The pre-pull placeholder must be gone now that the real LICENSE landed.
+    assert not (aoo_dir / "LICENSE.placeholder").exists(), (
+        "vendor/aoo/LICENSE.placeholder should be removed once the real "
+        "upstream LICENSE is vendored."
     )

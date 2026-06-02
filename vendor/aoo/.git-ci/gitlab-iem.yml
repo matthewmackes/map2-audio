@@ -1,0 +1,346 @@
+### global variables
+
+variables:
+  CMAKE_BUILD_TYPE:
+    value: "Release"
+    description: "Set CMake build type"
+  LOG_LEVEL:
+    value: "Warning"
+    description: "Set log level"
+  STATIC_RUNTIME:
+    value: 0
+    description: "Link with static runtime libraries"
+  PD_VERSION: 0.54-1
+  PD_URL: http://msp.ucsd.edu/Software/pd-${PD_VERSION}.src.tar.gz
+  PD_PATH: /tmp/pd
+  SC_PATH: /tmp/supercollider
+
+### script snippets
+
+# clone SC repository
+.script:sc: &script_sc
+  - git clone https://github.com/supercollider/supercollider.git "${SC_PATH}"
+  - pushd "${SC_PATH}"
+  - git submodule update --init
+  - popd
+
+# download Pd sources
+.script:pd: &script_pd
+  - wget -q -O Pd.tgz ${PD_URL}
+  - rm -rf ${PD_PATH}; mkdir -p ${PD_PATH}
+  - tar -xf Pd.tgz -C ${PD_PATH}
+  - rm -f Pd.tgz
+  - mv "${PD_PATH}"/*/* "${PD_PATH}"
+
+# download Pd application (with sources)
+.script:pd_app: &script_pd_app
+  - wget -q -O Pd.zip ${PD_URL}
+  - rm -rf "${PD_PATH}"; mkdir -p "${PD_PATH}"
+  - unzip -q Pd.zip -d "${PD_PATH}"
+  - rm -f Pd.zip
+  - mv "${PD_PATH}"/*/* "${PD_PATH}"
+
+# NOTE: we have to use absolute paths for PD_INSTALL_DIR and SC_INSTALL_DIR.
+# For some reason, relative paths (including '.') are not appended to CMAKE_INSTALL_PREFIX
+# as they should be, instead they are resolved to the source directory *before* getting passed to CMake.
+.script:cmake: &script_cmake
+  - prefix="$(pwd)/build/${CI_JOB_NAME}"
+  - rm -rf build build_shared
+  # static AOO library, Pd external, SC extension, AOO server, tests, examples and documentation
+  - cmake -H. -Bbuild -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX="$prefix/aoo"
+    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DCMAKE_OSX_ARCHITECTURES="${OSX_ARCHITECTURES}"
+    -DCMAKE_DEPENDS_USE_COMPILER=OFF
+    -DAOO_LOG_LEVEL=${LOG_LEVEL} -DAOO_STATIC_RUNTIME=${STATIC_RUNTIME} -DAOO_LOCAL_OPUS=ON
+    -DAOO_BUILD_SERVER=ON -DAOO_BUILD_TESTS=ON -DAOO_BUILD_EXAMPLES=ON
+    -DAOO_BUILD_DOCUMENTATION=${DOXYGEN}
+    -DAOO_BUILD_PD_EXTERNAL=ON -DPD_INCLUDE_DIR="${PD_PATH}/src" -DPD_BIN_DIR="${PD_PATH}/bin"
+    -DPD_INSTALL_DIR="${prefix}/pd" -DPD_EXTENSION=${PD_EXTENSION}
+    -DAOO_BUILD_SC_EXTENSION=ON -DSC_INCLUDE_DIR="${SC_PATH}" -DSC_INSTALL_DIR="$prefix/sc" -DSC_SUPERNOVA=${SUPERNOVA}
+  # shared AOO library
+  - cmake -H. -Bbuild_shared -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX="$prefix/aoo"
+    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DCMAKE_OSX_ARCHITECTURES="${OSX_ARCHITECTURES}"
+    -DCMAKE_DEPENDS_USE_COMPILER=OFF
+    -DAOO_LOG_LEVEL=${LOG_LEVEL} -DAOO_STATIC_RUNTIME=${STATIC_RUNTIME} -DAOO_LOCAL_OPUS=ON
+    -DAOO_BUILD_SHARED_LIBRARY=ON
+
+   # NOTE: by default, CMake 3.21+ uses the compiler to obtain dependencies for makefiles ('compiler_depends.make').
+   # For some reason, on the 'Hopper' runner that file would contain bogus file paths which will cause the following
+   # invocation of 'cmake --build ./build --target install/strip' to fail with 'multiple target patterns'.
+   # As a workaround, we force the legacy behavior with -DCMAKE_DEPENDS_USE_COMPILER=OFF.
+
+### ad-hoc code signing for macOS
+.script:codesign:macos: &script_codesign_macos
+  - dir="$(pwd)/build/${CI_JOB_NAME}"
+  - codesign --force --sign - "${dir}/aoo/lib/libaoo.dylib"
+  - codesign --force --sign - "${dir}/aoo/bin/aooserver"
+  - codesign --force --sign - "${dir}/pd/aoo/aoo.${PD_EXTENSION}"
+  - find "${dir}/sc/aoo/plugins" -name "*.scx" -exec codesign --force --sign - {} \;
+
+### build snippets
+.script:make: &script_make
+  - cmake --build ./build --config Release -j -v
+  - cmake --build ./build_shared --config Release -j -v
+.script:make_install: &script_make_install
+  - cmake --install ./build --config Release -v --strip
+  - cmake --install ./build_shared --config Release -v --strip
+
+#######################################################################
+### configuration templates (to be used for snapshot and release builds)
+.build:script:
+  stage: build
+  script:
+    - *script_make
+    - *script_make_install
+  artifacts:
+    name: ${CI_PROJECT_NAME}_${CI_COMMIT_REF_NAME}_${CI_JOB_NAME}
+    paths:
+      - "build/${CI_JOB_NAME}/aoo"
+      - "build/${CI_JOB_NAME}/pd/aoo"
+      - "build/${CI_JOB_NAME}/sc/aoo"
+    # we only need the job artifacts to create the packages
+    expire_in: 1h
+
+.base:
+  artifacts:
+    expire_in: 1 week
+
+.build:linux: &build_linux
+  extends: .build:script
+  image: registry.git.iem.at/devtools/docker/debiancross:amd64
+  variables:
+    SUPERNOVA: 1
+    DOXYGEN: 1
+  before_script:
+    - apt-get update && apt-get install -y --no-install-recommends
+      make cmake wget git doxygen
+    - test "x${TARGETDEBARCH}" != "x" &&
+      { export CC=${TARGETARCH}-gcc; export CXX=${TARGETARCH}-g++; }
+    - git submodule update --init
+    - *script_sc
+    - *script_pd
+    - *script_cmake
+
+.build:linux_i386: &build_linux_i386
+  extends: .build:linux
+  image: registry.git.iem.at/devtools/docker/debiancross:i386
+  variables:
+    PD_EXTENSION: l_i386
+
+.build:linux_armhf: &build_linux_armhf
+  extends: .build:linux
+  image: registry.git.iem.at/devtools/docker/debiancross:armhf
+  variables:
+    PD_EXTENSION: l_arm
+
+.build:linux_arm64: &build_linux_arm64
+  extends: .build:linux
+  image: registry.git.iem.at/devtools/docker/debiancross:arm64
+  variables:
+    PD_EXTENSION: l_arm64
+
+.build:macos: &build_macos
+  extends: .build:script
+  tags:
+     - bigsur
+  variables:
+    OSX_ARCHITECTURES: "arm64;x86_64"
+    SUPERNOVA: 1
+    DOXYGEN: 0
+    PD_EXTENSION: d_fat
+  before_script:
+  # TODO: install doxygen (homebrew is too slow...)
+    - git submodule update --init
+    - *script_sc
+    - *script_pd
+    - *script_cmake
+  after_script:
+    - *script_codesign_macos
+
+.build:w32: &build_w32
+  extends: .build:script
+  tags:
+    - windows
+  variables:
+    IEMCI_CONFIGURATIONS: mingw32
+    SUPERNOVA: 1
+    DOXYGEN: 1
+    STATIC_RUNTIME: 1
+    PD_URL: http://msp.ucsd.edu/Software/pd-${PD_VERSION}-i386.msw.zip
+  before_script:
+    - pacman --noconfirm -S ${MINGW_PACKAGE_PREFIX}-cmake doxygen
+    - git submodule update --init
+    - *script_sc
+    - *script_pd_app
+    - *script_cmake
+
+.build:w64: &build_w64
+  extends: .build:w32
+  variables:
+    IEMCI_CONFIGURATIONS: mingw64
+    PD_EXTENSION: m_amd64
+    PD_URL: http://msp.ucsd.edu/Software/pd-${PD_VERSION}.msw.zip
+
+### job templates
+.Linux:
+  <<: *build_linux
+.Linux_i386:
+  allow_failure: true
+  <<: *build_linux_i386
+.Linux_ARMhf:
+  allow_failure: true
+  <<: *build_linux_armhf
+.Linux_ARM64:
+  allow_failure: true
+  <<: *build_linux_arm64
+.macOS:
+  <<: *build_macos
+.win32:
+  <<: *build_w32
+.win64:
+  <<: *build_w64
+
+#######################################################################
+### create deken packages and (optionally) upload them;
+### if you want to automatically upload a package, you need to
+### set DEKEN_USERNAME/DEKEN_PASSWORD in the CI-project settings.
+### (https://git.iem.at/help/ci/variables/README#variables)
+.package:deps: &package_deps
+  - apt-get update && apt-get --no-install-recommends -y install deken git zip
+
+.package:script:
+  stage: deploy
+  image: debian:buster
+  variables:
+    DEKEN_ROOT: "yes"
+  artifacts:
+    name: ${CI_PROJECT_NAME}_${CI_COMMIT_REF_NAME}_${CI_JOB_NAME}
+    paths:
+      - ./aoo*
+      - ./pd*
+      - ./sc*
+    expire_in: 1d
+  before_script:
+    - *package_deps
+  script:
+  # create zip files for platform (e.g. aoo_v0.6.0_win64.zip)
+  # with the following structure:
+  # - aoo
+  # - pd/aoo
+  # - sc/aoo
+    - rm -rf ./aoo
+    - rm -rf ./pd
+    - rm -rf ./sc
+    - mkdir aoo
+    - mkdir pd
+    - mkdir sc
+    - mv build/${JOBNAME}/aoo .
+    - mv build/${JOBNAME}/pd .
+    - mv build/${JOBNAME}/sc ./sc
+
+.package_deken: &package_deken
+  stage: deploy
+  image: debian:buster
+  variables:
+    DEKEN_ROOT: "yes"
+  artifacts:
+    name: ${CI_PROJECT_NAME}_${CI_COMMIT_REF_NAME}_deken
+    paths:
+      - ./*.dek
+    expire_in: 1d
+  before_script:
+    - *package_deps
+  script:
+    - rm -f ./*.dek
+    - rm -rf ./pd/aoo
+    - mkdir -p ./pd/aoo
+# create a single deken package containing binaries for all platforms
+    - for dir in ./build/*/pd/aoo; do cp -r $dir/* ./pd/aoo; done
+    - deken package --version="${CI_COMMIT_TAG#v}" ./pd/aoo
+# upload deken package (optional)
+    - test -z "${CI_COMMIT_TAG}" || test -z "${DEKEN_USERNAME}" || test -z "${DEKEN_PASSWORD}" || deken upload --no-source-error ./*.dek
+
+.package:linux: &package_linux
+  extends: .package:script
+  variables:
+    JOBNAME: Linux
+
+.package:linux_i386: &package_linux_i386
+  extends: .package:script
+  variables:
+    JOBNAME: Linux_i386
+
+.package:linux_armhf: &package_linux_armhf
+  extends: .package:script
+  variables:
+    JOBNAME: Linux_ARMhf
+
+.package:linux_arm64: &package_linux_arm64
+  extends: .package:script
+  variables:
+    JOBNAME: Linux_ARM64
+
+.package:macos: &package_macos
+  extends: .package:script
+  variables:
+    JOBNAME: macOS
+
+.package:win64: &package_win64
+  extends: .package:script
+  variables:
+    JOBNAME: win64
+
+.package:win32: &package_win32
+  extends: .package:script
+  variables:
+    JOBNAME: win32
+
+#######################################################################
+### the actual jobs:
+
+### release jobs
+Linux:
+  extends:
+    - .Linux
+    - .base
+Linux_i386:
+  extends:
+    - .Linux_i386
+    - .base
+Linux_ARMhf:
+  extends:
+    - .Linux_ARMhf
+    - .base
+Linux_ARM64:
+  extends:
+    - .Linux_ARM64
+    - .base
+macOS:
+  extends:
+    - .macOS
+    - .base
+win32:
+  extends:
+    - .win32
+    - .base
+win64:
+  extends:
+    - .win64
+    - .base
+
+## release packages
+Linux_package:
+  <<: *package_linux
+Linux_i386_package:
+  <<: *package_linux_i386
+Linux_ARMhf_package:
+  <<: *package_linux_armhf
+Linux_ARM64_package:
+  <<: *package_linux_arm64
+macOS_package:
+  <<: *package_macos
+win32_package:
+  <<: *package_win32
+win64_package:
+  <<: *package_win64
+deken_package:
+  <<: *package_deken

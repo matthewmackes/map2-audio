@@ -1,0 +1,41 @@
+TITLE:: AooFormatNull
+summary:: Null streaming format
+categories:: External Control>AOO
+related:: Classes/AooSendCtl, Classes/AooReceiveCtl, Classes/AooFormatOpus, Classes/AooFormatNull, Classes/AooFormat
+
+DESCRIPTION::
+AooFormatNull represents a dummy format; use this if you only want to send stream messages, but no audio data.
+
+note::Stream messages are not implemented yet.::
+
+CLASSMETHODS::
+
+METHOD:: new
+
+All arguments for optional.
+
+ARGUMENT:: channels
+the number of message channels, between 1 and 255.
+
+code::nil:: = same as input channel count
+
+ARGUMENT:: blockSize
+the block size in samples. (All values allowed.)
+
+code::nil:: = same as Server block size.
+
+ARGUMENT:: sampleRate
+the sample rate in Hz. (All values allowed.)
+
+code::nil:: = sames Server sample rate.
+
+
+INSTANCEMETHODS::
+
+COPYMETHOD:: AooFormat -codec
+
+COPYMETHOD:: AooFormat -channels
+
+COPYMETHOD:: AooFormat -blockSize
+
+COPYMETHOD:: AooFormat -sampleRate

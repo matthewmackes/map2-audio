@@ -1,0 +1,82 @@
+TITLE:: AooServer
+summary:: AOO server
+categories:: External Control>AOO
+related:: Classes/AooClient, Guides/AOO_Introduction
+
+DESCRIPTION::
+[For a general introduction to AOO, see link::Guides/AOO_Introduction::.]
+
+AooServer allows to run an AOO server in SuperCollider.
+The purpose of an AOO server is facilitate peer-to-peer connections in a network, in particular over the public internet. See link::Classes/AooClient:: for more information.
+
+note::The AOO server is also available as a simple command line program (code::aooserver::); this makes it really easy to run an AOO server as a system service, e.g. with systemd.::
+
+Currently, the feature set of AooServer is rather limited compared to capabilities of the underlying C++ library. In the future, we might implement more features, such as group and user management, custom request handling, push notifications, etc.
+
+Example:
+code::
+s.boot; // Server must be booted!
+
+// Just a single line!
+~server = AooServer();
+::
+
+CLASSMETHODS::
+
+METHOD:: defaultPort
+the default AOO server port (7078)
+
+
+METHOD:: new
+
+ARGUMENT:: port
+optional port number; if omitted, the link::#*defaultPort:: will be used.
+
+ARGUMENT:: server
+the Server or code::nil:: (= default Server)
+
+ARGUMENT:: password
+optional password
+
+Use this if you don't want random people to join your (public) AOO server.
+
+note::Public AOO servers typically do emphasis::not:: require a password, but groups usually do (see the code::groupPassword:: argument in link::Classes/AooClient#-joinGroup::.::
+
+
+ARGUMENT:: relay
+whether it should also act as a relay server.
+
+If code::true::, the AOO server will relay messages between clients which could not establish a peer-to-peer connection.
+
+Alternatively, users can provide their own relay servers for their group, see the code::relayAddr:: argument in link::Classes/AooClient#-joinGroup::.
+
+DISCUSSION::
+
+The AooServer is created emphasis::asynchronously:: on the Server. You can use link::Classes/Server#-sync:: to make sure the object is ready and possibly check for errors with link::#-isOpen::.
+
+code::
+(
+fork {
+	~server = AooServer();
+	s.sync;
+	if (~server.isOpen) {
+		// ok
+	};
+}
+)
+::
+
+
+INSTANCEMETHODS::
+
+PRIVATE:: prPostInit, prHandleEvent
+
+
+METHOD:: isOpen
+returns:: whether the object has been created successfully
+
+METHOD:: port
+the port number
+
+METHOD:: server
+the link::Classes/Server:: instance

@@ -1,0 +1,78 @@
+TITLE:: AooAddr
+summary:: Represents an AOO network endpoint
+categories:: External Control>AOO
+related:: Classes/AooPeer, Classes/AooEndpoint, Classes/AooSendCtl, Classes/AooReceiveCtl, Classes/AooClient
+
+DESCRIPTION::
+
+AooAddr represents an IP endpoint (= IP address + port number).
+
+AooAddr objects are often returned from event handlers. They can also be created ad-hoc and used as method arguments:
+
+code::
+// ~synth is a Synth containing an AooSend instance
+~ctl = AooSendCtl(~synth);
+// add sink
+~ctl.addSink(AooAddr("192.168.0.10", 9000), 1);
+::
+
+Contrary to link::Classes/NetAddr::, AooAddr also supports IPv6 addresses!
+
+Examples:
+code::
+// a typical IPv4 address:
+AooAddr("192.168.0.196", 9000);
+// a typical IPv6 address:
+AooAddr("2a02:8388:c40:1a80:1b0d:4520:a4cb:ff5", 9000);
+// IPv4 loopback address:
+AooAddr("127.0.0.l", 9000);
+// IPv6 loopback address:
+AooAddr("::", 9000);
+::
+
+CLASSMETHODS::
+
+METHOD:: new
+
+ARGUMENT:: ip
+the IP address as a String
+
+ARGUMENT:: port
+the port number
+
+
+METHOD:: resolve
+create an AooAddr from a emphasis::hostname:: and a port number.
+
+ARGUMENT:: hostname
+the hostname (e.g. "localhost")
+
+ARGUMENT:: port
+the port number
+
+returns:: an instance of AooAddr if it could resolve the hostname; throws an exception otherwise.
+
+DISCUSSION::
+
+Example:
+code::
+AooAddr.resolve("vrr.iem.at", 7078); // -> AooAddr(193.170.129.99, 7078)
+::
+
+note::Because hostname resolution is performed in sclang, it will always return an IPv4 address. (sclang does not support IPv6.)::
+
+INSTANCEMETHODS::
+
+METHOD:: ip
+the IP address string
+
+METHOD:: port
+the port number
+
+METHOD:: ==
+
+Two AooAddr objects compare equal if they have the same link::#-ip:: and link::#-port::.
+
+METHOD:: hash
+
+custom hash function which allows AooAddr to be used as a key in associative containers (e.g. link::Classes/IdentityDictionary::).

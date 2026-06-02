@@ -1,0 +1,64 @@
+TITLE:: AooPeer
+summary:: Represents an AOO peer
+categories:: External Control>AOO
+related:: Classes/AooAddr, Classes/AooGroup, Classes/AooUser, Classes/AooClient
+
+DESCRIPTION::
+
+AooPeer represents a peer in an AOO network (see link::Classes/AooClient::). It is defined by its group and user.
+
+AooPeer objects are often returned from event handlers. In this case, they always have valid link::#-ip:: and link::#-port:: members.
+
+However, they can also be created ad-hoc and used as method arguments:
+code::
+// ~synth is a Synth containing an AooSend instance
+~ctl = AooSendCtl(~synth);
+// add user "foo" in group "test" as a sink (with ID 1), assuming we have also joined the same group.
+~ctl.addSink(AooPeer("test", "foo"), 1);
+::
+
+
+CLASSMETHODS::
+
+PRIVATE:: prFromEvent
+
+
+METHOD:: new
+
+ARGUMENT:: group
+link::Classes/AooGroup:: or group name (String)
+
+ARGUMENT:: user
+link::Classes/AooUser:: or user name (String)
+
+ARGUMENT:: addr
+(optional) IP address String
+
+ARGUMENT:: port
+(optional) port number
+
+
+INSTANCEMETHODS::
+
+METHOD:: group
+the group (link::Classes/AooGroup::)
+
+
+METHOD:: user
+the user (link::Classes/AooUser::)
+
+
+COPYMETHOD:: AooAddr -ip
+
+COPYMETHOD:: AooAddr -port
+
+
+METHOD:: ==
+Two AooPeers objects compare equal if their link::#-group::s and link::#-user::s compare equal.
+
+An AooPeer and link::Classes/AooAddr:: compare equal if they have the same link::#-ip:: and link::#-port::.
+
+
+METHOD:: hash
+
+custom hash function which allows AooPeer to be used as a key in associative containers (e.g. link::Classes/IdentityDictionary::).

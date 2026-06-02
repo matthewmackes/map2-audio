@@ -1,0 +1,53 @@
+TITLE:: AooUser
+summary:: Represents an AOO user
+categories:: External Control>AOO
+related:: Classes/AooPeer, Classes/AooGroup, Classes/AooEndpoint, Classes/AooClient
+
+DESCRIPTION::
+AooUser represents a user in an AOO network. It is defined by its name and ID and it may also contain additional metadata.
+
+See link::Classes/AooClient:: for more information about AOO users.
+
+
+CLASSMETHODS::
+
+METHOD:: new
+
+ARGUMENT:: name
+the user name (String)
+
+ARGUMENT:: id
+(optional) the user ID (Integer)
+
+ARGUMENT:: metadata
+(optional) user metadata (link::Classes/AooData::)
+
+DISCUSSION::
+
+AooUser objects are typically part of link::Classes/AooPeer:: objects and rarely created by the user.
+
+
+INSTANCEMETHODS::
+
+METHOD:: name
+the user name (String)
+
+METHOD:: id
+the user ID (Integer)
+
+METHOD:: metadata
+optional user metadata (link::Classes/AooData:: or code::nil::)
+
+METHOD:: hash
+(describe method here)
+
+returns:: (describe returnvalue here)
+
+
+METHOD:: ==
+Two AooUser objects compare equal if they have the same name or the same ID.
+
+
+METHOD:: hash
+
+custom hash function which allows AooUser to be used as a key in associative containers (e.g. link::Classes/IdentityDictionary::).

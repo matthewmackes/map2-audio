@@ -1,0 +1,54 @@
+TITLE:: AooReceive
+summary:: Receive AOO streams
+categories:: UGens>Streaming, External Control>AOO
+related:: Classes/AooReceiveCtl, Classes/AooSend, Classes/AooSendCtl, Classes/AooClient, Classes/Aoo, Guides/AOO_Introduction
+
+DESCRIPTION::
+This UGen creates an AOO sink on the Server. It receives audio stream from one or more AOO sources (e.g. link::Classes/AooSend::) and sends the signal to its outputs. If the sink receives several streams on the same channel(s), the signals on each channel are automatically summed.
+
+See link::Classes/AooReceiveCtl:: for how to add/remove sinks, change the streaming format, receive events, etc.
+
+
+CLASSMETHODS::
+
+METHOD:: ar
+
+ARGUMENT:: port
+the (fixed) UDP port number.
+
+note::The port number can be shared among several instances of code::AooSend:: and/or code::AooReceive:: emphasis::within the same application::.::
+
+ARGUMENT:: id
+a fixed positive Integer which uniquely identifies the AOO sink on the given port.
+
+The ID can be set with a Synth argument so you can use the same SynthDef for multiple AOO sources on the same port.
+
+note::There must be no code::AooReceive:: objects with the same ID on the same port. You can, however, have two code::AooReceive:: objects with the same ID but on different ports!::
+
+ARGUMENT:: numChannels
+the (fixed) number of output channels.
+
+ARGUMENT:: latency
+the initial jitter buffer latency size in seconds.
+
+Increase this value for unstable or jittery networks. If the latency is large enough, lost packets can even be resent in time (see link::Classes/AooReceiveCtl#-resend::) and the stream becomes more and more reliable.
+
+For low latency applications, you should set the latency as low as possible, possibly risking occasional drop outs or relying on packet-loss-concealment (see link::Classes/AooFormatOpus::).
+
+note::The code::latency:: argument is read once during construction and can not be modulated! If you want to set the latency dynamically, you can use the link::Classes/AooReceiveCtl#-latency:: method.::
+
+ARGUMENT:: tag
+(optional) a Symbol which uniquely identifies this UGen within a SynthDef.
+
+This is only required if you have more than one code::AooReceive:: instance in a given SynthDef! See the corresponding code::tag:: argument in link::Classes/AooReceiveCtl#*new:: or link::Classes/AooReceiveCtl#*collect::.
+
+
+EXAMPLES::
+
+code::
+// a SynthDef with a single AooReceive that receives two
+// channels of audio and writes them to the given bus.
+SynthDef(\aoo_recv, { |bus|
+	Out.ar(bus, AooReceive.ar(9998, 1, 2));
+}).add;
+::

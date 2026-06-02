@@ -1,0 +1,50 @@
+TITLE:: AooGroup
+summary:: Represents an AOO group
+categories:: External Control>AOO
+related:: Classes/AooPeer, Classes/AooUser, Classes/AooEndpoint, Classes/AooClient
+
+DESCRIPTION::
+AooGroup represents a group in an AOO network (see link::Classes/AooClient::). It is defined by its group and user.
+
+See link::Classes/AooClient:: for more information about AOO groups.
+
+
+CLASSMETHODS::
+
+METHOD:: new
+
+ARGUMENT:: name
+the group name (String)
+
+ARGUMENT:: id
+(optional) the group ID (Integer)
+
+ARGUMENT:: metadata
+(optional) group metadata (link::Classes/AooData::)
+
+DISCUSSION::
+
+AooGroup objects are typically part of link::Classes/AooPeer:: objects.
+Users rarely need to create AooGroup objects themselves; one example is link::Classes/AooClient#-sendMsg::.
+
+
+INSTANCEMETHODS::
+
+METHOD:: name
+the group name (String)
+
+METHOD:: id
+the group ID (Integer)
+
+
+METHOD:: metadata
+optional metadata (link::Classes/AooData:: or code::nil::)
+
+
+METHOD:: ==
+Two AooGroup objects compare equal if they have the same name or the same ID.
+
+
+METHOD:: hash
+
+custom hash function which allows AooGroup to be used as a key in associative containers (e.g. link::Classes/IdentityDictionary::).

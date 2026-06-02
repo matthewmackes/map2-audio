@@ -1,0 +1,12 @@
+*.dll
+*.so
+*.pd_darwin
+*.pd_linux
+*.o
+*.obj
+*.config
+*.creator*
+*.files
+*.includes
+build**
+install/**

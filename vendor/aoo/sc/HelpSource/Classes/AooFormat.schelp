@@ -1,0 +1,27 @@
+TITLE:: AooFormat
+summary:: Base class for all streaming formats
+categories:: External Control>AOO
+related:: Classes/AooFormatPCM, Classes/AooFormatOpus, Classes/AooFormatNull, Classes/AooSendCtl, Classes/AooReceiveCtl, Guides/AOO_Introduction
+
+DESCRIPTION::
+
+AooFormat is the common base class for all streaming formats.
+
+Visit the subclasses above for more information about the individual streaming formats.
+
+
+INSTANCEMETHODS::
+
+METHOD:: codec
+
+returns:: the code name as a Symbol
+
+
+METHOD:: channels
+the number of channels
+
+METHOD:: blockSize
+the block size in samples
+
+METHOD:: sampleRate
+the sample rate in Hz

@@ -1,0 +1,15 @@
+TITLE:: AooCtl
+summary:: Common base class of AooSendCtl and AooReceiveCtl
+categories:: External Control>AOO
+related:: Classes/AooSendCtl, Classes/AooReceiveCtl
+
+DESCRIPTION::
+This is the common base class of link::Classes/AooSendCtl:: and link::Classes/AooReceiveCtl::. It is never instantiated on its own.
+
+CLASSMETHODS::
+
+PRIVATE:: prNextReplyID
+
+INSTANCEMETHODS::
+
+PRIVATE:: prInit, prMakeOSCFunc, prMakeMsg, prSendMsg, prResolveAddr
