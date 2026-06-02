@@ -163,9 +163,11 @@ jobs:
           done
 
           # Top-level files
-          for f in install install_on_new_host.sh requirements*.txt LICENSE README.md; do
+          for f in requirements*.txt LICENSE README.md; do
             [ -f "$f" ] && cp "$f" "$STAGING/"
           done
+          # Canonical installer source (build the RPM with packaging/build-rpm.sh)
+          cp -r packaging "$STAGING/"
 
           # Write version file
           cat > "$STAGING/VERSION" << EOF
@@ -268,7 +270,8 @@ jobs:
           \`\`\`bash
           tar xzf ${TARBALL}
           cd map2-audio-${VERSION}
-          sudo bash install_on_new_host.sh
+          ./packaging/build-rpm.sh ${VERSION#v} 1
+          sudo dnf install -y ./dist/map2-*.rpm
           \`\`\`
 
           > Auto-generated nightly from [map2-audio@${SHORT_SHA}](https://github.com/matthewmackes/map2-audio/commit/${SHORT_SHA})"

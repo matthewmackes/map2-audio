@@ -126,12 +126,13 @@ All processing runs on isolated CPU cores with `SCHED_FIFO` real-time priority, 
 git clone https://github.com/matthewmackes/map2-audio.git
 cd map2-audio
 
-# Full installation on Fedora Server 42+
-sudo bash install_on_new_host.sh
+# Full installation on Fedora Server — build and install the single canonical RPM
+./packaging/build-rpm.sh 1.0.0 1
+sudo dnf install -y ./dist/map2-1.0.0-1.*.x86_64.rpm
 
-# Optional install variants
-sudo bash install_on_new_host.sh --skip-avb         # Install MAP2 without AVB setup
-sudo bash install_on_new_host.sh --uninstall-avb    # Remove AVB configuration after rebuild
+# Optional host real-time / AVB tuning (operator tools, not part of the package)
+sudo bash scripts/setup_realtime.sh                 # 11-phase RT host tuning
+sudo bash scripts/setup_avb.sh --yes                # AVB/TSN host preparation
 
 # Or start individual components
 systemctl start map2-backend          # Backend API (port 8080)

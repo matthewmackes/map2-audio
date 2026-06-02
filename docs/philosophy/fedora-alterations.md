@@ -110,26 +110,50 @@ Other USB audio devices use the kernel's class-compliant drivers and need no ude
 
 The platform does **not** install `kernel-rt` automatically, but the install runbooks recommend it. Stock `preempt=full` plus `isolcpus` plus C-state caps achieves the documented 4–7 ms RTL targets; `kernel-rt` lowers worst-case jitter from ~200 µs to ~50 µs.
 
-## 10. Installer scripts
+## 10. Installation — single canonical RPM
 
-Two layers, both in the repo:
+The platform ships **one installer**: the RPM built from `packaging/rpm/map2.spec`
+via `packaging/build-rpm.sh`. The earlier parallel installers
+(`install_on_new_host.sh`, the Textual `installer/` TUI + its `./install`
+launcher, `web/install.sh`, `lcd/install_lcd.sh`) and the legacy
+`packaging/map2-audio.spec` were retired in favor of this single FHS-compliant,
+service-user, sandboxed package.
 
-- **`install_on_new_host.sh`** — idempotent, multi-phase, the front-door installer. Clones the repo, validates Internet access, installs Python and Git, generates a rebuild script via `backup_service.py`, runs it, optionally runs the AVB setup phase.
-- **`scripts/setup_realtime.sh`** — the underlying eleven-phase real-time setup: limits, USB autosuspend disable, swappiness, I/O scheduler, GRUB, governor, systemd, PipeWire, IRQ affinity, rtkit-daemon, runtime quantum.
+Host real-time tuning is **not** part of the package — it remains an operator
+step via `scripts/setup_realtime.sh` (the eleven-phase real-time setup: limits,
+USB autosuspend disable, swappiness, I/O scheduler, GRUB, governor, systemd,
+PipeWire, IRQ affinity, rtkit-daemon, runtime quantum). AVB host prep stays in
+`scripts/setup_avb.sh` / `scripts/uninstall_avb.sh`. These are tuning tools, not
+installers.
 
-The mode helper at `/usr/local/bin/map2-mode` is what writes `10-mode.conf` based on the chosen deployment mode. Operators do not edit drop-ins by hand.
+The mode helper at `/usr/local/bin/map2-mode` writes `10-mode.conf` based on the
+chosen deployment mode. Operators do not edit drop-ins by hand.
+
+Build the RPM:
+
+```bash
+./packaging/build-rpm.sh 1.0.0 1
+sudo dnf install -y ./dist/map2-1.0.0-1.*.x86_64.rpm
+```
 
 ## 11. RPM packaging
 
-`packaging/rpm/map2.spec` (and `packaging/map2-audio.spec`) lay down:
+`packaging/rpm/map2.spec` builds the React frontend + native engine from source
+and lays down the strict FHS layout:
 
-- `/opt/map2/{app, web/dist, scripts, device-packs, juce-engine/build, tui, lcd}` — runtime payload.
-- `/etc/map2/` — Prometheus configs, Grafana configs, node identity, the `avb-enabled` flag file.
-- `/var/lib/map2/{backups, config-repo, logs, controller-host, ir, irs, nams, lv2, shared}` — runtime state.
-- `/usr/lib/systemd/system/map2-*.service` — services.
-- `/usr/local/bin/{map2, map2-irq-affinity.sh, map2-mode}` — CLIs.
+- `/opt/map2-audio/{app, web/dist, scripts, device-packs, juce-engine/build, tui, lcd, docs/install}` — immutable application tree.
+- `/etc/map2/` — Prometheus configs, Grafana configs, the SonoBus env example, PipeWire fragment.
+- `/var/lib/map2`, `/var/cache/map2`, `/var/log/map2`, `/run/map2` — runtime state/cache/log/runtime, provisioned by `systemd-tmpfiles` in `%post`.
+- `/usr/lib/systemd/system/map2-*.service` — services (backend, frontend, controller-host, cluster, tui, prometheus, grafana, ptp4l, phc2sys, srpd, sonobus-transport) + `map2-avb.target`.
+- `/usr/lib/sysusers.d/map2.conf` + `/usr/lib/tmpfiles.d/map2.conf` — declarative service-user + dir provisioning.
+- `/usr/bin/{map2-cli, map2-self-test}` — operator CLI symlinks into the app tree.
 
-Post-install creates the `map2` system user (when running RPM), enables services, sets ownership. Pre-uninstall stops and disables services. Uninstall does **not** remove `/var/lib/map2/` — operator data is preserved across upgrades.
+`%pre` creates the dedicated `map2` system user via `systemd-sysusers` (UID per
+`/etc/login.defs`). `%post` provisions the FHS dirs via `systemd-tmpfiles`, adds
+`map2` to audio/pipewire/pipewire-system/video/input/plugdev groups, and runs
+the systemd unit refresh. `%preun` stops/disables units on uninstall. Uninstall
+**deliberately preserves** the `map2` user and `/var/lib/map2/` per FHS §5.5 —
+operator data survives upgrades.
 
 ## 12. SELinux and other host services
 
@@ -151,11 +175,13 @@ The platform does not currently install firewall rules. AVB uses the multicast M
 
 | Path | What |
 |---|---|
-| `/opt/map2/` | RPM-installed runtime (or symlink to dev tree). |
+| `/opt/map2-audio/` | RPM-installed immutable application tree (app, web/dist, engine, scripts, device-packs). |
 | `/etc/map2/` | Configuration, including `avb-enabled` flag and node identity. |
 | `/var/lib/map2/` | Persistent state: SQLite databases, asset caches, controller-host state, bootstrap secret. |
+| `/var/cache/map2/` | Caches. |
 | `/var/log/map2/` | Logs. |
-| `~/.config/pipewire/pipewire.conf.d/` | Per-user PipeWire fragment (the audio user). |
+| `/run/map2/` | Runtime sockets + PID files. |
+| `~/.config/pipewire/pipewire.conf.d/` | Per-user PipeWire fragment (dev-host audio user); system installs use the system-wide instance. |
 
 ## 15. Reversibility
 
@@ -167,15 +193,15 @@ Every modification is a file. To revert:
 4. Disable and remove `map2-*.service` units.
 5. Edit `/etc/default/grub` to remove the cmdline additions; `grub2-mkconfig -o /boot/grub2/grub.cfg`; reboot.
 6. Remove the PipeWire fragment.
-7. `dnf remove map2-audio` (RPM) or delete `/opt/map2/` (manual).
+7. `dnf remove map2` (preserves `map2` user + `/var/lib/map2/`; to fully decommission: `userdel map2 && groupdel map2 && rm -rf /var/lib/map2`).
 8. Re-enable SELinux if `setenforce 0` was applied.
 
 `/var/lib/map2/` is preserved unless explicitly removed.
 
 ## 16. Where to read next
 
-- `scripts/setup_realtime.sh` — the eleven-phase setup script.
-- `install_on_new_host.sh` — the multi-phase installer.
-- `packaging/rpm/map2.spec` — the RPM file list.
+- `packaging/rpm/map2.spec` — the single canonical RPM (full file list + scriptlets).
+- `packaging/build-rpm.sh` — the one build driver for the RPM.
+- `scripts/setup_realtime.sh` — the eleven-phase real-time host-tuning script.
 - `systemd/` — every service unit and drop-in.
 - `docs/avb-setup.md` — the AVB-specific host preparation.

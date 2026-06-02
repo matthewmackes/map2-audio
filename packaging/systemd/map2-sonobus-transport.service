@@ -125,7 +125,8 @@ ProtectHostname=true
 RestrictSUIDSGID=true
 RestrictNamespaces=true
 LockPersonality=true
-RestrictRealtime=false  # AOO send/receive thread needs SCHED_FIFO
+# AOO send/receive thread needs SCHED_FIFO
+RestrictRealtime=false
 RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
 
 [Install]

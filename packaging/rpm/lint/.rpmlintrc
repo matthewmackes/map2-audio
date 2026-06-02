@@ -70,6 +70,16 @@ addFilter = "dangling-symlink /usr/bin/map2-cli"
 addFilter = "dangling-symlink /usr/bin/map2-self-test"
 
 # ─────────────────────────────────────────────────────────────────────
+# Native engine RUNPATH (PipeWire JACK drop-in)
+# ─────────────────────────────────────────────────────────────────────
+# The JUCE audio engine links PipeWire's JACK shim (libjack.so.0), which
+# Fedora installs under /usr/lib64/pipewire-0.3/jack — NOT on the default
+# loader path. The engine .so therefore carries a legitimate RUNPATH to
+# that directory; without it the engine cannot resolve libjack at runtime.
+# Suppress rpmlint's generic rpath objection for this one expected case.
+addFilter = "binary-or-shlib-defines-rpath .*map2_audio_engine.*pipewire-0.3/jack"
+
+# ─────────────────────────────────────────────────────────────────────
 # rpmlint settings
 # ─────────────────────────────────────────────────────────────────────
 

@@ -37,104 +37,59 @@ jobs:
             rpmlint \
             git \
             python3-devel \
-            python3-pip \
+            python3-setuptools \
+            cmake \
+            gcc-c++ \
+            make \
+            pkgconf-pkg-config \
+            alsa-lib-devel \
+            systemd-rpm-macros \
+            pipewire-jack-audio-connection-kit-devel \
+            freetype-devel \
+            fontconfig-devel \
+            libX11-devel \
+            libXext-devel \
+            libXinerama-devel \
+            libXrandr-devel \
+            libXcursor-devel \
+            mesa-libGL-devel \
+            libcurl-devel \
             nodejs \
             npm \
-            make \
             tar \
             gzip
-            
-      - name: Prepare build environment
-        run: |
-          mkdir -p ~/rpmbuild/{SOURCES,SPECS,RPMS,SRPMS,BUILD}
-          
-      - name: Create source tarball
-        id: tarball
+
+      - name: Build canonical RPM
+        id: build
         run: |
           VERSION=${{ github.event.release.tag_name || github.event.inputs.version }}
           VERSION=${VERSION#v}  # Remove 'v' prefix if present
-          
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          
-          git archive \
-            --format=tar.gz \
-            --prefix="map2-audio-${VERSION}/" \
-            -o ~/rpmbuild/SOURCES/map2-audio-${VERSION}.tar.gz \
-            HEAD
-            
-          echo "Created source tarball: map2-audio-${VERSION}.tar.gz"
-          ls -lh ~/rpmbuild/SOURCES/
-          
-      - name: Prepare spec file
-        run: |
-          VERSION=${{ steps.tarball.outputs.version }}
           RELEASE=${{ github.event.inputs.release_number || '1' }}
-          DIST="fc40"
-          
-          echo "Building: map2-audio-${VERSION}-${RELEASE}.${DIST}"
-          
-          # Copy spec file
-          cp packaging/map2-audio.spec ~/rpmbuild/SPECS/
-          
-          # Update version and release
-          sed -i "s/^Version:.*/Version:        ${VERSION}/" ~/rpmbuild/SPECS/map2-audio.spec
-          sed -i "s/^Release:.*/Release:        ${RELEASE}%{?dist}/" ~/rpmbuild/SPECS/map2-audio.spec
-          
-      - name: Build RPM
-        id: build
-        run: |
-          VERSION=${{ steps.tarball.outputs.version }}
-          RELEASE=${{ github.event.inputs.release_number || '1' }}
-          DIST="fc40"
           ARCH="x86_64"
-          
-          rpmbuild \
-            -ba \
-            --define "_topdir ~/rpmbuild" \
-            --define "dist .${DIST}" \
-            ~/rpmbuild/SPECS/map2-audio.spec
-            
-          RPM_FILE="map2-audio-${VERSION}-${RELEASE}.${DIST}.${ARCH}.rpm"
-          RPM_PATH="~/rpmbuild/RPMS/${ARCH}/${RPM_FILE}"
-          
-          echo "rpm-filename=${RPM_FILE}" >> $GITHUB_OUTPUT
-          echo "rpm-path=${RPM_PATH}" >> $GITHUB_OUTPUT
-          
-          echo "Build complete:"
-          ls -lh ~/rpmbuild/RPMS/${ARCH}/
-          ls -lh ~/rpmbuild/SRPMS/
-          
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+          # Single canonical build path — builds packaging/rpm/map2.spec (FHS,
+          # service-user, sandboxed) into ./dist. build-rpm.sh exports QA_RPATHS
+          # to accept the legitimate PipeWire-JACK RUNPATH on the engine .so.
+          ./packaging/build-rpm.sh "$VERSION" "$RELEASE"
+
+          RPM_FILE=$(find ./dist -name "map2-${VERSION}-*.${ARCH}.rpm" | head -1)
+          echo "rpm-filename=$(basename "$RPM_FILE")" >> $GITHUB_OUTPUT
+          echo "rpm-path=${RPM_FILE}" >> $GITHUB_OUTPUT
+          echo "Build complete:"; ls -lh ./dist/
+
       - name: Lint RPM
         continue-on-error: true
-        run: |
-          ARCH="x86_64"
-          rpmlint ~/rpmbuild/RPMS/${ARCH}/*.rpm || true
-          
-      - name: Generate checksums
-        id: checksums
-        run: |
-          VERSION=${{ steps.tarball.outputs.version }}
-          RELEASE=${{ github.event.inputs.release_number || '1' }}
-          DIST="fc40"
-          ARCH="x86_64"
-          
-          cd ~/rpmbuild/RPMS/${ARCH}
-          sha256sum *.rpm > checksums.txt
-          cat checksums.txt
-          
-          echo "checksums<<EOF" >> $GITHUB_OUTPUT
-          cat checksums.txt >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-          
+        run: rpmlint ./dist/*.rpm || true
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: rpm-artifacts
           path: |
-            ~/rpmbuild/RPMS/x86_64/*.rpm
-            ~/rpmbuild/SRPMS/*.rpm
-            ~/rpmbuild/RPMS/x86_64/checksums.txt
+            dist/*.rpm
+            dist/*.sha256
           retention-days: 30
 
   test:
@@ -142,42 +97,34 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     container:
-      image: fedora:40
-      
+      image: fedora:41
+
     steps:
       - name: Download RPM artifact
         uses: actions/download-artifact@v4
         with:
           name: rpm-artifacts
           path: ./artifacts
-          
-      - name: Install test dependencies
+
+      - name: Install MAP2 RPM (resolves Requires via dnf)
         run: |
-          dnf install -y \
-            python3-fastapi \
-            python3-uvicorn \
-            python3-pydantic \
-            pipewire \
-            jack-audio-connection-kit \
-            systemd
-            
-      - name: Install MAP2 RPM
-        run: |
-          RPM=$(find ./artifacts -name "map2-audio-*.fc40.x86_64.rpm" | head -1)
+          RPM=$(find ./artifacts -name "map2-*.x86_64.rpm" ! -name "*.src.rpm" | head -1)
           echo "Installing: $RPM"
           dnf install -y "$RPM"
-          
+
       - name: Verify installation
         run: |
-          rpm -qi map2-audio
+          rpm -qi map2
           echo "---"
-          rpm -ql map2-audio | head -20
+          rpm -ql map2 | head -30
           echo "---"
+          test -d /opt/map2-audio/web/dist && echo "frontend present"
+          getent passwd map2 && echo "service user present"
           systemctl status map2-backend --no-pager || true
-          
+
       - name: Check package contents
         run: |
-          rpm -l map2-audio | grep -E '(app|tui|web|systemd)' || true
+          rpm -ql map2 | grep -E '(opt/map2-audio|systemd/system/map2|sysusers.d|tmpfiles.d)' || true
 
   publish:
     name: Publish RPM Release
@@ -209,7 +156,7 @@ jobs:
           
           ## Installation
           \`\`\`bash
-          sudo dnf install map2-audio-${VERSION}*.rpm
+          sudo dnf install map2-${VERSION}*.rpm
           \`\`\`
           
           ## Quick Start
@@ -229,7 +176,7 @@ jobs:
         with:
           files: |
             artifacts/*.rpm
-            artifacts/checksums.txt
+            artifacts/*.sha256
           body_path: release-notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -255,17 +202,17 @@ jobs:
       - name: Update repository
         run: |
           # Create repo structure
-          mkdir -p fedora/40/x86_64
-          
+          mkdir -p fedora/41/x86_64
+
           # Copy new RPMs
-          cp rpms/map2-audio-*.fc40.x86_64.rpm fedora/40/x86_64/ || true
-          
+          cp rpms/map2-*.x86_64.rpm fedora/41/x86_64/ || true
+
           # Update metadata
           dnf install -y createrepo_c
-          createrepo_c fedora/40/x86_64/
-          
+          createrepo_c fedora/41/x86_64/
+
           # Copy checksums
-          cp rpms/checksums.txt fedora/40/x86_64/ || true
+          cp rpms/*.sha256 fedora/41/x86_64/ || true
           
       - name: Commit and push
         run: |

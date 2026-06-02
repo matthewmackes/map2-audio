@@ -32,65 +32,6 @@ def _make_executable(path: Path) -> None:
     path.chmod(mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
 
 
-def _run_installer_dry_run(*args: str) -> str:
-    env = os.environ.copy()
-    env["MAP2_INSTALL_TEST_MODE"] = "1"
-    result = subprocess.run(
-        ["bash", "install_on_new_host.sh", "--dry-run", *args],
-        cwd=REPO_ROOT,
-        text=True,
-        capture_output=True,
-        env=env,
-    )
-    if result.returncode != 0:
-        raise AssertionError(
-            "installer dry-run command failed\n"
-            f"exit={result.returncode}\n"
-            f"stdout:\n{result.stdout}\n"
-            f"stderr:\n{result.stderr}"
-        )
-    return result.stdout
-
-
-def test_install_script_default_avb_dry_run_branch():
-    output = _run_installer_dry_run()
-
-    assert "AVB action: install by default" in output
-    assert "PHASE 5: AVB Configuration" in output
-    assert "Setup AVB/TSN (Default)" in output
-    assert "scripts/setup_avb.sh --yes --dry-run" in output
-    assert "AVB Action:" in output
-    assert "Installed by default (or previewed with --dry-run)" in output
-
-
-def test_install_script_skip_avb_dry_run_branch():
-    output = _run_installer_dry_run("--skip-avb")
-
-    assert "AVB action: skipped (--skip-avb)" in output
-    assert "AVB/TSN Setup Skipped" in output
-    assert "Run 'sudo bash scripts/setup_avb.sh --yes' to enable AVB later." in output
-    assert "AVB Action:" in output
-    assert "Skipped (--skip-avb)" in output
-
-
-def test_install_script_uninstall_avb_dry_run_branch():
-    output = _run_installer_dry_run("--uninstall-avb")
-
-    assert "AVB action: uninstall after rebuild" in output
-    assert "PHASE 5: AVB Configuration" in output
-    assert "Uninstall AVB/TSN Configuration" in output
-    assert "scripts/uninstall_avb.sh --yes" in output
-    assert "AVB Action:" in output
-    assert "Uninstalled (or previewed with --dry-run)" in output
-
-
-def test_install_script_avb_interface_override_dry_run_branch():
-    output = _run_installer_dry_run("--avb-interface", "enp2s0")
-
-    assert "AVB interface override: enp2s0" in output
-    assert "scripts/setup_avb.sh --yes --interface enp2s0 --dry-run" in output
-
-
 def test_setup_script_prefers_mrpd_when_both_daemons_exist(tmp_path: Path):
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir(parents=True, exist_ok=True)

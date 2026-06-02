@@ -1,5 +1,5 @@
 Name:           map2
-Version:        0.1.0
+Version:        1.0.0
 Release:        1%{?dist}
 Summary:        Mackes Audio Platform - Professional real-time audio processing
 
@@ -15,10 +15,27 @@ BuildRequires:  make
 BuildRequires:  pkgconf-pkg-config
 BuildRequires:  alsa-lib-devel
 BuildRequires:  systemd-rpm-macros
+# JUCE GUI modules (juce_audio_utils → juce_gui_basics) link X11/GL/freetype/
+# fontconfig even with JUCE_WEB_BROWSER=0, and JUCE FetchContent pulls JACK
+# headers for the JACK audio device type.
+BuildRequires:  pipewire-jack-audio-connection-kit-devel
+BuildRequires:  freetype-devel
+BuildRequires:  fontconfig-devel
+BuildRequires:  libX11-devel
+BuildRequires:  libXext-devel
+BuildRequires:  libXinerama-devel
+BuildRequires:  libXrandr-devel
+BuildRequires:  libXcursor-devel
+BuildRequires:  mesa-libGL-devel
+BuildRequires:  libcurl-devel
+# Frontend (React/Vite) is built from source inside %build so the package
+# is fully reproducible from `git archive` rather than a pre-built tree.
+BuildRequires:  nodejs
+BuildRequires:  npm
 
 # T2529-A2 — systemd-sysusers + systemd-tmpfiles provide the FHS-compliant
 # service-user + canonical-dir provisioning. systemd-rpm-macros provides
-# %sysusers_create_package + %tmpfiles_create_package helpers below.
+# %%sysusers_create_package + %%tmpfiles_create_package helpers below.
 Requires(pre):  shadow-utils
 Requires(pre):  systemd
 Requires:       systemd
@@ -50,12 +67,19 @@ Runs as the dedicated `map2` system service user (UID auto-assigned per
 %setup -q
 
 %build
+# Native audio engine + QuickJS controller-host supervisor child.
 cmake -S juce-engine -B juce-engine/build \
   -DCMAKE_BUILD_TYPE=Release \
   -DENABLE_NATIVE_OPTIMIZATIONS=ON \
   -DENABLE_FAST_MATH=ON \
   -DBUILD_CONTROLLER_HOST=ON
 cmake --build juce-engine/build --target map2_audio_engine map2-controller-host --parallel %{?_smp_build_ncpus}
+
+# React/Vite frontend — produced into web/dist for %install to package.
+cd web
+npm ci
+npm run build
+cd ..
 
 %install
 # T2529-A2: FHS §3 install layout — application tree under /opt/map2-audio,
@@ -68,6 +92,11 @@ cp -r app %{buildroot}/opt/map2-audio/
 cp -r tui %{buildroot}/opt/map2-audio/
 cp -r lcd %{buildroot}/opt/map2-audio/
 cp -r scripts %{buildroot}/opt/map2-audio/
+# Drop dev-host-only artifacts that must never ship in the package: the
+# dev-mode symlink points to an absolute /home path that won't exist on a
+# target, and any other dangling symlinks under scripts/ are dev conveniences.
+rm -f %{buildroot}/opt/map2-audio/scripts/dev-mode.sh
+find %{buildroot}/opt/map2-audio/scripts -xtype l -delete 2>/dev/null || true
 cp -r device-packs %{buildroot}/opt/map2-audio/
 # T2529-A6 — operator-facing install docs land under the app tree so the
 # `Documentation=file:///opt/map2-audio/docs/install/SERVICE_USER.md`
@@ -81,6 +110,11 @@ cp LICENSE README.md %{buildroot}/opt/map2-audio/
 mkdir -p %{buildroot}/opt/map2-audio/juce-engine/build
 install -m 755 juce-engine/build/map2-controller-host %{buildroot}/opt/map2-audio/juce-engine/build/map2-controller-host
 install -m 755 juce-engine/build/map2_audio_engine*.so %{buildroot}/opt/map2-audio/juce-engine/build/
+
+# React frontend static bundle — served by map2-frontend.service from
+# /opt/map2-audio/web/dist on port 3000.
+mkdir -p %{buildroot}/opt/map2-audio/web
+cp -r web/dist %{buildroot}/opt/map2-audio/web/dist
 
 # /etc/map2 — system config tree (Prometheus, Grafana, sub-service overrides)
 mkdir -p %{buildroot}/etc/map2/prometheus/targets
@@ -187,12 +221,12 @@ if [ $1 -eq 0 ]; then
     firewall-cmd --remove-service=map2-sonobus --permanent >/dev/null 2>&1 || true
     firewall-cmd --reload >/dev/null 2>&1 || true
 
-    # T2529-A2 — DELIBERATELY do NOT remove the map2 user on package
-    # uninstall. Per FHS §5.5 + Fedora/Debian packaging guidelines, package
-    # removal must preserve user-generated data in /var/lib/map2. The
-    # operator removes the user manually with:
-    #   userdel map2 && groupdel map2 && rm -rf /var/lib/map2
-    # if they want to fully decommission the platform.
+    # T2529-A2 — DELIBERATELY do NOT remove the map2 service user/group on
+    # package uninstall. Per FHS 5.5 + Fedora/Debian packaging guidelines,
+    # package removal must preserve user-generated data in /var/lib/map2.
+    # To fully decommission, the operator removes the user, group, and state
+    # dir manually (see docs/install/SERVICE_USER.md). We intentionally leave
+    # those destructive steps to the operator, not the package scriptlet.
     :
 fi
 
@@ -222,6 +256,16 @@ fi
 /usr/bin/map2-self-test
 
 %changelog
+* Sun Jun 01 2026 MAP2 Audio Platform <matthewmackes@gmail.com> - 1.0.0-1
+- Canonical single installer: this spec is now the ONE RPM that covers the
+  full platform install. Legacy packaging/map2-audio.spec and the shell/TUI
+  installers (install_on_new_host.sh, installer/, web/install.sh,
+  lcd/install_lcd.sh) are retired.
+- %build now also compiles the React/Vite frontend; %install packages it at
+  /opt/map2-audio/web/dist (served by map2-frontend.service on port 3000).
+- BuildRequires expanded for the JUCE GUI/X11/GL/JACK link set + nodejs/npm.
+- Version bumped 0.1.0 -> 1.0.0 for first full-platform release build.
+
 * Thu May 15 2026 Audio Team <audio@example.com>
 - T2529-A2: switch to dedicated `map2` system service user via
   systemd-sysusers, canonical FHS dirs via systemd-tmpfiles.

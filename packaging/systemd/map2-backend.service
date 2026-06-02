@@ -176,7 +176,8 @@ ProtectHostname=true
 RestrictSUIDSGID=true
 RestrictNamespaces=true
 LockPersonality=true
-MemoryDenyWriteExecute=false  # JIT-capable Python + JUCE plugin loading require W^X
+# JIT-capable Python + JUCE plugin loading require W^X
+MemoryDenyWriteExecute=false
 RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK AF_PACKET
 
 # T2529-A3 — FHS-aligned ReadWritePaths. /run/map2 hosts the controller-host

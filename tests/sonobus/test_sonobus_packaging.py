@@ -66,34 +66,9 @@ def test_env_example_exists_and_documents_locked_decisions():
     assert "MAP2_SONOBUS_UDP_PORT_BASE" in text
 
 
-def test_installer_registers_sonobus_component():
-    """The installer's `sonobus` component must expose the daemon's
-    build deps so RPM and Debian targets stay parallel."""
-    from installer.backend.packages import (
-        SONOBUS_PACKAGES_FEDORA,
-        FEDORA_TO_APT,
-    )
-
-    # Fedora set
-    assert "opus-devel" in SONOBUS_PACKAGES_FEDORA
-    assert "libuv-devel" in SONOBUS_PACKAGES_FEDORA
-    assert "avahi-devel" in SONOBUS_PACKAGES_FEDORA
-
-    # apt mappings (Debian/Ubuntu equivalents)
-    assert FEDORA_TO_APT["opus-devel"] == "libopus-dev"
-    assert FEDORA_TO_APT["libuv-devel"] == "libuv1-dev"
-    assert FEDORA_TO_APT["avahi-devel"] == "libavahi-client-dev"
-
-
-def test_installer_component_map_contains_sonobus():
-    """The PackageManager.install_component() switchboard must accept
-    `sonobus` as a component name so installer wiring can request it."""
-    from installer.backend import packages as packages_module
-
-    source = (
-        Path(packages_module.__file__).read_text()
-    )
-    assert '"sonobus":  SONOBUS_PACKAGES_FEDORA' in source
+# Note: the standalone TUI/shell installers were retired in favor of the single
+# canonical RPM (packaging/rpm/map2.spec). SonoBus build/runtime dependency
+# coverage is asserted against that spec below, not a separate installer module.
 
 
 # ---------------------------------------------------------------------------

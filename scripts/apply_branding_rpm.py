@@ -2,13 +2,13 @@
 """Rewrite user-visible RPM spec fields from the brand manifest.
 
 Updates ``Summary:``, ``URL:``, and the single-line ``%description`` lead
-in ``packaging/map2-audio.spec`` and ``packaging/rpm/map2.spec``.
+in the canonical ``packaging/rpm/map2.spec`` (the single installer).
 
 Idempotent and dry-run by default. Pass ``--write`` to apply.
 
 Identifiers (``Name:``, ``%{name}``, package directories, systemd unit
-basenames) are intentionally left alone — they are load-bearing legacy
-keys and renaming them is out of scope for a branding refresh.
+basenames) are intentionally left alone — they are load-bearing keys and
+renaming them is out of scope for a branding refresh.
 """
 from __future__ import annotations
 
@@ -24,7 +24,6 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 MANIFEST = REPO_ROOT / "branding" / "brand.manifest.json"
 OVERRIDE = Path(os.path.expanduser("~/.map2/brand.manifest.override.json"))
 SPECS = [
-    REPO_ROOT / "packaging" / "map2-audio.spec",
     REPO_ROOT / "packaging" / "rpm" / "map2.spec",
 ]
 

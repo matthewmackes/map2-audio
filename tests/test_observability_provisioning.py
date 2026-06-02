@@ -35,7 +35,7 @@ def test_grafana_provisioning_targets_local_prometheus_and_dashboards():
 
 
 def test_packaging_and_mode_script_reference_monitoring_units():
-    spec_text = (REPO_ROOT / "packaging" / "map2-audio.spec").read_text(encoding="utf-8")
+    spec_text = (REPO_ROOT / "packaging" / "rpm" / "map2.spec").read_text(encoding="utf-8")
     mode_script_text = (REPO_ROOT / "scripts" / "map2-mode.sh").read_text(encoding="utf-8")
 
     assert "map2-prometheus.service" in spec_text
@@ -45,8 +45,9 @@ def test_packaging_and_mode_script_reference_monitoring_units():
 
 
 def test_packaging_spec_includes_current_runtime_layers():
-    spec_text = (REPO_ROOT / "packaging" / "map2-audio.spec").read_text(encoding="utf-8")
-    legacy_spec_text = (REPO_ROOT / "packaging" / "rpm" / "map2.spec").read_text(
+    # The canonical, FHS-compliant package is packaging/rpm/map2.spec — the
+    # single installer. All other specs/installers have been retired.
+    spec_text = (REPO_ROOT / "packaging" / "rpm" / "map2.spec").read_text(
         encoding="utf-8"
     )
     backend_unit = (REPO_ROOT / "packaging" / "systemd" / "map2-backend.service").read_text(
@@ -54,14 +55,14 @@ def test_packaging_spec_includes_current_runtime_layers():
     )
 
     assert "License:        AGPL-3.0-only" in spec_text
-    assert "License:        AGPL-3.0-only" in legacy_spec_text
     assert "License:        MIT" not in spec_text
-    assert "License:        MIT" not in legacy_spec_text
     assert "requirements-backend-runtime.txt" in spec_text
     assert "requirements-installer.txt" in spec_text
     assert "device-packs" in spec_text
     assert "map2-controller-host" in spec_text
     assert "map2_audio_engine*.so" in spec_text
-    assert "systemd/map2-irq-affinity.sh" in spec_text
-    assert "WorkingDirectory=/opt/map2" in backend_unit
-    assert "PYTHONPATH=/opt/map2:/opt/map2/juce-engine/build" in backend_unit
+    # Frontend bundle is built + packaged by the canonical spec.
+    assert "web/dist" in spec_text
+    # FHS install layout under /opt/map2-audio (service-user model).
+    assert "WorkingDirectory=/opt/map2-audio" in backend_unit
+    assert "PYTHONPATH=/opt/map2-audio:/opt/map2-audio/juce-engine/build" in backend_unit

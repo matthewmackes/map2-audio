@@ -10,92 +10,81 @@ on:
 
 jobs:
   test-rpm-installation:
-    name: Test RPM Install on Fedora 40
+    name: Test RPM Install on Fedora 41
     runs-on: ubuntu-latest
     container:
-      image: fedora:40
-    
+      image: fedora:41
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+        with:
+          fetch-depth: 0
+
       - name: Install build dependencies
         run: |
           dnf install -y \
             rpm-build \
             python3-devel \
-            python3-pip \
+            python3-setuptools \
+            cmake \
+            gcc-c++ \
+            make \
+            pkgconf-pkg-config \
+            alsa-lib-devel \
+            systemd-rpm-macros \
+            pipewire-jack-audio-connection-kit-devel \
+            freetype-devel \
+            fontconfig-devel \
+            libX11-devel \
+            libXext-devel \
+            libXinerama-devel \
+            libXrandr-devel \
+            libXcursor-devel \
+            mesa-libGL-devel \
+            libcurl-devel \
             nodejs \
             npm \
-            git \
-            make
-            
-      - name: Build RPM locally
+            git
+
+      - name: Build canonical RPM locally
         run: |
-          mkdir -p ~/rpmbuild/{SOURCES,SPECS,RPMS,SRPMS,BUILD}
-          
           VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "1.0.0")
           VERSION=${VERSION#v}
-          
-          git archive \
-            --format=tar.gz \
-            --prefix="map2-audio-${VERSION}/" \
-            -o ~/rpmbuild/SOURCES/map2-audio-${VERSION}.tar.gz \
-            HEAD
-            
-          cp packaging/map2-audio.spec ~/rpmbuild/SPECS/
-          sed -i "s/^Version:.*/Version:        ${VERSION}/" ~/rpmbuild/SPECS/map2-audio.spec
-          sed -i "s/^Release:.*/Release:        1%{?dist}/" ~/rpmbuild/SPECS/map2-audio.spec
-          
-          rpmbuild \
-            -ba \
-            --define "_topdir ~/rpmbuild" \
-            --define "dist .fc40" \
-            ~/rpmbuild/SPECS/map2-audio.spec
-            
-          ls -lh ~/rpmbuild/RPMS/x86_64/
-          
-      - name: Install test dependencies
-        run: |
-          dnf install -y \
-            python3-fastapi \
-            python3-uvicorn \
-            python3-pydantic \
-            pipewire \
-            jack-audio-connection-kit \
-            systemd
-            
+          ./packaging/build-rpm.sh "$VERSION" 1
+          ls -lh ./dist/
+
       - name: Install built RPM
         run: |
-          RPM=$(find ~/rpmbuild/RPMS/x86_64 -name "map2-audio-*.rpm" | head -1)
+          RPM=$(find ./dist -name "map2-*.x86_64.rpm" ! -name "*.src.rpm" | head -1)
           echo "Installing: $RPM"
           dnf install -y "$RPM"
-          
+
       - name: Verify package installation
         run: |
           echo "=== Package Info ==="
-          rpm -qi map2-audio
-          
+          rpm -qi map2
           echo "=== Package Files ==="
-          rpm -ql map2-audio | head -30
-          
+          rpm -ql map2 | head -40
           echo "=== Systemd Units ==="
           ls -la /usr/lib/systemd/system/map2-*.service
-          
-      - name: Verify directory structure
+
+      - name: Verify FHS structure + service user
         run: |
           echo "=== Application Directory ==="
-          ls -la /opt/map2/
-          
+          ls -la /opt/map2-audio/
+          test -d /opt/map2-audio/web/dist && echo "frontend bundle present"
           echo "=== Config Directory ==="
-          ls -la /etc/map2/ 2>/dev/null || echo "Config dir not yet initialized"
-          
+          ls -la /etc/map2/ 2>/dev/null || echo "Config dir not initialized"
+          echo "=== Service User ==="
+          getent passwd map2
           echo "=== Services Installed ==="
-          systemctl list-unit-files | grep map2
-          
+          systemctl list-unit-files | grep map2 || true
+
       - name: Test Python modules
         run: |
-          python3 -c "import sys; sys.path.insert(0, '/opt/map2'); from app.main import app; print('✓ Main app imports successfully')"
+          dnf install -y python3-fastapi python3-uvicorn python3-pydantic python3-pyyaml python3-jsonschema || true
+          python3 -c "import sys; sys.path.insert(0, '/opt/map2-audio'); from app.main import app; print('Main app imports successfully')"
           
   test-git-updater:
     name: Test Git Updater Functionality
@@ -167,17 +156,17 @@ jobs:
 
   lint:
     name: Lint Spec File
-    runs-on: fedora:40
-    
+    runs-on: ubuntu-latest
+    container:
+      image: fedora:41
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Install rpmlint
-        run: |
-          dnf install -y rpmlint
-          
+        run: dnf install -y rpmlint
+
       - name: Lint spec file
         continue-on-error: true
-        run: |
-          rpmlint packaging/map2-audio.spec
+        run: rpmlint packaging/rpm/map2.spec
