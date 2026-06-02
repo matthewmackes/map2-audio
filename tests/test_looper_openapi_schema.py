@@ -16,7 +16,7 @@ from app.routes.looper import router as looper_router
 
 
 # ---------------------------------------------------------------------------
-# Path enumeration — all 13 routes show up under /api/v1/looper
+# Path enumeration — every looper route shows up under /api/v1/looper
 # ---------------------------------------------------------------------------
 
 
@@ -43,6 +43,9 @@ EXPECTED_PATHS_BY_METHOD: dict[str, set[str]] = {
         "/api/v1/looper/presets/{name}",                # T2512-PRESET — save
         "/api/v1/looper/presets/{name}/apply",          # T2512-PRESET — apply
         "/api/v1/looper/presets/reorder",               # T2512-PRESET-DRAG-REORDER
+        "/api/v1/looper/track/{track}/play",            # T2523-A — Maschine transport → LooperService
+        "/api/v1/looper/track/{track}/restart",         # T2523-A — Maschine transport → LooperService
+        "/api/v1/looper/track/{track}/toggle-quantize",  # T2523-A — Maschine transport → LooperService
     },
     "patch": {
         "/api/v1/looper/track/{track}/level",

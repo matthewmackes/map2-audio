@@ -1054,6 +1054,30 @@ Prior — 2026-05-05 EDT — Slices 2-6 SHIPPED + Mutation slice 1 SHIPPED. 15 u
 
 ## Todo
 
+ID: T2531
+Status: [✓] Done
+Title: Looper OpenAPI pin test out of date — new transport routes not in the allowlist
+Completion note: 2026-06-02 — Claude (ship loop). Synced the `post` allowlist in `tests/test_looper_openapi_schema.py` to the live router: added `/api/v1/looper/track/{track}/{play,restart,toggle-quantize}` (confirmed all POST via `app.openapi()` enumeration, origin T2523-A). Updated the stale "all 13 routes" comment. `pytest tests/test_looper_openapi_schema.py` → 7 passed. No route code touched (test-allowlist sync only), so no collision with the parallel looper agent's source.
+Description:
+- Goal: `tests/test_looper_openapi_schema.py::test_openapi_doc_includes_every_looper_path` fails because the looper API grew new transport paths that aren't in the test's expected set: `/api/v1/looper/track/{track}/play`, `/api/v1/looper/track/{track}/restart`, `/api/v1/looper/track/{track}/toggle-quantize`. Update the pin test's allowlist to include them (or whatever the canonical full set now is).
+- Origin: parallel-agent looper work — paths added in `b9994af31` (T2523-A cycle 17, Maschine MK1 transport → LooperService) + adjacent T2512 looper cycles, without updating the OpenAPI pin. Confirmed pre-existing on master 2026-06-02 (reproduces with all unrelated work stashed).
+- Why it matters: a red pin test masks future genuine OpenAPI regressions and breaks the contract-drift gate.
+- Acceptance: `python3 -m pytest tests/test_looper_openapi_schema.py -q` green; the allowlist reflects the actual registered looper routes (verify against `app/routes/looper.py`).
+- Note: touches a test the parallel looper agent is actively evolving — coordinate / pick a non-colliding moment, or just sync the allowlist to the live route set.
+- Estimated effort: Trivial (test allowlist sync).
+- Dependencies: none.
+
+ID: T2532
+Status: [ ] Todo
+Title: test_database_migrations sync-init tracked-migrations test failing on master
+Description:
+- Goal: `tests/test_database_migrations.py::test_sync_init_applies_tracked_schema_migrations_once` fails on current master. Diagnose and fix (either the migration tracking drifted or the test's expectation is stale).
+- Origin: pre-existing on master, surfaced 2026-06-02 during T2510-0 gate verification (reproduces with all unrelated work stashed — not caused by the snapshot-schema change). Likely parallel-agent DB work.
+- Why it matters: schema-migration idempotency is a correctness gate; a red test here hides real migration-tracking regressions.
+- Acceptance: `python3 -m pytest tests/test_database_migrations.py -q` green; root cause identified (drifted tracked-migration set vs. stale assertion) and the correct side fixed.
+- Estimated effort: Small (diagnose first).
+- Dependencies: none.
+
 ID: T2500
 Status: [✓] Done
 Title: Cabinet IR and Reverb IR pickers fail to load IR list in Snapshot Editor
