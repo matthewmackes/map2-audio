@@ -19,6 +19,7 @@ def _frame(
     args: list | None = None,
     controller_key: str = "test-key",
     msg_id: str = "msg-1",
+    apply_at_sample: object | None = None,
 ) -> dict:
     """Build a minimal engine_command frame for tests."""
     out: dict = {
@@ -33,6 +34,8 @@ def _frame(
         out["value"] = value
     if args is not None:
         out["args"] = args
+    if apply_at_sample is not None:
+        out["apply_at_sample"] = apply_at_sample
     return out
 
 
@@ -362,3 +365,62 @@ def test_buggy_observer_does_not_kill_dispatcher() -> None:
     # Dispatch counted as successful; the surviving observer still fired.
     assert dispatcher.dispatched_count == 1
     assert survivor == ["audio.snapshot.recall"]
+
+
+# ---------------------------------------------------------------------------
+# T2511-4 — apply_at_sample (sample-accurate apply offset)
+# ---------------------------------------------------------------------------
+
+
+def test_apply_at_sample_threads_to_context_on_exact_match() -> None:
+    dispatcher = EngineCommandDispatcher()
+    seen: list[EngineCommandContext] = []
+    dispatcher.register("audio.chain.1.input.switch", lambda ctx: seen.append(ctx))
+
+    dispatcher.dispatch(_frame("audio.chain.1.input.switch", apply_at_sample=480))
+
+    assert len(seen) == 1
+    assert seen[0].apply_at_sample == 480
+
+
+def test_apply_at_sample_absent_is_none_apply_now() -> None:
+    dispatcher = EngineCommandDispatcher()
+    seen: list[EngineCommandContext] = []
+    dispatcher.register("audio.snapshot.recall", lambda ctx: seen.append(ctx))
+
+    dispatcher.dispatch(_frame("audio.snapshot.recall"))
+
+    assert seen[0].apply_at_sample is None
+
+
+def test_apply_at_sample_survives_pattern_param_extraction() -> None:
+    dispatcher = EngineCommandDispatcher()
+    seen: list[EngineCommandContext] = []
+    dispatcher.register_pattern(
+        "audio.chain.*.input.switch", lambda ctx: seen.append(ctx)
+    )
+
+    dispatcher.dispatch(_frame("audio.chain.5.input.switch", apply_at_sample=9600))
+
+    assert seen[0].params == ["5"]
+    # The field must be preserved across the pattern-param rebuild of the context.
+    assert seen[0].apply_at_sample == 9600
+
+
+def test_apply_at_sample_coercion_rejects_bool_negative_and_garbage() -> None:
+    dispatcher = EngineCommandDispatcher()
+    seen: list[EngineCommandContext] = []
+    dispatcher.register("audio.t", lambda ctx: seen.append(ctx))
+
+    # bool must NOT coerce to 1 (a stray True can't mean "sample 1")
+    dispatcher.dispatch(_frame("audio.t", apply_at_sample=True))
+    # negative offset is meaningless → apply-now
+    dispatcher.dispatch(_frame("audio.t", apply_at_sample=-7))
+    # non-numeric string → apply-now
+    dispatcher.dispatch(_frame("audio.t", apply_at_sample="soon"))
+    # valid string-int → coerced
+    dispatcher.dispatch(_frame("audio.t", apply_at_sample="1024"))
+    # zero is a valid offset (apply at sample 0 of the buffer)
+    dispatcher.dispatch(_frame("audio.t", apply_at_sample=0))
+
+    assert [c.apply_at_sample for c in seen] == [None, None, None, 1024, 0]

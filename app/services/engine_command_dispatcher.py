@@ -96,6 +96,12 @@ class EngineCommandContext:
     controller_key: str
     msg_id: str
     params: list[str]
+    # T2511-4 — sample-accurate apply offset (absolute engine sample
+    # index). ``None`` means apply-now (next buffer boundary); a value
+    # means the engine should queue the command on its TriggerQueue and
+    # apply it at that exact sample. Handlers that don't support timed
+    # application ignore it (apply-now semantics preserved).
+    apply_at_sample: Optional[int] = None
 
 
 HandlerFn = Callable[[EngineCommandContext], None]
@@ -322,6 +328,20 @@ def _build_context(message: dict[str, Any]) -> EngineCommandContext:
     raw_args = message.get("args")
     args: list[Any] = list(raw_args) if isinstance(raw_args, list) else []
 
+    # T2511-4 — optional sample-accurate apply offset. Coerce to int;
+    # absent / non-numeric / negative → None (apply-now). bool is
+    # rejected explicitly (a stray True must not become sample 1).
+    raw_apply_at = message.get("apply_at_sample")
+    apply_at_sample: Optional[int]
+    if raw_apply_at is None or isinstance(raw_apply_at, bool):
+        apply_at_sample = None
+    else:
+        try:
+            coerced = int(raw_apply_at)
+            apply_at_sample = coerced if coerced >= 0 else None
+        except (TypeError, ValueError):
+            apply_at_sample = None
+
     return EngineCommandContext(
         target=str(message.get("target", "")),
         action=str(message.get("action", "")),
@@ -330,6 +350,7 @@ def _build_context(message: dict[str, Any]) -> EngineCommandContext:
         controller_key=str(message.get("controller_key", "")),
         msg_id=str(message.get("msg_id", "")),
         params=[],
+        apply_at_sample=apply_at_sample,
     )
 
 
@@ -356,4 +377,5 @@ def _with_pattern_params(
         controller_key=ctx.controller_key,
         msg_id=ctx.msg_id,
         params=params,
+        apply_at_sample=ctx.apply_at_sample,
     )

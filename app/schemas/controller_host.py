@@ -210,6 +210,12 @@ class EngineCommand(TypedDict):
     action: str         # "set" | "toggle" | "increment" | "decrement" | ...
     value: NotRequired[float]   # absent for actions that don't take a value
     args: NotRequired[list[float | int | str | bool]]
+    # T2511-4 — optional sample-accurate apply offset. When present, the
+    # engine queues the command on its TriggerQueue and applies it at this
+    # absolute audio-sample index (against the engine's monotonic sample
+    # clock) instead of at the next buffer boundary. Used by punch-in /
+    # source-switch triggers; absent for ordinary (apply-now) commands.
+    apply_at_sample: NotRequired[int]
 
 
 class ControllerEvent(TypedDict):
