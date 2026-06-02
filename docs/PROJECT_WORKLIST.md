@@ -2425,7 +2425,7 @@ Verification:
 
 ID: T2506
 Parent: T2504
-Status: [ ] Todo
+Status: [✓] Done
 Title: Extend snapshot graph schema with a `recording` block (session_id, armed, rolling, tap_matrix, participating_nodes).
 
 Description:
@@ -2443,7 +2443,15 @@ Sub-tasks:
 
 Acceptance: `pytest tests/test_state_authority_graph_recording.py` green; philosophy doc updated; no other subsystem yet references the new block (engine integration is T2507).
 
-Last updated: 2026-05-11 — Claude.
+Completion note: 2026-06-02 — Claude (ship loop). **STATUS RECONCILED — code shipped 2026-05-11, status never flipped (false-`[ ]`).** Verified all five sub-tasks complete against the live tree, no re-implementation needed:
+- T2506-1 ✓ — `app/services/state_authority_graph.py:24` `SNAPSHOT_GRAPH_VERSION = "2026.05"`; `_normalize_recording_block()` at L478 emits `{session_id, armed, rolling, started_at, participating_nodes, tap_matrix:{<chain>:{pre_fx,post_fx}}}`.
+- T2506-2 ✓ — `state_authority_graph.py:25-27` + L149-157: v2026.04 documents upcast on read by injecting `recording=None` via `setdefault` + `_normalize_recording_block`. `ACCEPTED_LEGACY_GRAPH_VERSIONS = ("2026.04",)`.
+- T2506-3 ✓ — `audio_state_snapshot_compiler.py:113-114` reads the `recording` block and exposes `record_session_id` + `tap_matrix` on the compiled intent.
+- T2506-4 ✓ — `docs/philosophy/snapshot-single-source-of-truth.md` §2 schema table (L27) carries the `recording` row; §4 flow (L71) documents the compile-and-apply leg threading `record_session_id`/`tap_matrix` onto the intent + the `RECORDER_SESSION_TOPIC` projection.
+- T2506-5 ✓ — `tests/test_state_authority_graph_recording.py` present (14 cases). Acceptance gate re-run this cycle: **`pytest tests/test_state_authority_graph_recording.py` → 14 passed in 2.42s.**
+No source change this cycle — worklist-status reconciliation only. Unblocks T2510 (which depends on the `recording` block being in the Raft-replicated graph).
+
+Last updated: 2026-06-02 — Claude.
 
 ---
 
