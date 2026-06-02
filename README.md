@@ -166,7 +166,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1679** Python | **1769** TypeScript | **235** C++/H | **149** Docs | **4731** total commits | **3** stars | **0** forks | **0** open issues
+**1681** Python | **1769** TypeScript | **235** C++/H | **149** Docs | **4733** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -207,14 +207,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`4c2285ae7`](https://github.com/matthewmackes/map2-audio/commit/4c2285ae779741b793d29ef21cb24e58806c3cf2) | feat(recorder): T2510-2 cluster record-arm via Raft apply... | Map2 Audio | 2026-06-02 |
+| [`650f7201b`](https://github.com/matthewmackes/map2-audio/commit/650f7201b375e8cf2c0a2a1a33734be8e844f256) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-02 |
 | [`2075974fa`](https://github.com/matthewmackes/map2-audio/commit/2075974fa07ece4c5502dd28c0fb59470a7f2cb3) | fix(test): sync looper OpenAPI pin (T2531); file T2532 db... | Map2 Audio | 2026-06-02 |
 | [`01c797fd4`](https://github.com/matthewmackes/map2-audio/commit/01c797fd4a8d38a530dc8c67609fe8baf6dd6e0f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-02 |
 | [`9990b2ed2`](https://github.com/matthewmackes/map2-audio/commit/9990b2ed2f4ab7711cd9bbaf087d54614beb9291) | feat(snapshot): T2510-0 per-chain cluster-owner field (sc... | Map2 Audio | 2026-06-02 |
 | [`1913eb4c2`](https://github.com/matthewmackes/map2-audio/commit/1913eb4c205abe22a513f0cc77dd38970b62f489) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-02 |
 | [`d5b852895`](https://github.com/matthewmackes/map2-audio/commit/d5b852895c7ea292e7807caa6dc3ea7112522818) | docs(worklist): file T2510-0 per-chain cluster-owner sche... | Map2 Audio | 2026-06-02 |
 | [`b9535b2ec`](https://github.com/matthewmackes/map2-audio/commit/b9535b2ec7550c7dfc5958dcf7e798ede05ce9e8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-02 |
-| [`5efd3014f`](https://github.com/matthewmackes/map2-audio/commit/5efd3014ff41ec541d927de4b918c4f9b74ba289) | feat(recorder): T2509 §0.8 render-snapshot + T2511 RT-saf... | Map2 Audio | 2026-06-02 |
-| [`25fd81793`](https://github.com/matthewmackes/map2-audio/commit/25fd81793207436306ae2cf46b09868c067007ef) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-02 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
