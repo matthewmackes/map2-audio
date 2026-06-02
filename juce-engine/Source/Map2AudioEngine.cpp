@@ -3157,6 +3157,32 @@ int Map2AudioEngine::getMonitoringOutputIndex() const {
     return monitoringOutputIndex_.load(std::memory_order_acquire);
 }
 
+// SonoBus / AOO remote-audio transport name-exchange binding (T2521-4 step 5).
+// These setters store the stream id as a *name* for the map2-sonobus-transport
+// daemon to discover the engine's JACK ports; the id is NOT read on the audio
+// callback — AOO stays out of the JUCE RT path (SONOBUS_DAEMON_RT_SAFETY_REVIEW.md
+// §1). Control-thread only: a plain juce::String set/read here, plus a cheap
+// atomic has-binding flag. An empty string clears the binding.
+bool Map2AudioEngine::setSonoBusInputId(const juce::String& streamId) {
+    sonoBusInputStreamId_ = streamId;
+    hasSonoBusInput_.store(streamId.isNotEmpty(), std::memory_order_release);
+    return true;
+}
+
+bool Map2AudioEngine::setSonoBusOutputId(const juce::String& streamId) {
+    sonoBusOutputStreamId_ = streamId;
+    hasSonoBusOutput_.store(streamId.isNotEmpty(), std::memory_order_release);
+    return true;
+}
+
+juce::String Map2AudioEngine::getSonoBusInputStreamId() const {
+    return sonoBusInputStreamId_;
+}
+
+juce::String Map2AudioEngine::getSonoBusOutputStreamId() const {
+    return sonoBusOutputStreamId_;
+}
+
 // ========================================
 // Plugin Management
 // ========================================

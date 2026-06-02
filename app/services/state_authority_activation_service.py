@@ -890,6 +890,7 @@ class StateAuthorityActivationService:
         graph_document_apply_result: dict[str, Any] | None = None
         audio_device_binding_result: dict[str, Any] | None = None
         monitoring_output_result: dict[str, Any] | None = None
+        sonobus_io_binding_result: dict[str, Any] | None = None
         output_safety_result: dict[str, Any] | None = None
         midi_map_sync_result: dict[str, Any] | None = None
         expression_mapping_sync_result: dict[str, Any] | None = None
@@ -949,6 +950,7 @@ class StateAuthorityActivationService:
             quantum_result = await _enforce_quantum_for_activation(policy=quantum_policy)
             audio_device_binding_result = await self.owner._apply_snapshot_audio_device_bindings(detail)
             monitoring_output_result = await self.owner._apply_snapshot_monitoring_output_binding(detail)
+            sonobus_io_binding_result = await self.owner._apply_snapshot_sonobus_io_binding(detail)
             output_safety_result = await self.owner._apply_snapshot_output_safety_settings(detail)
             current_runtime_state = await runtime_state_service.get_live_state()
             previous_preload_state = self.owner._extract_preload_state(current_runtime_state.get("runtime_metrics"))
@@ -1287,6 +1289,7 @@ class StateAuthorityActivationService:
                 "preload_hit": preload_hit,
                 "audio_device_binding": audio_device_binding_result or {},
                 "monitoring_output": monitoring_output_result or {},
+                "sonobus_io_binding": sonobus_io_binding_result or {},
                 "output_safety": output_safety_result or {},
                 "routing_apply": routing_apply_result or {},
                 "loop_insertions": loop_insertion_sync_result or {},

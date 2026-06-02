@@ -2444,6 +2444,31 @@ PYBIND11_MODULE(map2_audio_engine, m) {
              "Route the live monitoring mix to the selected hardware output pair")
         .def("get_monitoring_output_index", &Map2AudioEngine::getMonitoringOutputIndex,
              "Get the selected monitoring output pair start index")
+        // SonoBus / AOO remote-audio transport name-exchange binding (T2521-4 step 5).
+        // The id is stored as a name for the map2-sonobus-transport daemon to discover
+        // the engine's JACK ports; it is NOT read on the audio callback.
+        .def("set_sonobus_input_id",
+             [](Map2AudioEngine& self, const std::string& streamId) {
+                 return self.setSonoBusInputId(juce::String(streamId));
+             },
+             py::arg("stream_id"),
+             "Bind a SonoBus input stream id (name) for the transport daemon; empty clears")
+        .def("set_sonobus_output_id",
+             [](Map2AudioEngine& self, const std::string& streamId) {
+                 return self.setSonoBusOutputId(juce::String(streamId));
+             },
+             py::arg("stream_id"),
+             "Bind a SonoBus output stream id (name) for the transport daemon; empty clears")
+        .def("get_sonobus_input_id",
+             [](const Map2AudioEngine& self) {
+                 return self.getSonoBusInputStreamId().toStdString();
+             },
+             "Get the currently bound SonoBus input stream id (empty if unbound)")
+        .def("get_sonobus_output_id",
+             [](const Map2AudioEngine& self) {
+                 return self.getSonoBusOutputStreamId().toStdString();
+             },
+             "Get the currently bound SonoBus output stream id (empty if unbound)")
         .def("set_lv2_path", &Map2AudioEngine::setLv2Path,
              py::arg("path"),
              "Set LV2 plugin search path")

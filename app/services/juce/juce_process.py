@@ -312,6 +312,90 @@ class JuceProcessMixin:
 
         return True if result is None else bool(result)
 
+    async def set_sonobus_input_id(self, stream_id: Optional[str]) -> bool:
+        """Bind a SonoBus input stream id (a name) into the engine.
+
+        The id is stored for the map2-sonobus-transport daemon to discover the
+        engine's JACK ports; it is NOT read on the audio callback. An empty or
+        None stream_id clears the binding.
+        """
+        normalized_id = "" if stream_id is None else str(stream_id)
+        if not self._engine:
+            return False
+
+        handler = getattr(self._engine, "set_sonobus_input_id", None)
+        if not callable(handler):
+            logger.warning("JUCE engine does not support SonoBus input binding")
+            return False
+
+        try:
+            result = await asyncio.to_thread(handler, normalized_id)
+        except Exception as exc:
+            logger.error(
+                "Failed to set SonoBus input id %r: %s",
+                normalized_id,
+                exc,
+            )
+            return False
+
+        return True if result is None else bool(result)
+
+    async def set_sonobus_output_id(self, stream_id: Optional[str]) -> bool:
+        """Bind a SonoBus output stream id (a name) into the engine.
+
+        The id is stored for the map2-sonobus-transport daemon to discover the
+        engine's JACK ports; it is NOT read on the audio callback. An empty or
+        None stream_id clears the binding.
+        """
+        normalized_id = "" if stream_id is None else str(stream_id)
+        if not self._engine:
+            return False
+
+        handler = getattr(self._engine, "set_sonobus_output_id", None)
+        if not callable(handler):
+            logger.warning("JUCE engine does not support SonoBus output binding")
+            return False
+
+        try:
+            result = await asyncio.to_thread(handler, normalized_id)
+        except Exception as exc:
+            logger.error(
+                "Failed to set SonoBus output id %r: %s",
+                normalized_id,
+                exc,
+            )
+            return False
+
+        return True if result is None else bool(result)
+
+    def get_sonobus_input_id(self) -> str:
+        """Return the currently bound SonoBus input stream id ("" if unbound)."""
+        if not self._engine:
+            return ""
+        handler = getattr(self._engine, "get_sonobus_input_id", None)
+        if not callable(handler):
+            return ""
+        try:
+            value = handler()
+        except Exception as exc:
+            logger.error("Failed to read SonoBus input id: %s", exc)
+            return ""
+        return "" if value is None else str(value)
+
+    def get_sonobus_output_id(self) -> str:
+        """Return the currently bound SonoBus output stream id ("" if unbound)."""
+        if not self._engine:
+            return ""
+        handler = getattr(self._engine, "get_sonobus_output_id", None)
+        if not callable(handler):
+            return ""
+        try:
+            value = handler()
+        except Exception as exc:
+            logger.error("Failed to read SonoBus output id: %s", exc)
+            return ""
+        return "" if value is None else str(value)
+
     def is_audio_running(self) -> bool:
         """Check if audio is running.
 

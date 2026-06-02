@@ -304,6 +304,16 @@ public:
     bool setMonitoringOutputIndex(int index);
     int getMonitoringOutputIndex() const;
 
+    // SonoBus / AOO remote-audio transport name-exchange binding (T2521-4 step 5).
+    // The stream id is stored as a *name* for the map2-sonobus-transport daemon to
+    // discover the engine's JACK ports; it is NOT read on the audio callback — AOO
+    // stays out of the JUCE RT path (SONOBUS_DAEMON_RT_SAFETY_REVIEW.md §1). An empty
+    // string clears the binding and resets the has-binding flag.
+    bool setSonoBusInputId(const juce::String& streamId);
+    bool setSonoBusOutputId(const juce::String& streamId);
+    juce::String getSonoBusInputStreamId() const;
+    juce::String getSonoBusOutputStreamId() const;
+
     // ========================================
     // Plugin Management
     // ========================================
@@ -1930,6 +1940,15 @@ private:
     std::atomic<float> inputGainLinear_{1.0f};
     std::atomic<float> outputGainLinear_{1.0f};
     std::atomic<int> monitoringOutputIndex_{0};
+    // SonoBus name-exchange binding (T2521-4 step 5). Stored on the control
+    // thread only — never read on the audio callback (the daemon does the live
+    // JACK port wiring on its own RT thread). The id strings are plain
+    // control-thread state; the has-binding flags are atomics so a future cheap
+    // "is a sonobus stream bound" probe can stay lock-free if needed.
+    juce::String sonoBusInputStreamId_;
+    juce::String sonoBusOutputStreamId_;
+    std::atomic<bool> hasSonoBusInput_{false};
+    std::atomic<bool> hasSonoBusOutput_{false};
     std::atomic<int> topologyTransitionSamplesRemaining_{0};
     std::atomic<int> topologyTransitionTotalSamples_{0};
     std::string audioDevice_ = "default";

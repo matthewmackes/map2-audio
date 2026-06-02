@@ -1136,6 +1136,74 @@ class SnapshotRuntimeMixin:
         result["reason"] = "applied" if applied else "set_monitoring_output_index_failed"
         return result
 
+    @staticmethod
+    def _resolve_snapshot_interface_ids(detail: dict[str, Any]) -> tuple[Optional[str], Optional[str]]:
+        """Pull the requested input/output interface ids out of a snapshot
+        activation detail. Mirrors the resolution order used by the audio
+        state compiler: ``io_bindings`` wins over ``controls``.
+        """
+        io_bindings = detail.get("io_bindings")
+        if isinstance(io_bindings, dict):
+            return (
+                io_bindings.get("input_interface_id"),
+                io_bindings.get("output_interface_id"),
+            )
+        controls = detail.get("controls")
+        if isinstance(controls, dict):
+            return (
+                controls.get("input_interface_id"),
+                controls.get("output_interface_id"),
+            )
+        return (None, None)
+
+    async def _apply_snapshot_sonobus_io_binding(self, detail: dict[str, Any]) -> dict[str, Any]:
+        """Bind (or clear) the engine's SonoBus name-exchange ids on activation.
+
+        When the snapshot's requested input/output interface is a ``sonobus:``
+        id, the engine stores the stream name for the map2-sonobus-transport
+        daemon to discover its JACK ports (the daemon does the live wiring on
+        its own RT thread — AOO never enters the JUCE RT path). A non-SonoBus /
+        absent id unbinds, so switching away from a SonoBus interface clears the
+        engine binding. The general interface-routing applier (driving device
+        selection from non-SonoBus interface ids) lands with T2518.
+        """
+        from types import SimpleNamespace
+
+        from app.services.sonobus.engine_dispatch import apply_sonobus_io_binding
+
+        input_interface_id, output_interface_id = self._resolve_snapshot_interface_ids(detail)
+        result: dict[str, Any] = {
+            "requested_input_interface_id": input_interface_id,
+            "requested_output_interface_id": output_interface_id,
+            "input_bound": False,
+            "output_bound": False,
+            "input_stream_id": None,
+            "output_stream_id": None,
+            "applied": False,
+            "reason": "not_configured",
+        }
+
+        service = get_audio_engine()
+        if service is None:
+            result["reason"] = "engine_unavailable"
+            return result
+
+        if not callable(getattr(service, "set_sonobus_input_id", None)) or not callable(
+            getattr(service, "set_sonobus_output_id", None)
+        ):
+            result["reason"] = "sonobus_binding_unsupported"
+            return result
+
+        desired_io = SimpleNamespace(
+            requested_input_interface_id=input_interface_id,
+            requested_output_interface_id=output_interface_id,
+        )
+        summary = await apply_sonobus_io_binding(service, desired_io)
+        result.update(summary)
+        result["applied"] = bool(summary.get("input_bound") or summary.get("output_bound"))
+        result["reason"] = "applied" if result["applied"] else "cleared"
+        return result
+
     async def _apply_snapshot_output_safety_settings(self, detail: dict[str, Any]) -> dict[str, Any]:
         reference_dbfs = detail.get("output_level_reference_dbfs")
         warning_threshold_db = detail.get("output_level_warning_threshold_db")
