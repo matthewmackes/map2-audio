@@ -193,17 +193,31 @@ def test_hello_returns_version_and_capabilities(daemon: DaemonHandle) -> None:
     assert d["port_count"] == 100
 
 
-def test_hello_reports_stub_mode_when_aoo_not_vendored(daemon: DaemonHandle) -> None:
-    """Cycle 1 + 2 are stub-mode (vendor/aoo/ has no CMakeLists yet);
-    has_aoo must be False so the supervisor can warn operators that
-    audio won't move until the vendor pull lands."""
+def _daemon_has_aoo(daemon: DaemonHandle) -> bool:
+    """Query the daemon's build mode via `hello`. T2521-4 vendored the
+    real AOO source (2026-06-02), so a default build now reports
+    has_aoo=True / build_mode=full; a build without the vendored tree
+    reports has_aoo=False / build_mode=stub. The lifecycle tests below
+    branch on this so they are correct in BOTH modes."""
+    daemon.send({"v": 1, "type": "hello", "id": "hmode"})
+    resp = daemon.recv_one()
+    return bool(resp["data"]["has_aoo"])
+
+
+def test_hello_build_mode_matches_aoo_vendoring(daemon: DaemonHandle) -> None:
+    """has_aoo and build_mode must agree, so the supervisor + GUI can
+    correctly show whether AOO transport is live. Post-T2521-4 vendoring
+    a default build is full mode; a no-AOO build is stub. (Was the
+    stub-only assertion test_hello_reports_stub_mode_when_aoo_not_vendored
+    before the 2026-06-02 vendor pull.)"""
     daemon.send({"v": 1, "type": "hello", "id": "h1"})
     resp = daemon.recv_one()
-    assert resp["data"]["has_aoo"] is False, (
-        "stub build must report has_aoo=False — this is what tells the "
-        "supervisor + GUI to show 'AOO transport not vendored'"
+    has_aoo = resp["data"]["has_aoo"]
+    build_mode = resp["data"]["build_mode"]
+    assert build_mode in ("stub", "full")
+    assert build_mode == ("full" if has_aoo else "stub"), (
+        f"has_aoo={has_aoo} must agree with build_mode={build_mode}"
     )
-    assert resp["data"]["build_mode"] == "stub"
 
 
 # ---------------------------------------------------------------------------
@@ -225,38 +239,58 @@ def test_ping_returns_pong(daemon: DaemonHandle) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_create_source_stub_returns_transport_unavailable(daemon: DaemonHandle) -> None:
-    """In stub mode (no AOO vendored), AOO calls must fail with the
-    canonical `transport_unavailable` error code. The supervisor uses
-    this to decide whether to mark the binding `daemon_status=stub` vs
-    `daemon_status=failed`."""
+def test_create_source_lifecycle(daemon: DaemonHandle) -> None:
+    """Mode-aware: in STUB mode (no AOO vendored) create_source fails
+    with the canonical `transport_unavailable` code; in FULL mode
+    (T2521-4 vendored AOO) it succeeds and the real AOO source is
+    created. The supervisor uses the stub error to mark the binding
+    daemon_status=stub vs failed."""
+    has_aoo = _daemon_has_aoo(daemon)
     daemon.send({
         "v": 1, "type": "create_source", "id": "cs1",
         "payload": {"stream_id": "test-source-1"},
     })
     resp = daemon.recv_one()
-    assert resp["ok"] is False
-    assert resp["error"]["code"] == "transport_unavailable"
+    if has_aoo:
+        assert resp["ok"] is True, "full-mode create_source must succeed"
+    else:
+        assert resp["ok"] is False
+        assert resp["error"]["code"] == "transport_unavailable"
 
 
-def test_create_sink_stub_returns_transport_unavailable(daemon: DaemonHandle) -> None:
+def test_create_sink_lifecycle(daemon: DaemonHandle) -> None:
+    has_aoo = _daemon_has_aoo(daemon)
     daemon.send({
         "v": 1, "type": "create_sink", "id": "ck1",
         "payload": {"stream_id": "test-sink-1"},
     })
     resp = daemon.recv_one()
-    assert resp["ok"] is False
-    assert resp["error"]["code"] == "transport_unavailable"
+    if has_aoo:
+        assert resp["ok"] is True, "full-mode create_sink must succeed"
+    else:
+        assert resp["ok"] is False
+        assert resp["error"]["code"] == "transport_unavailable"
 
 
-def test_destroy_source_stub_returns_transport_unavailable(daemon: DaemonHandle) -> None:
+def test_destroy_source_lifecycle(daemon: DaemonHandle) -> None:
+    has_aoo = _daemon_has_aoo(daemon)
+    # Create first in full mode so destroy has a real target.
+    if has_aoo:
+        daemon.send({
+            "v": 1, "type": "create_source", "id": "ds_pre",
+            "payload": {"stream_id": "test-source-1"},
+        })
+        daemon.recv_one()
     daemon.send({
         "v": 1, "type": "destroy_source", "id": "ds1",
         "payload": {"stream_id": "test-source-1"},
     })
     resp = daemon.recv_one()
-    assert resp["ok"] is False
-    assert resp["error"]["code"] == "transport_unavailable"
+    if has_aoo:
+        assert resp["ok"] is True, "full-mode destroy_source must succeed"
+    else:
+        assert resp["ok"] is False
+        assert resp["error"]["code"] == "transport_unavailable"
 
 
 # ---------------------------------------------------------------------------

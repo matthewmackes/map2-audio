@@ -286,9 +286,26 @@ if(USE_SONOBUS)
     if(EXISTS "${SONOBUS_VENDOR_DIR}/CMakeLists.txt")
         message(STATUS "SonoBus / AOO: ENABLED (vendored at ${SONOBUS_VENDOR_DIR})")
         set(SONOBUS_AVAILABLE TRUE)
+        # T2521-4 — AOO build options, set BEFORE add_subdirectory so they
+        # win over the vendored CMake's option() defaults.
+        #   - AOO_LOCAL_OPUS=OFF  → use SYSTEM libopus (vendor/aoo/deps/opus
+        #     is an empty submodule on this host; the system opus.pc is
+        #     resolved by vendor/aoo/cmake/FindOpus.cmake via pkg-config).
+        #   - We only need the static core `aoo` library — no examples,
+        #     no server, no PD/SC externals, no docs, no install rules.
+        set(AOO_USE_OPUS ON CACHE BOOL "AOO: use Opus codec" FORCE)
+        set(AOO_LOCAL_OPUS OFF CACHE BOOL "AOO: use system Opus (not vendored deps/opus)" FORCE)
+        set(AOO_BUILD_EXAMPLES OFF CACHE BOOL "AOO: build examples" FORCE)
+        set(AOO_BUILD_SERVER OFF CACHE BOOL "AOO: build server program" FORCE)
+        set(AOO_BUILD_TESTS OFF CACHE BOOL "AOO: build test suite" FORCE)
+        set(AOO_BUILD_DOCUMENTATION OFF CACHE BOOL "AOO: build docs" FORCE)
+        set(AOO_BUILD_PD_EXTERNAL OFF CACHE BOOL "AOO: build Pure Data external" FORCE)
+        set(AOO_BUILD_SC_EXTENSION OFF CACHE BOOL "AOO: build SuperCollider extension" FORCE)
+        set(AOO_BUILD_SHARED_LIBRARY OFF CACHE BOOL "AOO: build shared library" FORCE)
+        set(AOO_INSTALL_LIBRARY OFF CACHE BOOL "AOO: install library" FORCE)
         # add_subdirectory call lands with the T2521-4 daemon target,
         # when the vendor tree carries an actual AOO source root.
-        add_subdirectory(${SONOBUS_VENDOR_DIR} ${CMAKE_BINARY_DIR}/_aoo)
+        add_subdirectory(${SONOBUS_VENDOR_DIR} ${CMAKE_BINARY_DIR}/_aoo EXCLUDE_FROM_ALL)
     else()
         message(STATUS "SonoBus / AOO: STUB MODE — daemon builds with E_AOO_UNAVAILABLE no-op transport (T2521-4 vendor pull required for full mode)")
         set(SONOBUS_BUILD_STUB TRUE)
@@ -917,6 +934,10 @@ if(BUILD_RECORDER_TESTS)
         tests/TriggerQueueTests.cpp
         # T2511-3 — engine-integration parity + switch wiring (header-only).
         tests/ChainInputSwitchIntegrationTests.cpp
+        # T2521-4 — SonoBus daemon StreamTable atomic-swap + deferred-free
+        # stress test (header-only; the daemon's RT boundary, no AOO/JACK
+        # dependency — StreamTable forward-declares AooSource/AooSink).
+        tests/SonoBusStreamTableTests.cpp
         Source/Recorder/IoUringWriter.cpp
         Source/Recorder/RecorderService.cpp
     )
@@ -930,6 +951,9 @@ if(BUILD_RECORDER_TESTS)
     )
     target_include_directories(recorder_tests PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/Source
+        # juce-engine root, so SonoBusStreamTableTests.cpp can include
+        # "SonoBusDaemon/Source/StreamTable.h" (T2521-4).
+        ${CMAKE_CURRENT_SOURCE_DIR}
         ${LIBURING_INCLUDE_DIRS}
     )
     target_link_libraries(recorder_tests PRIVATE

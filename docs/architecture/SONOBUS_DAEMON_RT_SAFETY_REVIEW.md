@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | **Task** | T2521-4 (parent T2521 — SonoBus/AOO remote-audio transport) |
-| **Status** | **RT-safety review — DRAFT for operator sign-off** |
+| **Status** | **Design APPROVED 2026-06-02 by the operator.** RT transport may be built to this contract; software-gated. On-hardware soak (§6 hardware / T2521-10) stays post-release debt. |
 | **Date** | 2026-06-02 |
 | **Author** | Claude (analysis artifact, zero code) |
 | **Process model** | Standalone `map2-sonobus-transport` daemon — **NOT in the JUCE engine process**. Its RT thread is its own JACK process callback. |

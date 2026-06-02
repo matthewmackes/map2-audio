@@ -403,7 +403,11 @@ async def test_real_daemon_connects_via_supervisor(tmp_path: Path) -> None:
         caps = sup.status_payload()["capabilities"]
         assert caps is not None
         assert caps["build_mode"] in ("stub", "full")
-        assert caps["has_aoo"] is False  # stub build in CI
+        # has_aoo must agree with build_mode: full ⇒ AOO vendored + linked
+        # (T2521-4 real transport); stub ⇒ AOO not vendored. We assert the
+        # invariant rather than a fixed value so the test passes in BOTH a
+        # CI stub build AND a bench/dev full-AOO build.
+        assert caps["has_aoo"] is (caps["build_mode"] == "full")
         assert caps["sample_rate_hz"] == 48000
         assert caps["buffer_size"] == 64
     finally:
@@ -412,10 +416,20 @@ async def test_real_daemon_connects_via_supervisor(tmp_path: Path) -> None:
 
 @pytest.mark.asyncio
 @pytestmark_functional
-async def test_real_daemon_stub_create_source_returns_transport_unavailable(
+async def test_real_daemon_create_source_behaviour_matches_build_mode(
     tmp_path: Path,
 ) -> None:
-    """End-to-end: supervisor → client → real daemon → expected stub-mode error."""
+    """End-to-end: supervisor → client → real daemon → create_source.
+
+    Behaviour is build-mode-dependent (T2521-4 made the full path real):
+      - STUB build (AOO not vendored): create_source returns the
+        ``transport_unavailable`` command error.
+      - FULL build (AOO vendored + linked): create_source actually
+        allocates a real AOO source (+ JACK ports if a JACK server is
+        reachable) and returns ok.
+    We branch on the daemon's reported ``has_aoo`` capability so the test
+    is correct in both modes.
+    """
     from app.services.sonobus.daemon_client import DaemonCommandError
 
     socket_path = tmp_path / "sonobus.sock"
@@ -434,8 +448,19 @@ async def test_real_daemon_stub_create_source_returns_transport_unavailable(
             if sup.is_connected:
                 break
         assert sup.is_connected
-        with pytest.raises(DaemonCommandError) as exc_info:
+        caps = sup.status_payload()["capabilities"]
+        assert caps is not None
+
+        if caps["has_aoo"]:
+            # FULL mode: a real AOO source is created; the call succeeds
+            # (create_source raises on a command error, returns None on ok).
             await sup.client.create_source("test-stream")
-        assert exc_info.value.error_code == "transport_unavailable"
+            # Tearing it down again must also succeed (idempotent destroy).
+            await sup.client.destroy_source("test-stream")
+        else:
+            # STUB mode: transport is unavailable.
+            with pytest.raises(DaemonCommandError) as exc_info:
+                await sup.client.create_source("test-stream")
+            assert exc_info.value.error_code == "transport_unavailable"
     finally:
         await sup.stop()

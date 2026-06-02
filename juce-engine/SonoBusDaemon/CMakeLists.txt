@@ -54,12 +54,20 @@ target_compile_options(map2-sonobus-transport PRIVATE
 
 if(SONOBUS_AVAILABLE)
     # Full mode: link libaoo from vendor/aoo/. The vendor CMakeLists
-    # exports a target named `aoo` (per upstream cmake configuration).
-    target_link_libraries(map2-sonobus-transport PRIVATE aoo)
+    # exports the target `aoo` with alias `Aoo::aoo` (vendor/aoo/aoo/
+    # CMakeLists.txt:3,138) which links Opus::opus transitively. The
+    # parent juce-engine/CMakeLists.txt forces AOO_LOCAL_OPUS=OFF so the
+    # system libopus (opus.pc) is used.
+    target_link_libraries(map2-sonobus-transport PRIVATE Aoo::aoo)
+    # AOO public headers live under vendor/aoo/include (aoo.h,
+    # aoo_source.hpp, aoo_sink.hpp, aoo_client.hpp, codec/aoo_pcm.h).
+    target_include_directories(map2-sonobus-transport PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../vendor/aoo/include
+    )
     target_compile_definitions(map2-sonobus-transport PRIVATE
         MAP2_SONOBUS_HAS_AOO=1
     )
-    message(STATUS "  map2-sonobus-transport: AOO ENABLED (full transport)")
+    message(STATUS "  map2-sonobus-transport: AOO ENABLED (full transport, system libopus)")
 else()
     # Stub mode: AOO calls compile to E_AOO_UNAVAILABLE.
     target_compile_definitions(map2-sonobus-transport PRIVATE

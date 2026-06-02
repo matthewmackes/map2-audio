@@ -89,6 +89,11 @@ int DaemonServer::run()
         std::fprintf(stderr, "[daemon] AOO init failed (rc=%d)\n", rc);
         return rc;
     }
+    // Wire the AOO transport ↔ JACK bridge BEFORE the JACK callback is
+    // installed (§3 split): the JACK callback reads AooTransport's shared
+    // StreamTable; AooTransport creates JACK ports through the bridge.
+    jack_->setStreamTable(aoo_->streamTable());
+    aoo_->setJackBridge(jack_.get());
     if (int rc = jack_->initialize(); rc != 0)
     {
         std::fprintf(stderr, "[daemon] JACK init returned %d — running in degraded mode\n", rc);
