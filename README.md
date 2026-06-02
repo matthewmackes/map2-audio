@@ -166,7 +166,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1714** Python | **1764** TypeScript | **235** C++/H | **149** Docs | **4710** total commits | **3** stars | **0** forks | **0** open issues
+**1677** Python | **1764** TypeScript | **235** C++/H | **149** Docs | **4713** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -207,14 +207,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`9f6734684`](https://github.com/matthewmackes/map2-audio/commit/9f6734684069dcb930d6249a8a614f30932a50fe) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-06-01 |
+| [`072c7fc57`](https://github.com/matthewmackes/map2-audio/commit/072c7fc574c5555714d08b0e3dc5cb8e7fdb5c35) | feat(packaging): consolidate to a single canonical RPM in... | Map2 Audio | 2026-06-01 |
+| [`6dba3f824`](https://github.com/matthewmackes/map2-audio/commit/6dba3f8249d326716637bf2c65f4dc04409fddde) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-01 |
 | [`3aca9c4f4`](https://github.com/matthewmackes/map2-audio/commit/3aca9c4f43109c5dfb84a386eed017d594abbf5a) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-06-01 |
 | [`43a06be29`](https://github.com/matthewmackes/map2-audio/commit/43a06be29165ee26fadad5f85bab3ad212b7e1a9) | chore(web): retire stale Outotune plugin card | Map2 Audio | 2026-06-01 |
 | [`ef191e285`](https://github.com/matthewmackes/map2-audio/commit/ef191e285fe367f9617c458dfc4430c53cf979b0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-01 |
 | [`c31fd3dde`](https://github.com/matthewmackes/map2-audio/commit/c31fd3dded9e779566e29f7af80746aa8a4393de) | docs(worklist): remove cross-task hold directive | Map2 Audio | 2026-06-01 |
 | [`7d1fa32e1`](https://github.com/matthewmackes/map2-audio/commit/7d1fa32e110cdd76ca123c3721f183bc0a6fa2f1) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-06-01 |
-| [`850e763d0`](https://github.com/matthewmackes/map2-audio/commit/850e763d08d1db7c6b2b8bfd28427b666bbea7b3) | chore: prune stale Claude worktree checkpoints | Map2 Audio | 2026-06-01 |
-| [`ca548e8c4`](https://github.com/matthewmackes/map2-audio/commit/ca548e8c4ec0524c48fa92251daf4bb8e461f8b1) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-01 |
-| [`7b5b6aee8`](https://github.com/matthewmackes/map2-audio/commit/7b5b6aee891b5c241b4ef1126665dd46b4ab0e51) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-31 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
