@@ -488,6 +488,152 @@ async def update_maschine_led_choreography(
     return {"status": "ok", **payload}
 
 
+# ---------------------------------------------------------------------------
+# T2499-B — MK1 onboarding orchestrator surface
+#
+# Drives the per-unit onboarding state machine (tour → pad sensitivity →
+# pressure curves → LCD calibration → profile selection → ready) from an
+# operator surface. The daemon shares the same orchestrator instance when it
+# later grows a USB-serial probe; these routes let the web wizard complete a
+# full onboarding flow today.
+# ---------------------------------------------------------------------------
+
+
+class MaschineOnboardingConnectRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    usb_serial: str = Field(min_length=1, max_length=64)
+
+
+class MaschineOnboardingPhaseRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    phase: Literal[
+        "pad_sensitivity", "pressure_curves", "lcd_calibration", "profile_selection"
+    ]
+    # Section payload in the calibration-store schema shape (list / dict /
+    # str depending on the phase). Validated by the store on save.
+    section_payload: Any
+
+
+@router.get("/onboarding/status")
+async def get_maschine_onboarding_status() -> dict[str, Any]:
+    """Current onboarding state machine snapshot + history."""
+    from app.services.maschine.onboarding_service import (
+        get_maschine_onboarding_service,
+    )
+
+    return {"status": "ok", **get_maschine_onboarding_service().status()}
+
+
+@router.get("/onboarding/calibration")
+async def get_maschine_onboarding_calibration() -> dict[str, Any]:
+    """On-disk calibration for the connected unit (null if none/unconnected)."""
+    from app.services.maschine.onboarding_service import (
+        get_maschine_onboarding_service,
+    )
+
+    calibration = get_maschine_onboarding_service().calibration()
+    return {"status": "ok", "calibration": calibration}
+
+
+@router.post("/onboarding/connect")
+async def maschine_onboarding_connect(
+    request: MaschineOnboardingConnectRequest,
+) -> dict[str, Any]:
+    """Begin onboarding for a unit identified by USB serial. Decides Q4
+    hot-load (existing calibration) vs Q50 first-connection tour."""
+    from app.services.maschine.onboarding_service import (
+        get_maschine_onboarding_service,
+    )
+
+    snapshot = get_maschine_onboarding_service().connect(request.usb_serial)
+    return {"status": "ok", **snapshot}
+
+
+@router.post("/onboarding/tour-complete")
+async def maschine_onboarding_tour_complete() -> dict[str, Any]:
+    """Operator finished the Q50 10-step tour; advance to pad sensitivity."""
+    from app.services.maschine.onboarding_orchestrator import (
+        OnboardingTransitionError,
+    )
+    from app.services.maschine.onboarding_service import (
+        get_maschine_onboarding_service,
+    )
+
+    try:
+        snapshot = get_maschine_onboarding_service().tour_complete()
+    except OnboardingTransitionError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    return {"status": "ok", **snapshot}
+
+
+@router.post("/onboarding/skip")
+async def maschine_onboarding_skip() -> dict[str, Any]:
+    """Operator pressed ERASE during the tour; save defaults and go READY."""
+    from app.services.maschine.onboarding_orchestrator import (
+        OnboardingTransitionError,
+    )
+    from app.services.maschine.onboarding_service import (
+        get_maschine_onboarding_service,
+    )
+
+    try:
+        snapshot = get_maschine_onboarding_service().skip()
+    except OnboardingTransitionError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    return {"status": "ok", **snapshot}
+
+
+@router.post("/onboarding/phase-complete")
+async def maschine_onboarding_phase_complete(
+    request: MaschineOnboardingPhaseRequest,
+) -> dict[str, Any]:
+    """Submit one calibration phase's section payload; advance the machine."""
+    from app.services.maschine.onboarding_orchestrator import (
+        OnboardingTransitionError,
+    )
+    from app.services.maschine.onboarding_service import (
+        get_maschine_onboarding_service,
+    )
+
+    service = get_maschine_onboarding_service()
+    try:
+        snapshot = service.complete_phase(request.phase, request.section_payload)
+    except OnboardingTransitionError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except CalibrationSchemaError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"status": "ok", **snapshot}
+
+
+@router.post("/onboarding/reset")
+async def maschine_onboarding_reset() -> dict[str, Any]:
+    """Force the machine back to IDLE (disconnect + reset) for a clean start."""
+    from app.services.maschine.onboarding_service import (
+        get_maschine_onboarding_service,
+    )
+
+    return {"status": "ok", **get_maschine_onboarding_service().reset()}
+
+
+@router.get("/onboarding/profile-catalog")
+async def get_maschine_profile_catalog() -> dict[str, Any]:
+    """T700 Q68 25-profile catalog (T1..T25) for the profile-selection step."""
+    from app.services.maschine.profile_selection_driver import (
+        ProfileSelectionDriver,
+    )
+
+    driver = ProfileSelectionDriver()
+    return {
+        "status": "ok",
+        "profiles": [
+            {"id": entry.id, "name": entry.name, "source": entry.source}
+            for entry in driver.catalog
+        ],
+    }
+
+
 @router.websocket("/ws")
 async def maschine_websocket(websocket: WebSocket) -> None:
     service = get_maschine_service()

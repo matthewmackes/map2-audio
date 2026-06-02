@@ -81,6 +81,7 @@ const HostMachinePage       = lazy(() => import('./pages/HostMachinePage').then(
 // /midi/devices/ableton-push-3/console mount, which composes
 // DeviceLandingHeader + PushSurfacePage via PushSurfaceConsoleView.
 const MaschinePage          = lazy(() => import('./pages/MaschinePage').then(m => ({ default: m.MaschinePage })))
+const MaschineOnboardingWizardPage = lazy(() => import('./pages/sequencerViews/MaschineOnboardingWizardPage').then(m => ({ default: m.MaschineOnboardingWizardPage })))
 // T2505 (2026-05-11) — `/multitrack-recorder` shell + sub-area pages and
 // `/daw` redirect collapsed into a single redirect → `/artifacts` (the
 // canonical Audio Artifacts surface where T2509 will mount the
@@ -673,6 +674,8 @@ export function App() {
                                     /midi/devices/ableton-push-3/console mount (Q1=A). */}
                                 <Route path="/labs/push-surface" element={<Navigate to="/midi/devices/ableton-push-3/console" replace />} />
                                 <Route path="/maschine" element={<MaschinePage />} />
+                                {/* T2499-B — MK1 onboarding wizard (Sequencer Setup deep-link). */}
+                                <Route path="/maschine/onboarding" element={<MaschineOnboardingWizardPage />} />
                                 <Route path="/maschine/midi-map" element={<Navigate to="/maschine#hardware-layout" replace />} />
                                 {/* T2505 (2026-05-11) — T2503 DAW Service epic
                                     retired; /daw and /multitrack-recorder both

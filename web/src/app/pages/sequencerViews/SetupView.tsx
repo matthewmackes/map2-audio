@@ -51,8 +51,15 @@ const SETUP_TASKS: readonly SetupTaskMeta[] = [
     description:
       'Run the headless Maschine MK1 onboarding: pad sensitivity, pressure curves, screen calibration, and profile selection.',
     Icon: Calibrate,
-    status: 'coming-soon',
-    roadmapTag: 'T700',
+    // T2499-B — flipped to "available" with the onboarding orchestrator
+    // surface landed (service singleton + /api/maschine/onboarding/* routes +
+    // web wizard). The wizard drives the full per-unit flow keyed by USB
+    // serial; the MK1's LCD shares the same orchestrator when the daemon's
+    // USB-serial probe is wired (follow-on). Real-hardware capture remains a
+    // bench gate; the orchestration + default-accept path is runnable today.
+    status: 'available',
+    roadmapTag: 'T2499-B',
+    navigateTo: '/maschine/onboarding',
   },
   {
     id: 'discover-avdecc',

@@ -46,6 +46,12 @@ function renderInRouter() {
               <div data-testid="avdecc-binding-wizard-page">wizard</div>
             }
           />
+          <Route
+            path="/maschine/onboarding"
+            element={
+              <div data-testid="maschine-onboarding-page">onboarding</div>
+            }
+          />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
@@ -61,19 +67,17 @@ describe('SetupView — Sequencer Setup tasks', () => {
     expect(screen.getByText('Discover AVDECC devices')).toBeInTheDocument()
   })
 
-  it('marks "Map a MIDI controller" as Available with the T2499-A roadmap tag', () => {
+  it('marks all four cards Available with their roadmap tags', () => {
     renderInRouter()
-    // Connect-keyboard + Map-controller + Discover-AVDECC are all Available
-    // now (3 cards) — AVDECC flipped to available 2026-05-10 under T2499-C
-    // Slice 6, simulator-driven; real-hardware acceptance still gated by T004.
-    expect(screen.getAllByText('Available')).toHaveLength(3)
+    // Connect-keyboard + Map-controller + Discover-AVDECC + Calibrate-MK1 are
+    // all Available now (4 cards). T2499-B flipped Calibrate MK1 with the
+    // onboarding orchestrator surface (routes + wizard); real-hardware capture
+    // stays a bench gate. AVDECC is simulator-driven (T004 hardware gate).
+    expect(screen.getAllByText('Available')).toHaveLength(4)
+    expect(screen.queryAllByText('Coming soon')).toHaveLength(0)
     expect(screen.getByText('T2499-A')).toBeInTheDocument()
+    expect(screen.getByText('T2499-B')).toBeInTheDocument()
     expect(screen.getByText('T2499-C')).toBeInTheDocument()
-  })
-
-  it('keeps Calibrate MK1 as Coming soon (T2499-B in progress)', () => {
-    renderInRouter()
-    expect(screen.getAllByText('Coming soon')).toHaveLength(1)
   })
 
   it('navigates to the framework Configurator when "Map a MIDI controller" is clicked', () => {
@@ -85,15 +89,13 @@ describe('SetupView — Sequencer Setup tasks', () => {
     ).toBeInTheDocument()
   })
 
-  it('does not expose the legacy click affordance for Coming-soon tiles', () => {
+  it('navigates to the MK1 onboarding wizard when "Calibrate Maschine MK1" is clicked', () => {
     renderInRouter()
-    // Coming-soon tiles render as <Tile> not <ClickableTile> — they're
-    // visually disabled. The aria-label "Start setup task" is only
-    // attached to ClickableTile, so the lookup itself proves the
-    // tile is not clickable.
+    const tile = screen.getByLabelText('Start setup task: Calibrate Maschine MK1')
+    fireEvent.click(tile)
     expect(
-      screen.queryByLabelText('Start setup task: Calibrate Maschine MK1'),
-    ).toBeNull()
+      screen.getByTestId('maschine-onboarding-page'),
+    ).toBeInTheDocument()
   })
 
   it('navigates to the AVDECC binding wizard when "Discover AVDECC devices" is clicked', () => {
