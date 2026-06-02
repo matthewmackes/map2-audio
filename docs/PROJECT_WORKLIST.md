@@ -1068,8 +1068,9 @@ Description:
 - Dependencies: none.
 
 ID: T2532
-Status: [ ] Todo
+Status: [✓] Done
 Title: test_database_migrations sync-init tracked-migrations test failing on master
+Completion note: 2026-06-02 — Claude (ship loop). Root cause: migration 14 (`sonobus_bindings_canonical_authority`, T2521-3 — a legitimate, documented migration) landed in `SCHEMA_MIGRATIONS`, but the test hardcoded the expected version list ending at 13. Fixed durably: the test now DERIVES `expected_versions` from `database_module.SCHEMA_MIGRATIONS` (`sorted(v for v, *_ in ...)`) instead of a frozen literal — the real invariant is "every tracked migration applied exactly once," which is now self-maintaining and won't re-break when the next migration lands. `pytest tests/test_database_migrations.py` → 2 passed. Migration 14 itself verified correct (not a duplicate/accident).
 Description:
 - Goal: `tests/test_database_migrations.py::test_sync_init_applies_tracked_schema_migrations_once` fails on current master. Diagnose and fix (either the migration tracking drifted or the test's expectation is stale).
 - Origin: pre-existing on master, surfaced 2026-06-02 during T2510-0 gate verification (reproduces with all unrelated work stashed — not caused by the snapshot-schema change). Likely parallel-agent DB work.

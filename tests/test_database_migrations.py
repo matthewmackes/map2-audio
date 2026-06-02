@@ -44,10 +44,16 @@ def test_sync_init_applies_tracked_schema_migrations_once(tmp_path):
         assert "snapshot_editor_flow_animation" in special_settings_columns
         assert "snapshot_editor_grid_backdrop" in special_settings_columns
         assert "snapshot_editor_node_shape" in special_settings_columns
-        assert _migration_versions(db_path) == [1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13]
+        # Derive the expected set from SCHEMA_MIGRATIONS itself rather than a
+        # hardcoded list — the invariant under test is "every tracked migration
+        # is applied exactly once", not a frozen version count. (Hardcoding bit
+        # us when migration 14 / sonobus_bindings landed; T2532.)
+        expected_versions = sorted(v for v, *_ in database_module.SCHEMA_MIGRATIONS)
+        assert _migration_versions(db_path) == expected_versions
 
+        # Re-running is idempotent: no migration is applied a second time.
         database_module.apply_pending_schema_migrations_sync()
-        assert _migration_versions(db_path) == [1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13]
+        assert _migration_versions(db_path) == expected_versions
     finally:
         if database_module._engine is not None:
             database_module._engine.dispose()
