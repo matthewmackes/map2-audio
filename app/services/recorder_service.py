@@ -22,11 +22,18 @@ Session lifecycle state machine
     arm_session(snapshot_id, tap_matrix)  ──► ARMED
     start_rolling(session_id)             ──► ROLLING
     stop(session_id)                      ──► STOPPED
+    seal_session(session_id)              ──► SEALED  (read-only terminal)
     disarm_session(session_id)            ──► removed entirely
 
 Transitions are validated; calling ``start_rolling`` on an unknown or
 already-stopped session raises ``RecorderServiceError`` so the route
 layer can emit a 4xx envelope.
+
+``SEALED`` is the terminal, read-only state (T2510-5): once every
+participating peer has flushed its writers and registered its takes in
+the StateAuthorityAsset registry, the cluster seals the session. A
+sealed session rejects ``start_rolling`` / ``stop`` / re-``arm`` /
+``disarm`` so the archived record can never be re-mutated.
 
 WebSocket broadcast
 -------------------
@@ -64,6 +71,7 @@ class RecorderSessionState(str, Enum):
     ARMED = "armed"
     ROLLING = "rolling"
     STOPPED = "stopped"
+    SEALED = "sealed"
 
 
 class RecorderVerb(str, Enum):
@@ -192,6 +200,7 @@ class RecorderSession:
     started_at: Optional[str] = None
     rolling_at: Optional[str] = None
     stopped_at: Optional[str] = None
+    sealed_at: Optional[str] = None
     participating_nodes: list[str] = field(default_factory=list)
 
 
@@ -207,9 +216,11 @@ class RecorderSessionStatus:
     state: RecorderSessionState
     armed: bool
     rolling: bool
+    sealed: bool
     started_at: Optional[str]
     rolling_at: Optional[str]
     stopped_at: Optional[str]
+    sealed_at: Optional[str]
     tap_matrix: dict[str, dict[str, bool]]
     participating_nodes: list[str]
 
@@ -221,9 +232,11 @@ class RecorderSessionStatus:
             "state": self.state.value,
             "armed": self.armed,
             "rolling": self.rolling,
+            "sealed": self.sealed,
             "started_at": self.started_at,
             "rolling_at": self.rolling_at,
             "stopped_at": self.stopped_at,
+            "sealed_at": self.sealed_at,
             "tap_matrix": dict(self.tap_matrix),
             "participating_nodes": list(self.participating_nodes),
         }
@@ -326,6 +339,14 @@ class RecorderService:
         async with self._lock:
             existing = self._sessions.get(session_id)
             if existing is not None:
+                if existing.state == RecorderSessionState.SEALED:
+                    # Read-only terminal state — a sealed session id can
+                    # never be re-armed. Reject so the route emits a 409.
+                    raise RecorderServiceError(
+                        code="invalid_state",
+                        message=f"cannot re-arm a sealed (read-only) session ({session_id})",
+                        session_id=session_id,
+                    )
                 # Idempotent: a session with this id is already armed
                 # (e.g. a re-applied Raft recording mutation). Return the
                 # current projection without re-emitting ARM.
@@ -355,6 +376,12 @@ class RecorderService:
         """Transition ARMED → ROLLING. Idempotent on already-rolling."""
         async with self._lock:
             session = self._require_session_locked(session_id)
+            if session.state == RecorderSessionState.SEALED:
+                raise RecorderServiceError(
+                    code="invalid_state",
+                    message=f"cannot roll a sealed (read-only) session ({session_id})",
+                    session_id=session_id,
+                )
             if session.state == RecorderSessionState.STOPPED:
                 raise RecorderServiceError(
                     code="invalid_state",
@@ -382,6 +409,12 @@ class RecorderService:
         """
         async with self._lock:
             session = self._require_session_locked(session_id)
+            if session.state == RecorderSessionState.SEALED:
+                raise RecorderServiceError(
+                    code="invalid_state",
+                    message=f"cannot stop a sealed (read-only) session ({session_id})",
+                    session_id=session_id,
+                )
             if session.state == RecorderSessionState.STOPPED:
                 return self._project(session)
             session.state = RecorderSessionState.STOPPED
@@ -393,14 +426,75 @@ class RecorderService:
         logger.info("RecorderService: stopped session %s", session_id)
         return status
 
+    async def seal_session(self, *, session_id: str) -> RecorderSessionStatus:
+        """Transition STOPPED → SEALED — the read-only terminal state.
+
+        T2510-5: the cluster calls this once every participating peer
+        has flushed its writers and registered its takes in the
+        StateAuthorityAsset registry. The session metadata flips to
+        ``sealed=True`` and the record becomes immutable — subsequent
+        ``start_rolling`` / ``stop`` / re-``arm`` / ``disarm`` calls
+        raise ``invalid_state``.
+
+        Only ``STOPPED`` → ``SEALED`` is valid; sealing an ``ARMED`` or
+        ``ROLLING`` (still-capturing) session raises ``invalid_state``.
+        Idempotent on already-``SEALED``: returns the current projection
+        without re-broadcasting.
+
+        Seal is a *metadata-only* lifecycle marker. Unlike arm/roll/stop,
+        it has **no** engine side-effect (the engine already stopped at
+        STOPPED and the writers are flushed), so no ``engine_command``
+        verb is emitted — the dispatcher's five recorder verbs stay the
+        canonical engine surface. Seal only broadcasts the new status to
+        the WS topic + REST projection.
+        """
+        async with self._lock:
+            session = self._require_session_locked(session_id)
+            if session.state == RecorderSessionState.SEALED:
+                # Idempotent: already terminal. No re-broadcast.
+                return self._project(session)
+            if session.state != RecorderSessionState.STOPPED:
+                raise RecorderServiceError(
+                    code="invalid_state",
+                    message=(
+                        "cannot seal a non-stopped session "
+                        f"(state={session.state.value}, session={session_id}); "
+                        "stop the session before sealing"
+                    ),
+                    session_id=session_id,
+                )
+            session.state = RecorderSessionState.SEALED
+            session.sealed_at = self._clock()
+
+        # No engine verb — seal is a pure metadata transition (see
+        # docstring). Broadcast the projection so the UI flips to the
+        # read-only sealed badge and the REST GET reflects the seal.
+        status = self._project(session)
+        await self._broadcast(status)
+        logger.info("RecorderService: sealed session %s (read-only)", session_id)
+        return status
+
     async def disarm_session(self, *, session_id: str) -> None:
         """Drop a session entirely. Sends ``recorder.disarm`` first so
         the engine releases tap nodes; then removes the local record.
         Idempotent — disarming an unknown session is a silent no-op
         (the route still returns 200; the engine state is what we
         care about, and a missing session is already disarmed).
+
+        A SEALED session is read-only (T2510-5): its takes have been
+        flushed + registered in the StateAuthorityAsset registry, so
+        dropping the record would discard the archived session. Disarm
+        is therefore rejected with ``invalid_state`` rather than allowed
+        as a cleanup path — sealing is the deliberate terminal step.
         """
         async with self._lock:
+            current = self._sessions.get(session_id)
+            if current is not None and current.state == RecorderSessionState.SEALED:
+                raise RecorderServiceError(
+                    code="invalid_state",
+                    message=f"cannot disarm a sealed (read-only) session ({session_id})",
+                    session_id=session_id,
+                )
             session = self._sessions.pop(session_id, None)
         if session is None:
             logger.info(
@@ -418,9 +512,11 @@ class RecorderService:
             state=RecorderSessionState.STOPPED,
             armed=False,
             rolling=False,
+            sealed=False,
             started_at=session.started_at,
             rolling_at=session.rolling_at,
             stopped_at=self._clock(),
+            sealed_at=session.sealed_at,
             tap_matrix=session.tap_matrix,
             participating_nodes=session.participating_nodes,
         )
@@ -480,9 +576,11 @@ class RecorderService:
             state=session.state,
             armed=session.state in (RecorderSessionState.ARMED, RecorderSessionState.ROLLING),
             rolling=session.state == RecorderSessionState.ROLLING,
+            sealed=session.state == RecorderSessionState.SEALED,
             started_at=session.started_at,
             rolling_at=session.rolling_at,
             stopped_at=session.stopped_at,
+            sealed_at=session.sealed_at,
             tap_matrix=dict(session.tap_matrix),
             participating_nodes=list(session.participating_nodes),
         )

@@ -52,9 +52,11 @@ async def test_broadcast_frame_has_type_and_payload_envelope() -> None:
         state=RecorderSessionState.ARMED,
         armed=True,
         rolling=False,
+        sealed=False,
         started_at="2026-05-11T18:00:00+00:00",
         rolling_at=None,
         stopped_at=None,
+        sealed_at=None,
         tap_matrix={"chain-a": {"pre_fx": True, "post_fx": False}},
         participating_nodes=["map2-prod-01"],
     )
@@ -87,9 +89,11 @@ async def test_broadcast_failure_is_logged_and_swallowed() -> None:
         state=RecorderSessionState.ARMED,
         armed=True,
         rolling=False,
+        sealed=False,
         started_at="2026-05-11T18:00:00+00:00",
         rolling_at=None,
         stopped_at=None,
+        sealed_at=None,
         tap_matrix={},
         participating_nodes=[],
     )

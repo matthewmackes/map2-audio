@@ -253,6 +253,170 @@ async def test_stop_rejects_unknown_session() -> None:
 
 
 # ---------------------------------------------------------------------------
+# seal_session (T2510-5 — read-only terminal state)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_seal_transitions_stopped_to_sealed() -> None:
+    """STOPPED → SEALED flips sealed=True + records sealed_at. The
+    state is the read-only terminal; armed/rolling are both False."""
+    service, verbs, broadcasts = _new_service()
+    await service.arm_session(snapshot_id=1, tap_matrix={})
+    await service.start_rolling(session_id="sess-1")
+    await service.stop(session_id="sess-1")
+    verbs.clear()
+    broadcasts.clear()
+
+    status = await service.seal_session(session_id="sess-1")
+
+    assert status.state == RecorderSessionState.SEALED
+    assert status.sealed is True
+    assert status.armed is False
+    assert status.rolling is False
+    assert status.sealed_at is not None
+    # Metadata-only: no engine verb emitted, but a broadcast fires so
+    # the UI flips to the read-only badge.
+    assert verbs == []
+    assert len(broadcasts) == 1
+    assert broadcasts[0].sealed is True
+
+
+@pytest.mark.asyncio
+async def test_seal_emits_no_engine_verb() -> None:
+    """Seal is a pure metadata transition — it must never ship an
+    engine_command verb (the five dispatcher verbs are the canonical
+    engine surface; seal is service-side only)."""
+    service, verbs, _broadcasts = _new_service()
+    await service.arm_session(snapshot_id=1, tap_matrix={})
+    await service.stop(session_id="sess-1")
+    verbs.clear()
+    await service.seal_session(session_id="sess-1")
+    assert verbs == []
+
+
+@pytest.mark.asyncio
+async def test_seal_from_armed_state_raises_invalid_state() -> None:
+    """Sealing a still-capturing (ARMED) session is rejected — only a
+    STOPPED session can be sealed."""
+    service, _verbs, _broadcasts = _new_service()
+    await service.arm_session(snapshot_id=1, tap_matrix={})
+    with pytest.raises(RecorderServiceError) as exc_info:
+        await service.seal_session(session_id="sess-1")
+    assert exc_info.value.code == "invalid_state"
+    assert exc_info.value.session_id == "sess-1"
+
+
+@pytest.mark.asyncio
+async def test_seal_from_rolling_state_raises_invalid_state() -> None:
+    """Sealing a ROLLING session is rejected — stop it first."""
+    service, _verbs, _broadcasts = _new_service()
+    await service.arm_session(snapshot_id=1, tap_matrix={})
+    await service.start_rolling(session_id="sess-1")
+    with pytest.raises(RecorderServiceError) as exc_info:
+        await service.seal_session(session_id="sess-1")
+    assert exc_info.value.code == "invalid_state"
+
+
+@pytest.mark.asyncio
+async def test_seal_rejects_unknown_session() -> None:
+    service, _verbs, _broadcasts = _new_service()
+    with pytest.raises(RecorderServiceError) as exc_info:
+        await service.seal_session(session_id="sess-nope")
+    assert exc_info.value.code == "unknown_session"
+
+
+@pytest.mark.asyncio
+async def test_seal_is_idempotent_when_already_sealed() -> None:
+    """Double-seal returns the current projection with no error and no
+    re-broadcast."""
+    service, _verbs, broadcasts = _new_service()
+    await service.arm_session(snapshot_id=1, tap_matrix={})
+    await service.stop(session_id="sess-1")
+    first = await service.seal_session(session_id="sess-1")
+    broadcasts.clear()
+    second = await service.seal_session(session_id="sess-1")
+    assert second.state == RecorderSessionState.SEALED
+    assert second.sealed is True
+    assert second.sealed_at == first.sealed_at
+    # Idempotent: no second broadcast.
+    assert broadcasts == []
+
+
+@pytest.mark.asyncio
+async def test_sealed_session_rejects_start_rolling() -> None:
+    """Read-only proven: a sealed session cannot be rolled."""
+    service, _verbs, _broadcasts = _new_service()
+    await service.arm_session(snapshot_id=1, tap_matrix={})
+    await service.stop(session_id="sess-1")
+    await service.seal_session(session_id="sess-1")
+    with pytest.raises(RecorderServiceError) as exc_info:
+        await service.start_rolling(session_id="sess-1")
+    assert exc_info.value.code == "invalid_state"
+    assert "sealed" in str(exc_info.value).lower()
+
+
+@pytest.mark.asyncio
+async def test_sealed_session_rejects_stop() -> None:
+    """Read-only proven: a sealed session cannot be re-stopped (which
+    would otherwise rewrite stopped_at and flip it out of SEALED)."""
+    service, _verbs, _broadcasts = _new_service()
+    await service.arm_session(snapshot_id=1, tap_matrix={})
+    await service.stop(session_id="sess-1")
+    await service.seal_session(session_id="sess-1")
+    with pytest.raises(RecorderServiceError) as exc_info:
+        await service.stop(session_id="sess-1")
+    assert exc_info.value.code == "invalid_state"
+
+
+@pytest.mark.asyncio
+async def test_sealed_session_rejects_rearm() -> None:
+    """Read-only proven: re-arming a sealed session id is rejected
+    (the cluster shares one id per snapshot recording session)."""
+    service, _verbs, _broadcasts = _new_service()
+    await service.arm_session(snapshot_id=1, tap_matrix={})
+    await service.stop(session_id="sess-1")
+    await service.seal_session(session_id="sess-1")
+    with pytest.raises(RecorderServiceError) as exc_info:
+        await service.arm_session(
+            snapshot_id=1, tap_matrix={}, session_id="sess-1"
+        )
+    assert exc_info.value.code == "invalid_state"
+
+
+@pytest.mark.asyncio
+async def test_sealed_session_rejects_disarm() -> None:
+    """Read-only proven: disarm (which drops the archived record) is
+    rejected on a sealed session — sealing is the deliberate terminal."""
+    service, _verbs, _broadcasts = _new_service()
+    await service.arm_session(snapshot_id=1, tap_matrix={})
+    await service.stop(session_id="sess-1")
+    await service.seal_session(session_id="sess-1")
+    with pytest.raises(RecorderServiceError) as exc_info:
+        await service.disarm_session(session_id="sess-1")
+    assert exc_info.value.code == "invalid_state"
+    # The record is still present (not dropped).
+    status = await service.get_session_status(session_id="sess-1")
+    assert status.state == RecorderSessionState.SEALED
+
+
+@pytest.mark.asyncio
+async def test_sealed_to_payload_includes_sealed_fields() -> None:
+    """to_payload exposes sealed + sealed_at for the WS/REST consumer."""
+    service, _verbs, _broadcasts = _new_service()
+    await service.arm_session(snapshot_id=7, tap_matrix={})
+    await service.stop(session_id="sess-1")
+    status = await service.seal_session(session_id="sess-1")
+    payload = status.to_payload()
+    assert payload["state"] == "sealed"
+    assert payload["sealed"] is True
+    assert payload["sealed_at"] is not None
+    # Every other consumer key still present.
+    assert payload["armed"] is False
+    assert payload["rolling"] is False
+
+
+# ---------------------------------------------------------------------------
 # disarm_session
 # ---------------------------------------------------------------------------
 
@@ -400,9 +564,11 @@ async def test_to_payload_serializes_to_canonical_shape() -> None:
         "state": "armed",
         "armed": True,
         "rolling": False,
+        "sealed": False,
         "started_at": "2026-05-11T18:00:00+00:00",
         "rolling_at": None,
         "stopped_at": None,
+        "sealed_at": None,
         "tap_matrix": {"chain-rhythm": {"pre_fx": True, "post_fx": False}},
         "participating_nodes": ["map2-prod-01"],
     }

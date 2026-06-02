@@ -207,6 +207,70 @@ def test_stop_is_idempotent() -> None:
 
 
 # ---------------------------------------------------------------------------
+# POST /sessions/{id}/seal — T2510-5 read-only terminal state
+# ---------------------------------------------------------------------------
+
+
+def test_seal_transitions_stopped_to_sealed() -> None:
+    client, _svc, verbs, _broadcasts = _build_client()
+    client.post("/api/v1/recorder/sessions", json={"snapshot_id": 1, "tap_matrix": {}})
+    client.post("/api/v1/recorder/sessions/sess-1/roll")
+    client.post("/api/v1/recorder/sessions/sess-1/stop")
+    verbs.clear()
+    resp = client.post("/api/v1/recorder/sessions/sess-1/seal")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["state"] == "sealed"
+    assert body["sealed"] is True
+    assert body["sealed_at"] is not None
+    assert body["armed"] is False
+    assert body["rolling"] is False
+    # Seal is metadata-only — no engine verb emitted.
+    assert verbs == []
+
+
+def test_seal_on_unknown_session_returns_404() -> None:
+    client, _svc, _verbs, _broadcasts = _build_client()
+    resp = client.post("/api/v1/recorder/sessions/sess-nope/seal")
+    assert resp.status_code == 404
+
+
+def test_seal_on_non_stopped_session_returns_409() -> None:
+    """Sealing a still-armed session is a state-machine violation."""
+    client, _svc, _verbs, _broadcasts = _build_client()
+    client.post("/api/v1/recorder/sessions", json={"snapshot_id": 1, "tap_matrix": {}})
+    resp = client.post("/api/v1/recorder/sessions/sess-1/seal")
+    assert resp.status_code == 409
+
+
+def test_seal_is_idempotent() -> None:
+    client, _svc, _verbs, _broadcasts = _build_client()
+    client.post("/api/v1/recorder/sessions", json={"snapshot_id": 1, "tap_matrix": {}})
+    client.post("/api/v1/recorder/sessions/sess-1/stop")
+    client.post("/api/v1/recorder/sessions/sess-1/seal")
+    resp = client.post("/api/v1/recorder/sessions/sess-1/seal")
+    assert resp.status_code == 200
+    assert resp.json()["state"] == "sealed"
+
+
+def test_sealed_session_is_read_only_across_routes() -> None:
+    """Roll / stop / re-arm / disarm against a sealed session all 409
+    (re-arm shares the id; disarm honours read-only)."""
+    client, _svc, _verbs, _broadcasts = _build_client()
+    client.post("/api/v1/recorder/sessions", json={"snapshot_id": 1, "tap_matrix": {}})
+    client.post("/api/v1/recorder/sessions/sess-1/stop")
+    client.post("/api/v1/recorder/sessions/sess-1/seal")
+
+    assert client.post("/api/v1/recorder/sessions/sess-1/roll").status_code == 409
+    assert client.post("/api/v1/recorder/sessions/sess-1/stop").status_code == 409
+    assert client.delete("/api/v1/recorder/sessions/sess-1").status_code == 409
+    # The sealed record survives the rejected disarm.
+    get_resp = client.get("/api/v1/recorder/sessions/sess-1")
+    assert get_resp.status_code == 200
+    assert get_resp.json()["state"] == "sealed"
+
+
+# ---------------------------------------------------------------------------
 # DELETE /sessions/{id} — disarm
 # ---------------------------------------------------------------------------
 
@@ -317,6 +381,7 @@ def test_route_operation_ids_are_unique_and_canonical() -> None:
         "recorder_arm_session",
         "recorder_start_rolling",
         "recorder_stop_session",
+        "recorder_seal_session",
         "recorder_disarm_session",
         "recorder_get_session_status",
         "recorder_list_sessions",

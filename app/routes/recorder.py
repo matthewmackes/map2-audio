@@ -89,12 +89,14 @@ class RecorderSessionStatusResponse(BaseModel):
 
     session_id: str
     snapshot_id: int
-    state: str  # ARMED / ROLLING / STOPPED
+    state: str  # ARMED / ROLLING / STOPPED / SEALED
     armed: bool
     rolling: bool
+    sealed: bool
     started_at: Optional[str]
     rolling_at: Optional[str]
     stopped_at: Optional[str]
+    sealed_at: Optional[str]
     tap_matrix: dict[str, dict[str, bool]]
     participating_nodes: list[str]
 
@@ -181,6 +183,31 @@ async def stop_session(
     return RecorderSessionStatusResponse.from_status(result)
 
 
+@router.post(
+    "/sessions/{session_id}/seal",
+    response_model=RecorderSessionStatusResponse,
+    operation_id="recorder_seal_session",
+    summary="Seal a stopped session into the read-only terminal state",
+    description=(
+        "T2510-5: flips a STOPPED session to SEALED once every "
+        "participating peer has flushed its writers and registered its "
+        "takes in the StateAuthorityAsset registry. Sealed sessions are "
+        "read-only — roll / stop / re-arm / disarm all return 409. "
+        "Idempotent on an already-sealed session; sealing a non-stopped "
+        "session returns 409."
+    ),
+)
+async def seal_session(
+    session_id: str,
+    service: RecorderService = Depends(_get_service),
+) -> RecorderSessionStatusResponse:
+    try:
+        result = await service.seal_session(session_id=session_id)
+    except RecorderServiceError as exc:
+        raise _http_for_error(exc)
+    return RecorderSessionStatusResponse.from_status(result)
+
+
 @router.delete(
     "/sessions/{session_id}",
     operation_id="recorder_disarm_session",
@@ -191,8 +218,12 @@ async def disarm_session(
     session_id: str,
     service: RecorderService = Depends(_get_service),
 ) -> None:
-    # ``disarm_session`` is idempotent on unknown — never raises.
-    await service.disarm_session(session_id=session_id)
+    # ``disarm_session`` is idempotent on unknown (silent no-op), but a
+    # SEALED session is read-only and raises ``invalid_state`` → 409.
+    try:
+        await service.disarm_session(session_id=session_id)
+    except RecorderServiceError as exc:
+        raise _http_for_error(exc)
 
 
 @router.get(
