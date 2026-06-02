@@ -2494,7 +2494,7 @@ Last updated: 2026-05-11 — Claude.
 
 ID: T2508
 Parent: T2504
-Status: [>] In Progress (dispatcher half shipped 2026-05-11; service/routes/WS still pending)
+Status: [✓] Done
 Title: `RecorderService` Python facade + `/api/v1/recorder/*` routes + `StateAuthorityAsset` registration as `asset_type="recording"`.
 
 Partial completion (2026-05-11 — Claude, autonomous Continue cycles 4-5/15):
@@ -2669,8 +2669,17 @@ Last updated: 2026-05-11 — Claude.
 
 ID: T2509
 Parent: T2504
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Extend `AudioArtifactsPage` with a `recordings` tab. Add `<RecordingPanel />` to `SnapshotEditorPageContent`. Rewire salvaged `MultiTrackRecorderShell` routes.
+
+Status reconciliation (2026-06-02 — Claude, ship loop): was marked `[ ] Todo` but the code shipped 2026-05-11 (autonomous Continue cycles 10-15, see Run-summary table below) and was never reflected. Verified against the live tree + canonical jest invocation (`node node_modules/jest/bin/jest.js --config package.json`):
+- `T2509-2` ✓ DONE — `web/src/app/pages/AudioArtifactsPage.tsx:87` `'recordings'` in `ArtifactCategory`; `:263-286` full `CategoryMeta` (Microphone icon, columns, status formatter).
+- `T2509-3` ✓ DONE (intentional design deviation) — commit `6839c8a9` shipped the recordings detail surface as an inline `<audio controls>` + DELETE section grafted onto the existing `ArtifactDetailPanel` in `AudioArtifactsPage.tsx`, NOT as a separate `RecordingDetailPanel.tsx`. This follows the epic's own directive ("one canonical artifact surface is preferable to a parallel page", line above). The waveform-preview + Play/Stop/Loop/Cue transport + per-chain routing toggles + punch-in-arm parts of the original spec depend on **T2511** (RT-critical playback engine, not yet shipped) and are correctly deferred with T2511, not part of this slice.
+- `T2509-4` ✓ DONE — `web/src/app/components/Recordings/RecordingPanel.tsx` (full impl + `.css` + test); mounted at `SnapshotEditorPageContent.tsx` ("T2509-4 mount").
+- `T2509-5` ✓ DONE — `web/src/app/hooks/useRecorderSession.ts` (235 LOC); returns `{sessions,isConnected,isLoading,armSession,startRolling,stopSession,disarmSession}`.
+- `T2509-7` ✓ DONE — recorder web suites green: `AudioArtifactsPage` + `RecordingPanel` + `useRecorderSession` = **30/30** under the canonical invocation. (NB: a prior probe misreported a Babel `import type` error — that was an artifact of running `npx jest` from `web/` with the wrong rootDir; see memory `reference_canonical_jest_invocation`.)
+- `T2509-8` ✓ DONE (2026-05-13, Codex).
+Parent stays `[>] In Progress` — NOT `[✓]` — solely because CLAUDE.md §0.8 mandates in-browser visual verification for a UI task, which is operator-bench-gated. All code + tests are shipped; the remaining gate is a visual confirm of the recordings tab + RecordingPanel + the inline take-audition surface. The transport/routing/punch-in affordances ride T2511.
 
 Description:
 - Goal: All recorder GUI is grafted onto existing surfaces — no new top-level pages. `AudioArtifactsPage` gains an 8th category tab (recordings) with the per-chain routing toggles and full transport. `SnapshotEditorPageContent` gains a `<RecordingPanel />` sibling for live session state (arm / level meters / take counter).
