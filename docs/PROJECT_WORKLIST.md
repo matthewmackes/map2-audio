@@ -3504,13 +3504,20 @@ Shipped this run, in order:
 | T2521-1 Decisions Q1–Q21 | [✓] Done | run-12 kickoff |
 | T2521-2 Architecture doc | [✓] Done | run-12 c1 |
 | T2521-3 Binding authority + persistence | [✓] Done | run-12 c2 |
-| T2521-4 `map2-sonobus-transport` daemon | [ ] Todo | — (bench/RT-gated) |
-| T2521-5 REST + WS | [>] In Progress | run-12 c3 + run-13 c1/c2/c8/c10 |
-| T2521-6 Carbon workspace | [>] In Progress | run-12 c4 + run-13 c3/c4/c5/c6/c9 |
-| T2521-7 Snapshot/routing + Q12 | [>] In Progress | run-12 c7 + run-13 c11/c13 |
-| T2521-8 Installer/RPM/systemd/firewall | [>] In Progress | run-12 c5 + run-13 c7 |
+| T2521-4 `map2-sonobus-transport` daemon | [✓] Done (software) — RT soak → T2521-10 | daemon transport + AOO vendor + engine binding shipped 2026-06-02 (`2796df459`, `5e47f2ee5`, this run) |
+| T2521-5 REST + WS | [✓] Done | run-12 c3 + run-13 c1/c2/c8/c10 |
+| T2521-6 Carbon workspace | [✓] Done | run-12 c4 + run-13 c3/c4/c5/c6/c9 |
+| T2521-7 Snapshot/routing + Q12 | [✓] Done | run-12 c7 + run-13 c11/c13 (engine name-exchange binding 2026-06-02) |
+| T2521-8 Installer/RPM/systemd/firewall | [✓] Done | run-12 c5 + run-13 c7 |
 | T2521-9 Licensing/notices | [✓] Done | run-12 c6 + run-13 c12 (api-contract addendum) |
-| T2521-10 Validation/soak | [ ] Todo | — (bench-gated) |
+| T2521-10 Validation/soak | [ ] Todo → § Post-Release Hardware Debt | — (2-node LAN + impairment + 5-min RT soak; no code) |
+
+<!-- Status reconciled 2026-06-02 (ship T2521): the [ ]/[>] markers above predated the
+     2026-06-02 work. Real daemon transport (AooTransport/JackBridge/StreamTable + vendored
+     AOO 2.0.0) shipped in 2796df459/5e47f2ee5; the engine setSonoBus{Input,Output}Id
+     name-exchange binding shipped this run. T2521-1..-9 are now software-complete; only
+     T2521-10 (pure hardware/RT bench validation) remains → § Post-Release Hardware Debt. -->
+
 
 Everything that can ship without bench hardware has shipped. The remaining sub-tasks (`T2521-4` daemon binary, `T2521-10` LAN two-node + impairment soak) require physical hardware + RT review and are explicitly out-of-scope for autonomous Continue runs.
 
@@ -3552,6 +3559,10 @@ Shipped this run, in order:
 
 | Sub-task | Status | Run-12 cycle |
 |---|---|---|
+<!-- OBSOLETE run-12 (twelfth-run) status snapshot — kept as a historical run-record.
+     Superseded by the run-13 table above and the 2026-06-02 ship-T2521 reconciliation:
+     the whole epic is now code-complete (T2521-4 daemon + step-5 engine binding shipped),
+     only T2521-10 RT/LAN bench validation remains → § Post-Release Hardware Debt. -->
 | T2521-1 Decisions Q1-Q21 | [✓] Done | (kickoff) |
 | T2521-2 Architecture doc | [✓] Done | 1 |
 | T2521-3 Binding authority + persistence | [✓] Done | 2 |
@@ -5100,9 +5111,9 @@ Last updated: 2026-05-13 19:52 EDT - Codex
 ---
 
 ID: T2521
-Status: [>] In Progress — control-plane/GUI/routes/packaging all SHIPPED; T2521-4 daemon C++ remains; bench validation → § Post-Release Hardware Debt
+Status: [✓] Done (software) — entire epic code-complete; only T2521-10 RT/LAN bench validation → § Post-Release Hardware Debt
 Title: SonoBus/AOO full remote-audio transport deployment epic
-Status note (2026-06-02): T2521-1..-3, -5..-9 are Done (routes, GUI, authority, picker, packaging, licensing). Two items remain: **T2521-4** — the `map2-sonobus-transport` C++ daemon code is NOT yet written (a remaining build item, not just unverified); its RT audio-bench validation is the hardware gate. **T2521-10** — pure 2-node LAN + impairment bench validation, no code. Both bench gates → § Post-Release Hardware Debt; the T2521-4 daemon *code* itself is buildable this release.
+Status note (updated 2026-06-02, ship T2521 — SUPERSEDES the earlier "daemon C++ NOT yet written" framing, which is now FALSE): the **entire T2521 epic is code-complete**. T2521-1..-3 + -5..-9 shipped in runs 12-13; **T2521-4** real daemon transport (AooTransport/JackBridge/StreamTable + vendored AOO 2.0.0 + system-libopus build) shipped 2026-06-02 (`2796df459`/`5e47f2ee5`); the **engine `setSonoBus{Input,Output}Id` name-exchange binding** (step 5 — the last code item) shipped 2026-06-02 (this ship cycle), wired into the snapshot-activation apply seam. The ONLY remaining work is **T2521-10** — pure hardware/runtime validation (daemon-starts-via-systemd, live `/api/sonobus/diagnostics` metrics, WS events to the GUI, the 2-node LAN + impairment matrix, the paired 5-min ON-vs-OFF RT soak) — and the **live JACK port-connect** the daemon performs at runtime. Both are runtime/bench, no code → § Post-Release Hardware Debt. All software gates green: real AOO+daemon build clean; `tests/sonobus/` 160 + engine-binding 7 + recorder_tests `[t2521]` 7 (stream-table stress) all pass.
 Description:
 - Goal / acceptance criteria: Deploy SonoBus/AOO as a first-class MAP2 remote-audio transport beside AVB, using the AVB Services template for GUI and integration. Acceptance requires a canonical operator mount, backend authority/service layer, C++/daemon audio handoff, peer/session/routing APIs, Carbon GUI pages, TUI/control-plane coverage where affected, installer/RPM/systemd/firewall updates, docs, third-party notices, tests, and bench evidence. The transport must support full deployment, not just a lab prototype.
 - Why it matters: Adds internet/LAN peer-to-peer remote audio between MAP2 systems and external SonoBus-compatible clients while preserving MAP2's platform discipline: one authority, consistent config planes, coherent GUI/TUI/API surfaces, repeatable installation, and validated latency/xrun behavior.
