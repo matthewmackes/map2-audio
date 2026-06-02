@@ -753,10 +753,159 @@ Map2AudioEngine::Map2AudioEngine() {
     // construction happens here, outside the audio callback, so
     // the audio thread never touches the allocator.
     looperEngine_ = std::make_unique<map2::looper::LooperEngine>();
+
+    // T2511-3 — punch-in playback input switch (ATOMIC-SWITCH-ONLY,
+    // WHOLE-ENGINE v1). Construct the switch + the live-input sentinel
+    // here (non-RT) and point the switch at the live sentinel so the
+    // DEFAULT input path is byte-for-byte today's behaviour: when no take
+    // is loaded, currentSource_ == liveInputSource_ and processInto is the
+    // original input copy plus one predicted-taken atomic load + branch.
+    liveInputSource_ = std::make_unique<map2::recorder::LiveInputSource>();
+    inputSwitch_     = std::make_unique<map2::recorder::ChainInputSwitch>();
+
+    // Register the live sentinel at index 0 so a sample-accurate trigger can
+    // resolve "punch back to live" (kLiveSourceIndex). The playback take is
+    // registered at index 1 by loadTakeForPlayback().
+    inputSwitch_->registerSource(kLiveSourceIndex, liveInputSource_.get());
+
+    // Default the live source so the disarmed hot path is unchanged.
+    inputSwitch_->setSource(liveInputSource_.get());
+
+    // Install the deferred-free retire callback (§3.3). The switch invokes
+    // it on the CONTROL thread; it forwards to this engine instance, which
+    // enqueues the old source onto the deferred-free queue — NEVER deletes
+    // inline. retireOwner_ is a singleton seam because setRetireCallback
+    // takes a plain function pointer; this engine is a process singleton.
+    retireOwner_ = this;
+    inputSwitch_->setRetireCallback(&Map2AudioEngine::retireSourceCallback);
+}
+
+// T2511-3 — static seam pointing the switch's plain-function retire callback
+// at the live engine instance. Control-thread only.
+Map2AudioEngine* Map2AudioEngine::retireOwner_ = nullptr;
+
+void Map2AudioEngine::retireSourceCallback(
+    map2::recorder::PlaybackSource* old) noexcept {
+    // CONTROL-THREAD ONLY (invoked from ChainInputSwitch::retireSource,
+    // which we only ever call off the audio thread). Enqueue, never delete.
+    if (retireOwner_ == nullptr || old == nullptr) {
+        return;
+    }
+    // The only retire-able sources in v1 are FileInputProcessors (the live
+    // sentinel is never retired). Downcast is safe because we only ever pass
+    // FileInputProcessor* through setSource()'s return into retireSource().
+    auto* take = static_cast<map2::recorder::FileInputProcessor*>(old);
+    take->stopReader();  // off-thread reader is a no-op stub in v1.
+    std::lock_guard<std::mutex> lock(retireOwner_->retiredSourcesMutex_);
+    retireOwner_->retiredSources_.emplace_back(take);
+}
+
+void Map2AudioEngine::drainRetiredSources() {
+    // CONTROL-THREAD ONLY. Frees every retired source. Called from
+    // loadTakeForPlayback / unloadTake / the dtor — never on the audio
+    // thread. By the time we reach here the swap onto the live sentinel has
+    // been published (release in the CAS) and at least one audio period has
+    // elapsed since any realistic caller, so the audio thread no longer holds
+    // the old pointer in its per-buffer local.
+    std::vector<std::unique_ptr<map2::recorder::FileInputProcessor>> toFree;
+    {
+        std::lock_guard<std::mutex> lock(retiredSourcesMutex_);
+        toFree.swap(retiredSources_);
+    }
+    // Destructors (file/thread teardown) run here, outside the lock and off
+    // the audio thread.
+    toFree.clear();
+}
+
+bool Map2AudioEngine::loadTakeForPlayback(const std::string& takePath,
+                                          int numChannels) {
+    // CONTROL THREAD. Build the new source fully (non-RT alloc OK), register
+    // it at the playback index, then CAS the switch onto it. The previous
+    // playback take (if any) is retired through the deferred-free queue.
+    if (inputSwitch_ == nullptr) {
+        return false;
+    }
+
+    // GRACE PERIOD: drain sources retired by EARLIER calls FIRST. They have
+    // been off the live atomic for ≥ one full call's worth of audio periods,
+    // so the audio thread has long since dropped them from its per-buffer
+    // local. We never drain a source we retire in THIS call — that one stays
+    // queued until the next load/unload/dtor (§3.3 RCU grace period).
+    drainRetiredSources();
+
+    auto take = std::make_unique<map2::recorder::FileInputProcessor>(
+        takePath, numChannels);
+    take->setPlaying(true);
+
+    // Register at the playback index BEFORE publishing so a sample-accurate
+    // trigger can resolve to it (release-store inside registerSource).
+    inputSwitch_->registerSource(kPlaybackSourceIndex, take.get());
+
+    // Hand ownership of any currently-loaded take to the deferred-free queue
+    // BEFORE the swap. retireSourceCallback wraps the raw pointer in a
+    // unique_ptr; we release ours so there is exactly one owner. If nothing
+    // is loaded, the live sentinel is the old source and is never retired.
+    if (playbackTake_ != nullptr) {
+        inputSwitch_->retireSource(playbackTake_.release());
+    }
+
+    // Publish via CAS onto the new take. The returned old pointer is either
+    // the live sentinel (no-op) or the take we just retired (already owned by
+    // the queue) — so we do NOT retire `old` again here.
+    (void)inputSwitch_->setSource(take.get());
+
+    playbackTake_ = std::move(take);
+    return true;
+}
+
+void Map2AudioEngine::unloadTake() {
+    // CONTROL THREAD. Switch back to the live sentinel and retire the take.
+    if (inputSwitch_ == nullptr) {
+        return;
+    }
+
+    // Grace-period drain of EARLIER retirees first (see loadTakeForPlayback).
+    drainRetiredSources();
+
+    if (playbackTake_ == nullptr) {
+        // Nothing loaded — ensure the switch is on live and return.
+        inputSwitch_->setSource(liveInputSource_.get());
+        return;
+    }
+
+    // Hand the loaded take to the deferred-free queue, then CAS back to live.
+    inputSwitch_->retireSource(playbackTake_.release());
+    (void)inputSwitch_->setSource(liveInputSource_.get());
+}
+
+void Map2AudioEngine::armPunchIn(std::int64_t applyAtSample,
+                                 int desiredSourceIndex) {
+    // CONTROL THREAD. Push a sample-accurate trigger; the audio thread
+    // applies it mid-block at the exact offset (§6).
+    if (inputSwitch_ == nullptr) {
+        return;
+    }
+    inputSwitch_->triggerQueue().push(applyAtSample, desiredSourceIndex);
 }
 
 Map2AudioEngine::~Map2AudioEngine() {
     shutdown();
+
+    // T2511-3 — tear down the playback path on the control thread. By the
+    // time the dtor runs, audio is stopped (shutdown() above), so no audio
+    // thread can hold a per-buffer local. Switch to the live sentinel,
+    // retire any loaded take, then drain the deferred-free queue so every
+    // FileInputProcessor is destroyed off the (now-stopped) audio thread.
+    if (inputSwitch_ != nullptr && liveInputSource_ != nullptr) {
+        inputSwitch_->setSource(liveInputSource_.get());
+    }
+    if (playbackTake_ != nullptr) {
+        // shutdown() has stopped audio; freeing inline here is safe, but we
+        // keep the single ownership invariant by releasing into the queue.
+        retiredSources_.emplace_back(std::move(playbackTake_));
+    }
+    drainRetiredSources();
+    retireOwner_ = nullptr;
 }
 
 void Map2AudioEngine::enqueuePlatformEvent(
@@ -2280,33 +2429,68 @@ void Map2AudioEngine::audioCallback(const float* const* inputs, int numInputs,
                                     processSamples);
     juce::MidiBuffer midiBuffer;
 
-    if (inputChannelMode_ == InputChannelMode::Stereo) {
-        // Copy input to buffer (overwrites all channels — no need to clear first)
-        for (int ch = 0; ch < copyInputChannels; ++ch) {
-            if (inputs[ch] != nullptr) {
-                buffer.copyFrom(ch, 0, inputs[ch], processSamples);
-            } else {
-                buffer.clear(ch, 0, processSamples);  // Only clear if input is null
-            }
-        }
-        // Clear any extra channels beyond input count
-        for (int ch = copyInputChannels; ch < processChannels; ++ch) {
-            buffer.clear(ch, 0, processSamples);
-        }
+    // T2511-3 — punch-in playback input switch (ATOMIC-SWITCH-ONLY,
+    // WHOLE-ENGINE v1). The switch decides what fills `buffer` this block:
+    //   - currentSource_ == live sentinel (DEFAULT, no take loaded) → the
+    //     live sentinel's pullBlock reproduces the original input copy
+    //     below BYTE-FOR-BYTE (Stereo / MonoLeft / MonoRight + extra-channel
+    //     clear). Cost over the old code: one predicted-taken atomic load +
+    //     branch + one virtual call. The disarmed/live path is NOT regressed
+    //     (proven by ChainInputSwitchIntegrationTests.cpp's parity test).
+    //   - currentSource_ == FileInputProcessor (take loaded) → its pullBlock
+    //     fills `buffer` from the pre-filled PlaybackRing instead; on
+    //     underrun the switch silences the span (never live, never garbage).
+    //   - A sample-accurate apply_at_sample trigger flips live↔file mid-
+    //     block at the exact offset (TriggerQueue drained at block start;
+    //     the switch advances its own sampleClock_ each buffer).
+    //
+    // Everything downstream (input gain, the graph-crossfade dry capture,
+    // capturePreFx, audioGraph_->process, the T2507 taps) is UNCHANGED — it
+    // just sees a `buffer` that is sometimes playback instead of live.
+    if (inputSwitch_ != nullptr && liveInputSource_ != nullptr) {
+        // Bind THIS block's device inputs + routing into the live sentinel.
+        // Same thread, same block as the pull below — no race, no sync.
+        liveInputSource_->bindBlock(
+            inputs,
+            safeInputChannels,
+            copyInputChannels,
+            processChannels,
+            static_cast<map2::recorder::LiveInputSource::InputChannelMode>(
+                static_cast<int>(inputChannelMode_)));
+        juce::MidiBuffer switchMidi;  // unused by the switch.
+        inputSwitch_->processBlock(buffer, switchMidi);
     } else {
-        const int sourceChannel = inputChannelMode_ == InputChannelMode::MonoRight ? 1 : 0;
-        const int monoCopyChannels = std::min(processChannels, 2);
-        const bool sourceAvailable = sourceChannel < safeInputChannels && inputs[sourceChannel] != nullptr;
-
-        for (int ch = 0; ch < monoCopyChannels; ++ch) {
-            if (sourceAvailable) {
-                buffer.copyFrom(ch, 0, inputs[sourceChannel], processSamples);
-            } else {
+        // Defensive fallback — if the switch failed to construct, run the
+        // original input copy verbatim so the engine still works exactly as
+        // before T2511-3.
+        if (inputChannelMode_ == InputChannelMode::Stereo) {
+            // Copy input to buffer (overwrites all channels — no need to clear first)
+            for (int ch = 0; ch < copyInputChannels; ++ch) {
+                if (inputs[ch] != nullptr) {
+                    buffer.copyFrom(ch, 0, inputs[ch], processSamples);
+                } else {
+                    buffer.clear(ch, 0, processSamples);  // Only clear if input is null
+                }
+            }
+            // Clear any extra channels beyond input count
+            for (int ch = copyInputChannels; ch < processChannels; ++ch) {
                 buffer.clear(ch, 0, processSamples);
             }
-        }
-        for (int ch = monoCopyChannels; ch < processChannels; ++ch) {
-            buffer.clear(ch, 0, processSamples);
+        } else {
+            const int sourceChannel = inputChannelMode_ == InputChannelMode::MonoRight ? 1 : 0;
+            const int monoCopyChannels = std::min(processChannels, 2);
+            const bool sourceAvailable = sourceChannel < safeInputChannels && inputs[sourceChannel] != nullptr;
+
+            for (int ch = 0; ch < monoCopyChannels; ++ch) {
+                if (sourceAvailable) {
+                    buffer.copyFrom(ch, 0, inputs[sourceChannel], processSamples);
+                } else {
+                    buffer.clear(ch, 0, processSamples);
+                }
+            }
+            for (int ch = monoCopyChannels; ch < processChannels; ++ch) {
+                buffer.clear(ch, 0, processSamples);
+            }
         }
     }
 

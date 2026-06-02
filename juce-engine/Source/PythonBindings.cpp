@@ -6664,6 +6664,50 @@ PYBIND11_MODULE(map2_audio_engine, m) {
              "Snapshot of the current recorder session (or active=false).")
 
         // ========================================
+        // T2511-3 — punch-in playback input-switch bindings
+        // ========================================
+        // Thin pass-through to the engine's control-thread API. The full
+        // RecorderService Python orchestration (take-id resolution, reader
+        // thread, apply_at_sample dispatcher) is a follow-on; these bind the
+        // minimal engine surfaces. All run on the Python message thread and
+        // use the ChainInputSwitch CAS + deferred-free seam — they never
+        // block the audio thread.
+
+        .def("playback_load_take",
+             [](Map2AudioEngine& self,
+                const std::string& take_path,
+                int num_channels) -> bool {
+                 return self.loadTakeForPlayback(take_path, num_channels);
+             },
+             py::arg("take_path"),
+             py::arg("num_channels") = 2,
+             "Load a take WAV as the engine input and atomically switch the"
+             " input path onto it (ATOMIC-SWITCH-ONLY, whole-engine v1). The"
+             " previous take is retired through the deferred-free queue."
+             " Returns false if the switch is not constructed.")
+
+        .def("playback_unload_take",
+             [](Map2AudioEngine& self) {
+                 self.unloadTake();
+             },
+             "Atomically switch the input path back to the live device input"
+             " and retire the loaded take through the deferred-free queue"
+             " (never inline delete). No-op if nothing is loaded.")
+
+        .def("playback_arm_punch_in",
+             [](Map2AudioEngine& self,
+                std::int64_t apply_at_sample,
+                int desired_source_index) {
+                 self.armPunchIn(apply_at_sample, desired_source_index);
+             },
+             py::arg("apply_at_sample"),
+             py::arg("desired_source_index") =
+                 Map2AudioEngine::kPlaybackSourceIndex,
+             "Queue a sample-accurate punch trigger. The audio thread flips"
+             " the input path at the exact intra-block sample offset. Default"
+             " target is the playback source; pass 0 to punch back to live.")
+
+        // ========================================
         // T2512 — Multi-track looper bindings
         // ========================================
 

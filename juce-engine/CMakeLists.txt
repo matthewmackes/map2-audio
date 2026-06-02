@@ -915,6 +915,8 @@ if(BUILD_RECORDER_TESTS)
         tests/PlaybackRingTests.cpp
         tests/ChainInputSwitchTests.cpp
         tests/TriggerQueueTests.cpp
+        # T2511-3 — engine-integration parity + switch wiring (header-only).
+        tests/ChainInputSwitchIntegrationTests.cpp
         Source/Recorder/IoUringWriter.cpp
         Source/Recorder/RecorderService.cpp
     )

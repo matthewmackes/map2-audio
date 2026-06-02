@@ -23,6 +23,9 @@
 #include "SnapshotManager.h"
 #include "Recorder/EngineRecorder.h"  // T2507-3
 #include "Recorder/RecorderService.h" // T2507-5b
+#include "Recorder/Playback/ChainInputSwitch.h"  // T2511-3
+#include "Recorder/Playback/FileInputProcessor.h" // T2511-3
+#include "Recorder/Playback/LiveInputSource.h"   // T2511-3
 #include "Looper/LooperEngine.h"      // T2512 looper
 
 #ifdef HAS_NAM
@@ -1724,6 +1727,50 @@ private:
     // every track is in Empty state.
     std::unique_ptr<map2::looper::LooperEngine> looperEngine_;
 
+    // T2511-3 — punch-in playback input switch (ATOMIC-SWITCH-ONLY,
+    // WHOLE-ENGINE v1). One engine-owned ChainInputSwitch sits at the
+    // input-copy boundary (audioCallback :2283-2311). Its currentSource_
+    // defaults to the live sentinel below, so when no take is loaded the
+    // input path is byte-for-byte today's behaviour plus one predicted-
+    // taken atomic load + branch. Loading a take CASes the switch onto a
+    // FileInputProcessor; unloading retires it through the deferred-free
+    // queue (drained on the non-RT control thread, NEVER on the audio
+    // thread). See docs/architecture/T2511_3_PLAYBACK_GRAPH_INTEGRATION.md
+    // and T2511_RT_SAFETY_REVIEW.md §3.
+    std::unique_ptr<map2::recorder::ChainInputSwitch> inputSwitch_;
+
+    // The live-device-input sentinel (source index 0). Constructed once;
+    // lives as long as the engine; never retired. bindBlock() is called on
+    // the audio thread each callback before the switch is driven.
+    std::unique_ptr<map2::recorder::LiveInputSource> liveInputSource_;
+
+    // The currently-loaded playback take (source index 1), if any. Owned by
+    // the engine on the control thread; only ever set/cleared from the
+    // control-thread API below. The audio thread holds it only as a
+    // non-owning pointer inside the switch.
+    std::unique_ptr<map2::recorder::FileInputProcessor> playbackTake_;
+
+    // Deferred-free queue (§3.3 RCU-grace-period reclamation). When a take is
+    // unloaded the switch CASes back to the live sentinel and the old
+    // FileInputProcessor is retired here, NOT deleted inline. The queue is
+    // drained on the control thread (>= one audio period after the swap is
+    // observed) in unloadTake() / loadTakeForPlayback() / the dtor — NEVER on
+    // the audio thread. The mutex is therefore CONTROL-THREAD-ONLY; the audio
+    // thread never touches it.
+    std::mutex retiredSourcesMutex_;
+    std::vector<std::unique_ptr<map2::recorder::FileInputProcessor>> retiredSources_;
+
+    // Singleton retire callback the switch invokes (control thread) to hand
+    // an old source to the deferred-free queue. Static because the switch's
+    // setRetireCallback takes a plain function pointer; it forwards to the
+    // engine instance set in the ctor.
+    static Map2AudioEngine* retireOwner_;
+    static void retireSourceCallback(map2::recorder::PlaybackSource* old) noexcept;
+
+    // Drain the deferred-free queue on the control thread. Safe to call only
+    // off the audio thread. Frees every retired FileInputProcessor.
+    void drainRetiredSources();
+
 public:
     /// Non-owning accessor for the recorder hooks. Returns nullptr
     /// if the engine has not finished constructing the recorder
@@ -1743,6 +1790,54 @@ public:
     /// Operator-side mutations + status reads come through here.
     map2::looper::LooperEngine* looperEngine() noexcept {
         return looperEngine_.get();
+    }
+
+    // ------------------------------------------------------------------
+    // T2511-3 — punch-in playback control-thread API (NON-RT).
+    // ------------------------------------------------------------------
+
+    // Source index constants for the ChainInputSwitch registration table.
+    // Public so the Python bindings can name the playback index as a default
+    // argument. 0 = live device input, 1 = playback take.
+    static constexpr int kLiveSourceIndex     = 0;
+    static constexpr int kPlaybackSourceIndex = 1;
+
+    // These run on the Python message thread (via pybind11), mirroring the
+    // recorder_* bindings. They never block the audio thread: they swap the
+    // ChainInputSwitch's source via its CAS seam and retire old sources
+    // through the deferred-free queue. The full RecorderService Python
+    // orchestration (take-id resolution, io_uring reader spawn) is a
+    // follow-on; these are the minimal engine surfaces it binds toward.
+
+    /// Load a take WAV as the engine's input source and atomically switch
+    /// the input path onto it. NON-RT (control thread). Returns false if the
+    /// switch is not constructed. The playback ring is filled by the
+    /// (post-release) reader thread; until then pullBlock underruns to
+    /// silence — never garbage, never live. The previous playback take (if
+    /// any) is retired through the deferred-free queue, never deleted inline.
+    ///
+    /// @param takePath  Absolute path to the take WAV.
+    /// @param numChannels Declared channel count of the take (clamped by the
+    ///                    ring to kPlaybackMaxChannels).
+    bool loadTakeForPlayback(const std::string& takePath, int numChannels = 2);
+
+    /// Atomically switch the input path back to the live device input and
+    /// retire the loaded take through the deferred-free queue (NEVER inline
+    /// delete). NON-RT (control thread). No-op if nothing is loaded.
+    void unloadTake();
+
+    /// Queue a sample-accurate punch trigger that flips the input path to
+    /// the playback take at the given absolute engine sample. The audio
+    /// thread applies it mid-block at the exact offset (TriggerQueue / §6).
+    /// NON-RT (control thread). desiredSourceIndex defaults to the playback
+    /// source; pass kLiveSourceIndex to punch back to live.
+    void armPunchIn(std::int64_t applyAtSample,
+                    int desiredSourceIndex = kPlaybackSourceIndex);
+
+    /// Non-owning accessor for the input switch (T2511-3) — diagnostics /
+    /// tests. Audio thread drives it inside audioCallback.
+    map2::recorder::ChainInputSwitch* inputSwitch() noexcept {
+        return inputSwitch_.get();
     }
 
 private:
