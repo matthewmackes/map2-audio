@@ -166,7 +166,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1683** Python | **1769** TypeScript | **318** C++/H | **149** Docs | **4754** total commits | **3** stars | **0** forks | **0** open issues
+**1684** Python | **1769** TypeScript | **320** C++/H | **149** Docs | **4756** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -207,14 +207,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`2796df459`](https://github.com/matthewmackes/map2-audio/commit/2796df459f6dd9b3e9147d9b4f9a2705d69214f5) | feat(sonobus): T2521-4 real AOO transport + JACK bridge (... | Map2 Audio | 2026-06-02 |
+| [`12154a5d4`](https://github.com/matthewmackes/map2-audio/commit/12154a5d45188f25cb255b1f86cbff825a1a8f21) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-02 |
 | [`7b0772c68`](https://github.com/matthewmackes/map2-audio/commit/7b0772c6811ec0182b9100f13142542a94ab7d6a) | docs(T2521-4): SonoBus daemon RT-safety design note (for ... | Map2 Audio | 2026-06-02 |
 | [`ce0624d70`](https://github.com/matthewmackes/map2-audio/commit/ce0624d701e79ca1fe5274b547332950a993a147) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-02 |
 | [`9e1948e11`](https://github.com/matthewmackes/map2-audio/commit/9e1948e119cf933709c75fce8629c41d5f79816d) | docs(worklist): T2521-4 step 1 (AOO vendored) done; remai... | Map2 Audio | 2026-06-02 |
 | [`5e47f2ee5`](https://github.com/matthewmackes/map2-audio/commit/5e47f2ee5c1f6e1b9985e13d9689ee36ce441ccd) | chore(sonobus): vendor AOO source tree (T2521-4 step 1 of N) | Map2 Audio | 2026-06-02 |
 | [`a0cb584b5`](https://github.com/matthewmackes/map2-audio/commit/a0cb584b591999cb47a981b9993a6996f26bc3f0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-02 |
 | [`bd7353245`](https://github.com/matthewmackes/map2-audio/commit/bd735324530edb353190a5b3f09f763dd6aa6600) | feat(recorder): T2511-3 wire ChainInputSwitch into audioC... | Map2 Audio | 2026-06-02 |
-| [`092cb32f9`](https://github.com/matthewmackes/map2-audio/commit/092cb32f9223cdbd79fbcd203279632bc5b20037) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-02 |
-| [`3570eb1ba`](https://github.com/matthewmackes/map2-audio/commit/3570eb1ba3a88f2cf7ed61c268be8d3c83057531) | docs(T2511-3): lock atomic-switch-only playback integrati... | Map2 Audio | 2026-06-02 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
