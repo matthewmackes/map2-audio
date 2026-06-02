@@ -166,7 +166,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1683** Python | **1769** TypeScript | **235** C++/H | **149** Docs | **4737** total commits | **3** stars | **0** forks | **0** open issues
+**1683** Python | **1769** TypeScript | **235** C++/H | **149** Docs | **4739** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -207,14 +207,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`df820a90b`](https://github.com/matthewmackes/map2-audio/commit/df820a90b8afc67da6176486600b5c21d65c2dac) | docs(T2511): operator-approved RT-safety design review | Map2 Audio | 2026-06-02 |
+| [`496782bd7`](https://github.com/matthewmackes/map2-audio/commit/496782bd78fd5f9ca3c4fd598a5256eb65da6c6e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-02 |
 | [`8b563b528`](https://github.com/matthewmackes/map2-audio/commit/8b563b52872daf69ef41ffd0cf38a25fe6e79959) | feat(recorder): T2510-4 cluster session-assembly + T2510-... | Map2 Audio | 2026-06-02 |
 | [`3c46f7e4a`](https://github.com/matthewmackes/map2-audio/commit/3c46f7e4a5caa531c9b3ecada7898d55ec97b528) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-02 |
 | [`ce163b363`](https://github.com/matthewmackes/map2-audio/commit/ce163b363355c616673a7814be213d132afef812) | fix(test): derive migration-version pin from SCHEMA_MIGRA... | Map2 Audio | 2026-06-02 |
 | [`563a09901`](https://github.com/matthewmackes/map2-audio/commit/563a09901e7d5b9ca45953f09ca182f0348ff1a6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-02 |
 | [`4c2285ae7`](https://github.com/matthewmackes/map2-audio/commit/4c2285ae779741b793d29ef21cb24e58806c3cf2) | feat(recorder): T2510-2 cluster record-arm via Raft apply... | Map2 Audio | 2026-06-02 |
 | [`650f7201b`](https://github.com/matthewmackes/map2-audio/commit/650f7201b375e8cf2c0a2a1a33734be8e844f256) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-02 |
-| [`2075974fa`](https://github.com/matthewmackes/map2-audio/commit/2075974fa07ece4c5502dd28c0fb59470a7f2cb3) | fix(test): sync looper OpenAPI pin (T2531); file T2532 db... | Map2 Audio | 2026-06-02 |
-| [`01c797fd4`](https://github.com/matthewmackes/map2-audio/commit/01c797fd4a8d38a530dc8c67609fe8baf6dd6e0f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-02 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
