@@ -911,6 +911,10 @@ if(BUILD_RECORDER_TESTS)
         tests/IoUringWriterTests.cpp
         tests/RecorderServiceTests.cpp
         tests/AutomationCaptureTests.cpp
+        # T2511 — punch-in playback RT-safe nodes (header-only; no .cpp).
+        tests/PlaybackRingTests.cpp
+        tests/ChainInputSwitchTests.cpp
+        tests/TriggerQueueTests.cpp
         Source/Recorder/IoUringWriter.cpp
         Source/Recorder/RecorderService.cpp
     )
