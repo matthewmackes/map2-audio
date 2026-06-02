@@ -21,9 +21,16 @@ from urllib.parse import urlparse
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 SNAPSHOT_GRAPH_SCHEMA_PATH = _PROJECT_ROOT / "schemas" / "snapshot-graph-v1.schema.json"
-SNAPSHOT_GRAPH_VERSION = "2026.05"
+SNAPSHOT_GRAPH_VERSION = "2026.06"
+# v2026.06 (T2510-0) adds `graph.channels[].cluster_owner_node_id` — an optional
+# per-chain cluster owner that, when null, resolves to deployment.primary_node_id
+# at compile/consume time. Per the pre-release no-migration directive there are
+# no persisted 2026.05 documents to upcast, so 2026.05 is intentionally NOT added
+# to ACCEPTED_LEGACY_GRAPH_VERSIONS — the new field round-trips structurally
+# (deepcopy passthrough) without any version-acceptance machinery.
+#
 # Schema versions accepted as inputs to normalize_graph_document(). v2026.04 is
-# migrated to v2026.05 on read by injecting `recording=None`; see T2506.
+# migrated forward on read by injecting `recording=None`; see T2506.
 ACCEPTED_LEGACY_GRAPH_VERSIONS = ("2026.04",)
 
 _EXACT_URI_MAP = {
@@ -146,14 +153,20 @@ def normalize_graph_document(document: Mapping[str, Any]) -> dict[str, Any]:
     normalized = deepcopy(dict(document))
     incoming_version = normalized.get("version")
     if incoming_version in ACCEPTED_LEGACY_GRAPH_VERSIONS:
-        # T2506 — v2026.04 → v2026.05 upcast. The only structural addition is
-        # the top-level `recording` block, which becomes `None` on legacy docs
-        # (no recording session bound to the snapshot).
+        # T2506 — v2026.04 is the only accepted legacy input. Its sole structural
+        # gap versus the current schema is the top-level `recording` block, which
+        # becomes `None` on these docs (no recording session bound). The version
+        # string is rewritten to whatever SNAPSHOT_GRAPH_VERSION currently is.
+        # NOTE: v2026.05 → v2026.06 (T2510-0, channel.cluster_owner_node_id) is
+        # NOT an upcast — per the pre-release no-migration directive there are no
+        # 2026.05 documents to migrate, and the new field round-trips via the
+        # deepcopy below with no transform.
         normalized["version"] = SNAPSHOT_GRAPH_VERSION
         normalized.setdefault("recording", None)
     normalized.setdefault("version", SNAPSHOT_GRAPH_VERSION)
-    # `recording` is always normalized (even for v2026.05 input that already
-    # has the field) so downstream consumers see the canonical 6-field shape.
+    # `recording` is always normalized (even for current-version input that
+    # already has the field) so downstream consumers see the canonical 6-field
+    # shape.
     normalized["recording"] = _normalize_recording_block(normalized.get("recording"))
     graph = normalized.setdefault("graph", {})
     nodes = graph.setdefault("nodes", [])
@@ -728,6 +741,13 @@ def _validate_graph_channels(channels: Any) -> None:
                         "chain_nodes entries must be non-empty node id strings",
                         "Persist chain_nodes as non-empty node identifier strings.",
                     )
+        owner = channel_map.get("cluster_owner_node_id")
+        if owner is not None and (not isinstance(owner, str) or not owner.strip()):
+            _raise_validation_error(
+                f"{path}.cluster_owner_node_id",
+                "cluster_owner_node_id must be a non-empty string or null",
+                "Persist channel.cluster_owner_node_id as a stable cluster node id, or null to inherit deployment.primary_node_id.",
+            )
 
 
 def _validate_routing_section(routing: Any) -> None:

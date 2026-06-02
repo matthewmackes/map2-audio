@@ -1,4 +1,5 @@
 from app.services.audio_state_snapshot_compiler import (
+    _coerce_snapshot_paths,
     build_initial_authoritative_audio_state,
     compile_snapshot_detail_to_intent,
     overlay_audio_state_extensions,
@@ -107,6 +108,86 @@ def test_build_initial_authoritative_audio_state_preserves_existing_extensions()
 
     assert state.extensions["sequencer"]["instances"]["instance-17__position-3"]["instance_id"] == "17"
     assert state.desired.extensions["sequencer"]["instances"]["instance-17__position-3"]["plugin_position"] == 3
+
+
+# --- T2510-0: per-chain cluster owner resolution -----------------------------
+
+
+def test_channel_with_null_owner_resolves_to_deployment_primary_node_id():
+    detail = {
+        "id": 11,
+        "name": "Cluster Snapshot",
+        "deployments": [{"primary_node_id": "MANAGEMENT-NODE-1"}],
+        "channels": [
+            {"channel_key": "A"},  # no cluster_owner_node_id — inherit primary
+        ],
+    }
+
+    paths = _coerce_snapshot_paths(detail)
+
+    assert paths[0]["id"] == "A"
+    assert paths[0]["cluster_owner_node_id"] == "MANAGEMENT-NODE-1"
+
+
+def test_channel_with_explicit_owner_keeps_it_over_deployment_primary():
+    detail = {
+        "id": 12,
+        "name": "Cluster Snapshot",
+        "deployments": [{"primary_node_id": "MANAGEMENT-NODE-1"}],
+        "channels": [
+            {"channel_key": "A", "cluster_owner_node_id": "AUDIO-NODE-7"},
+        ],
+    }
+
+    paths = _coerce_snapshot_paths(detail)
+
+    assert paths[0]["cluster_owner_node_id"] == "AUDIO-NODE-7"
+
+
+def test_channel_owner_stays_none_when_no_deployment_primary_bound():
+    detail = {
+        "id": 13,
+        "name": "Local-Only Snapshot",
+        "channels": [
+            {"channel_key": "A"},
+        ],
+    }
+
+    paths = _coerce_snapshot_paths(detail)
+
+    assert paths[0]["cluster_owner_node_id"] is None
+
+
+def test_channel_blank_owner_falls_back_to_deployment_primary():
+    detail = {
+        "id": 14,
+        "name": "Cluster Snapshot",
+        "deployments": [{"primary_node_id": "MANAGEMENT-NODE-1"}],
+        "channels": [
+            {"channel_key": "A", "cluster_owner_node_id": "   "},  # blank — inherit
+        ],
+    }
+
+    paths = _coerce_snapshot_paths(detail)
+
+    assert paths[0]["cluster_owner_node_id"] == "MANAGEMENT-NODE-1"
+
+
+def test_mixed_channel_owners_resolve_per_chain():
+    detail = {
+        "id": 15,
+        "name": "Mixed Cluster Snapshot",
+        "deployments": [{"primary_node_id": "MANAGEMENT-NODE-1"}],
+        "channels": [
+            {"channel_key": "A", "cluster_owner_node_id": "AUDIO-NODE-7"},
+            {"channel_key": "B"},  # inherit primary
+        ],
+    }
+
+    paths = _coerce_snapshot_paths(detail)
+
+    owners = {path["id"]: path["cluster_owner_node_id"] for path in paths}
+    assert owners == {"A": "AUDIO-NODE-7", "B": "MANAGEMENT-NODE-1"}
 
 
 def test_overlay_audio_state_extensions_replaces_snapshot_owned_namespace():

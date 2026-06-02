@@ -17,12 +17,13 @@ If a piece of state matters to the sound, it lives in the graph document. If it 
 
 ## 2. The data model
 
-A snapshot is a JSON document validated against schema version `2026.05` (`app/services/state_authority_graph.py`, `SNAPSHOT_GRAPH_SCHEMA_PATH`). v2026.04 documents migrate transparently on read — `ACCEPTED_LEGACY_GRAPH_VERSIONS` in the same module lists every accepted legacy version. It has five blocks:
+A snapshot is a JSON document validated against schema version `2026.06` (`app/services/state_authority_graph.py`, `SNAPSHOT_GRAPH_SCHEMA_PATH`). v2026.04 documents migrate transparently on read — `ACCEPTED_LEGACY_GRAPH_VERSIONS` in the same module lists every accepted legacy version. It has five blocks:
 
 | Block | Holds |
 |---|---|
 | `meta` | name, description, tags, community metadata, I/O bindings |
 | `graph` | channels, chains, plugin nodes, routing/morph configuration, MIDI map, tempo, audio levels |
+| `graph.channels[].cluster_owner_node_id` | (v2026.06+) optional per-chain cluster owner. `null` (or omitted) inherits `deployment.primary_node_id` at compile/consume time — a runtime default, not a stored shim. When a string, it must be a non-empty stable cluster node id. |
 | `controls` | monitoring outputs, automation lanes, expression mappings |
 | `recording` | (v2026.05+) optional snapshot-bound recording session: `session_id`, `armed`, `rolling`, `started_at`, `participating_nodes`, `tap_matrix` per chain (pre-fx + post-fx). `None` when no session is bound. Consumed by the T2504 Multi-Track Recorder. |
 | `extensions` | vendor-specific payloads (kept additive so old snapshots load) |

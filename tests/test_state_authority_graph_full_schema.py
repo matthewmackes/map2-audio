@@ -1,4 +1,4 @@
-"""Runtime validator tests for the full v2026.05 graph document schema.
+"""Runtime validator tests for the full v2026.06 graph document schema.
 
 Companion to `tests/test_state_authority_graph.py` (which exercises the pre-rollout
 validator surface) and `tests/test_snapshot_graph_schema.py` (which asserts
@@ -185,6 +185,67 @@ def test_channel_chain_nodes_must_be_strings():
     with pytest.raises(GraphDocumentValidationError) as exc_info:
         validate_graph_document(doc)
     assert exc_info.value.path == "$.graph.channels[0].chain_nodes[1]"
+
+
+# --- graph.channels[].cluster_owner_node_id (T2510-0, v2026.06) ---------------
+
+
+def test_channel_cluster_owner_node_id_accepts_non_empty_string():
+    doc = _base_document()
+    doc["graph"]["channels"] = [{"key": "A", "cluster_owner_node_id": "node-b"}]
+    validate_graph_document(doc)  # does not raise
+
+
+def test_channel_cluster_owner_node_id_accepts_null():
+    doc = _base_document()
+    doc["graph"]["channels"] = [{"key": "A", "cluster_owner_node_id": None}]
+    validate_graph_document(doc)  # does not raise
+
+
+def test_channel_cluster_owner_node_id_accepts_omitted():
+    doc = _base_document()
+    doc["graph"]["channels"] = [{"key": "A"}]
+    validate_graph_document(doc)  # does not raise
+
+
+def test_channel_cluster_owner_node_id_rejects_empty_string():
+    doc = _base_document()
+    doc["graph"]["channels"] = [{"key": "A", "cluster_owner_node_id": ""}]
+    with pytest.raises(GraphDocumentValidationError) as exc_info:
+        validate_graph_document(doc)
+    assert exc_info.value.path == "$.graph.channels[0].cluster_owner_node_id"
+    assert "non-empty string or null" in str(exc_info.value)
+
+
+def test_channel_cluster_owner_node_id_rejects_whitespace_only():
+    doc = _base_document()
+    doc["graph"]["channels"] = [{"key": "A", "cluster_owner_node_id": "   "}]
+    with pytest.raises(GraphDocumentValidationError) as exc_info:
+        validate_graph_document(doc)
+    assert exc_info.value.path == "$.graph.channels[0].cluster_owner_node_id"
+
+
+def test_channel_cluster_owner_node_id_reports_correct_index_in_path():
+    doc = _base_document()
+    doc["graph"]["channels"] = [
+        {"key": "A", "cluster_owner_node_id": "node-a"},
+        {"key": "B", "cluster_owner_node_id": 42},  # non-string — invalid
+    ]
+    with pytest.raises(GraphDocumentValidationError) as exc_info:
+        validate_graph_document(doc)
+    assert exc_info.value.path == "$.graph.channels[1].cluster_owner_node_id"
+
+
+def test_channel_cluster_owner_node_id_round_trips_through_normalize():
+    doc = _base_document()
+    doc["graph"]["channels"] = [
+        {"key": "A", "cluster_owner_node_id": "node-b"},
+        {"key": "B", "cluster_owner_node_id": None},
+    ]
+    normalized = normalize_and_validate_graph_document(doc)
+    channels = normalized["graph"]["channels"]
+    assert channels[0]["cluster_owner_node_id"] == "node-b"
+    assert channels[1]["cluster_owner_node_id"] is None
 
 
 # --- routing ------------------------------------------------------------------

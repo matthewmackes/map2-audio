@@ -30,6 +30,7 @@ from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateServ
 from app.services.snapshot import SnapshotActivationPreflightError, SnapshotService
 from app.services.snapshot_system_blocks import NOISE_GATE_PLUGIN_URI
 from app.services.snapshot_tempo_service import reset_snapshot_tempo_service
+from app.services.state_authority_graph import SNAPSHOT_GRAPH_VERSION
 from sqlalchemy import delete, select
 
 
@@ -1103,7 +1104,7 @@ def test_snapshot_service_persists_and_reads_state_authority_document(tmp_path, 
 
             snapshot_row = await session.get(database_module.Snapshot, created["id"])
             assert snapshot_row is not None
-            assert snapshot_row.document["version"] == "2026.05"
+            assert snapshot_row.document["version"] == SNAPSHOT_GRAPH_VERSION
             assert "map2:fx:nam" in [node["uri"] for node in snapshot_row.document["graph"]["nodes"]]
 
             await session.execute(delete(database_module.SnapshotChannel).where(database_module.SnapshotChannel.snapshot_id == created["id"]))

@@ -62,6 +62,22 @@ def overlay_audio_state_extensions(
     return merged
 
 
+def _resolve_deployment_primary_node_id(detail: dict[str, Any]) -> str | None:
+    """The cluster owner that an unset (null) channel owner inherits.
+
+    Mirrors how `compile_snapshot_detail_to_intent` derives `preferred_nodes`:
+    the first deployment's `primary_node_id`. Returns `None` when no deployment
+    primary is bound (local-only snapshots), in which case a null channel owner
+    stays unresolved (`None`)."""
+    deployments = detail.get("deployments") if isinstance(detail.get("deployments"), list) else []
+    for item in deployments:
+        if isinstance(item, dict):
+            primary = str(item.get("primary_node_id") or "").strip()
+            if primary:
+                return primary
+    return None
+
+
 def _coerce_snapshot_paths(detail: dict[str, Any]) -> list[dict[str, Any]]:
     paths = detail.get("paths")
     if isinstance(paths, list) and paths:
@@ -71,17 +87,29 @@ def _coerce_snapshot_paths(detail: dict[str, Any]) -> list[dict[str, Any]]:
     if not isinstance(channels, list):
         return []
 
+    # T2510-0 — resolve each channel's per-chain cluster owner. A null/omitted
+    # `cluster_owner_node_id` inherits deployment.primary_node_id at compile time
+    # (a runtime default, NOT a stored back-compat shim).
+    primary_node_id = _resolve_deployment_primary_node_id(detail)
+
     normalized_paths: list[dict[str, Any]] = []
     for index, channel in enumerate(channels):
         if not isinstance(channel, dict):
             continue
         channel_key = str(channel.get("channel_key") or f"ch_{index}")
+        explicit_owner = channel.get("cluster_owner_node_id")
+        resolved_owner = (
+            explicit_owner.strip()
+            if isinstance(explicit_owner, str) and explicit_owner.strip()
+            else primary_node_id
+        )
         normalized_paths.append(
             {
                 "id": channel_key,
                 "label": channel.get("label") or channel_key,
                 "color": channel.get("color"),
                 "snapshot_chain_id": channel.get("chain_id"),
+                "cluster_owner_node_id": resolved_owner,
             }
         )
     return normalized_paths

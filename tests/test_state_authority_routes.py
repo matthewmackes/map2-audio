@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.routes.state_authority import router
+from app.services.state_authority_graph import SNAPSHOT_GRAPH_VERSION
 
 
 def _client() -> TestClient:
@@ -122,7 +123,7 @@ def test_get_state_authority_schema_returns_monolithic_schema():
     assert response.status_code == 200
     schema = response.json()
     assert schema["$schema"] == "https://json-schema.org/draft/2020-12/schema"
-    assert schema["title"] == "MAP2 Snapshot Graph v2026.05"
+    assert schema["title"] == f"MAP2 Snapshot Graph v{SNAPSHOT_GRAPH_VERSION}"
     assert "meta" in schema["properties"]
     assert "graph" in schema["properties"]
     assert "routing" in schema["properties"]

@@ -17,11 +17,16 @@ from app.services.state_authority_graph import (
 )
 
 
+def test_snapshot_graph_version_pinned_to_2026_06():
+    # T2510-0 — channel.cluster_owner_node_id. Clean bump, no migration of 2026.05.
+    assert SNAPSHOT_GRAPH_VERSION == "2026.06"
+
+
 def test_load_snapshot_graph_schema_reads_monolithic_schema_file():
     schema = load_snapshot_graph_schema()
 
     assert SNAPSHOT_GRAPH_SCHEMA_PATH.exists()
-    assert schema["title"] == "MAP2 Snapshot Graph v2026.05"
+    assert schema["title"] == "MAP2 Snapshot Graph v2026.06"
     assert schema["properties"]["graph"]["properties"]["nodes"]["items"]["properties"]["uri"]["pattern"].startswith("^")
 
 

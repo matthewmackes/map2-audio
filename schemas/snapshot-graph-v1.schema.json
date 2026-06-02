@@ -1,15 +1,15 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://map2.audio/schemas/snapshot-graph-v1.schema.json",
-  "title": "MAP2 Snapshot Graph v2026.05",
-  "description": "Monolithic graph document schema for MAP2 State Authority. A snapshot is a single JSONB document that fully describes a rig state: plugins/system-blocks as nodes, port-to-port audio/sidechain edges, parallel/series groups, A-F channels, routing mode, A/B/C/D quad morph, effects loops, unified control mappings (MIDI/Expression/Maschine/OSC/GPIO), I/O bindings, tempo, output safety, deployment intent, template composition, and (v2026.05+) the optional snapshot-bound `recording` session block consumed by the T2504 Multi-Track Recorder.",
+  "title": "MAP2 Snapshot Graph v2026.06",
+  "description": "Monolithic graph document schema for MAP2 State Authority. A snapshot is a single JSONB document that fully describes a rig state: plugins/system-blocks as nodes, port-to-port audio/sidechain edges, parallel/series groups, A-F channels (each with an optional per-chain cluster owner as of v2026.06), routing mode, A/B/C/D quad morph, effects loops, unified control mappings (MIDI/Expression/Maschine/OSC/GPIO), I/O bindings, tempo, output safety, deployment intent, template composition, and (v2026.05+) the optional snapshot-bound `recording` session block consumed by the T2504 Multi-Track Recorder.",
   "type": "object",
   "required": ["version", "meta", "graph"],
   "additionalProperties": true,
   "properties": {
     "version": {
       "type": "string",
-      "const": "2026.05"
+      "const": "2026.06"
     },
     "meta": {
       "type": "object",
@@ -138,6 +138,10 @@
               "chain_nodes": {
                 "type": "array",
                 "items": { "type": "string", "minLength": 1 }
+              },
+              "cluster_owner_node_id": {
+                "description": "Per-chain cluster owner (v2026.06+). When null, resolves to deployment.primary_node_id at compile/consume time. When a string, must be a non-empty stable cluster node id.",
+                "type": ["string", "null"]
               }
             }
           }

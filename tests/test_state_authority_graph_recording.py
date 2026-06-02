@@ -1,8 +1,8 @@
 """Snapshot graph `recording` block — T2506 (phase 2 of T2504).
 
 Covers:
-  * v2026.04 → v2026.05 migration injects `recording=None`.
-  * Schema title pins to v2026.05.
+  * v2026.04 → current-version migration injects `recording=None`.
+  * Schema title pins to the current SNAPSHOT_GRAPH_VERSION (v2026.06 as of T2510-0).
   * `normalize_graph_document` produces the canonical 6-field `recording`
     layout when supplied a partial dict.
   * `validate_graph_document` accepts both `null` and the full-shape
@@ -33,18 +33,23 @@ from app.services.state_authority_graph import (
 # ---------------------------------------------------------------------------
 
 
-def test_schema_version_pinned_to_2026_05():
-    assert SNAPSHOT_GRAPH_VERSION == "2026.05"
+def test_schema_version_pinned_to_2026_06():
+    # T2510-0 bumped 2026.05 → 2026.06 (channel.cluster_owner_node_id). Per the
+    # pre-release no-migration directive, 2026.05 is intentionally NOT a legacy
+    # input version — there are no documents to migrate.
+    assert SNAPSHOT_GRAPH_VERSION == "2026.06"
 
 
 def test_legacy_graph_versions_accept_2026_04():
     assert "2026.04" in ACCEPTED_LEGACY_GRAPH_VERSIONS
+    # 2026.05 is NOT carried as a legacy input (no migration; see T2510-0).
+    assert "2026.05" not in ACCEPTED_LEGACY_GRAPH_VERSIONS
 
 
-def test_schema_title_pins_to_v2026_05():
+def test_schema_title_pins_to_v2026_06():
     schema = load_snapshot_graph_schema()
-    assert schema["title"] == "MAP2 Snapshot Graph v2026.05"
-    assert schema["properties"]["version"]["const"] == "2026.05"
+    assert schema["title"] == "MAP2 Snapshot Graph v2026.06"
+    assert schema["properties"]["version"]["const"] == "2026.06"
 
 
 def test_schema_has_top_level_recording_block_with_oneof_null_or_object():
@@ -67,11 +72,12 @@ def test_schema_has_top_level_recording_block_with_oneof_null_or_object():
 
 
 # ---------------------------------------------------------------------------
-# Migration: v2026.04 → v2026.05 (T2506-2 acceptance)
+# Migration: v2026.04 → current version (T2506-2 acceptance). The only accepted
+# legacy input is 2026.04; it upcasts to whatever SNAPSHOT_GRAPH_VERSION is now.
 # ---------------------------------------------------------------------------
 
 
-def test_v2026_04_document_migrates_to_v2026_05_with_recording_null():
+def test_v2026_04_document_migrates_to_current_version_with_recording_null():
     document = {
         "version": "2026.04",
         "meta": {"name": "Legacy Tone", "type": "snapshot"},
@@ -80,7 +86,7 @@ def test_v2026_04_document_migrates_to_v2026_05_with_recording_null():
 
     normalized = normalize_graph_document(document)
 
-    assert normalized["version"] == "2026.05"
+    assert normalized["version"] == SNAPSHOT_GRAPH_VERSION
     assert normalized["recording"] is None
 
 
@@ -93,13 +99,13 @@ def test_v2026_04_document_round_trips_through_validate():
 
     normalized = normalize_and_validate_graph_document(document)
 
-    assert normalized["version"] == "2026.05"
+    assert normalized["version"] == SNAPSHOT_GRAPH_VERSION
     assert normalized["recording"] is None
 
 
-def test_v2026_05_document_with_existing_recording_passes_through():
+def test_current_version_document_with_existing_recording_passes_through():
     document = {
-        "version": "2026.05",
+        "version": SNAPSHOT_GRAPH_VERSION,
         "meta": {"name": "Recording Tone", "type": "snapshot"},
         "graph": {"nodes": [], "edges": []},
         "recording": {
@@ -116,7 +122,7 @@ def test_v2026_05_document_with_existing_recording_passes_through():
 
     normalized = normalize_and_validate_graph_document(document)
 
-    assert normalized["version"] == "2026.05"
+    assert normalized["version"] == SNAPSHOT_GRAPH_VERSION
     assert normalized["recording"]["session_id"] == "sess-7f2a"
     assert normalized["recording"]["armed"] is True
     assert normalized["recording"]["rolling"] is False
@@ -128,7 +134,7 @@ def test_v2026_05_document_with_existing_recording_passes_through():
 
 def test_normalize_coerces_partial_recording_dict_to_canonical_six_fields():
     document = {
-        "version": "2026.05",
+        "version": SNAPSHOT_GRAPH_VERSION,
         "meta": {"name": "Partial Recording", "type": "snapshot"},
         "graph": {"nodes": [], "edges": []},
         # Only `armed` supplied — every other field must default safely.
@@ -150,7 +156,7 @@ def test_normalize_coerces_partial_recording_dict_to_canonical_six_fields():
 
 def test_normalize_drops_malformed_tap_matrix_entries():
     document = {
-        "version": "2026.05",
+        "version": SNAPSHOT_GRAPH_VERSION,
         "meta": {"name": "Dirty Matrix", "type": "snapshot"},
         "graph": {"nodes": [], "edges": []},
         "recording": {
@@ -180,11 +186,11 @@ def test_normalize_drops_malformed_tap_matrix_entries():
 
 def test_validate_rejects_recording_when_required_field_missing_post_migration():
     # Migration injects `recording=None` when source is v2026.04, but if a
-    # caller hand-builds a v2026.05 doc with a malformed recording mapping,
-    # the canonicalization fills in the 6 required fields. A truly invalid
-    # doc (e.g. an int) is coerced back to None.
+    # caller hand-builds a current-version doc with a malformed recording
+    # mapping, the canonicalization fills in the 6 required fields. A truly
+    # invalid doc (e.g. an int) is coerced back to None.
     document = {
-        "version": "2026.05",
+        "version": SNAPSHOT_GRAPH_VERSION,
         "meta": {"name": "Garbage Recording", "type": "snapshot"},
         "graph": {"nodes": [], "edges": []},
         "recording": 42,  # not a Mapping
