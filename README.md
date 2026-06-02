@@ -166,7 +166,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1679** Python | **1769** TypeScript | **235** C++/H | **149** Docs | **4725** total commits | **3** stars | **0** forks | **0** open issues
+**1679** Python | **1769** TypeScript | **235** C++/H | **149** Docs | **4727** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -207,14 +207,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`d5b852895`](https://github.com/matthewmackes/map2-audio/commit/d5b852895c7ea292e7807caa6dc3ea7112522818) | docs(worklist): file T2510-0 per-chain cluster-owner sche... | Map2 Audio | 2026-06-02 |
+| [`b9535b2ec`](https://github.com/matthewmackes/map2-audio/commit/b9535b2ec7550c7dfc5958dcf7e798ede05ce9e8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-02 |
 | [`5efd3014f`](https://github.com/matthewmackes/map2-audio/commit/5efd3014ff41ec541d927de4b918c4f9b74ba289) | feat(recorder): T2509 §0.8 render-snapshot + T2511 RT-saf... | Map2 Audio | 2026-06-02 |
 | [`25fd81793`](https://github.com/matthewmackes/map2-audio/commit/25fd81793207436306ae2cf46b09868c067007ef) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-02 |
 | [`78d905f7a`](https://github.com/matthewmackes/map2-audio/commit/78d905f7a1ad4cb5a9301d500eed0a49ab49e8d3) | docs(worklist): reconcile T2508 → Done, T2509 → In Progre... | Map2 Audio | 2026-06-02 |
 | [`9904a8289`](https://github.com/matthewmackes/map2-audio/commit/9904a828978b18f15d241829c8d95a825fa0e7b6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-02 |
 | [`77396d02c`](https://github.com/matthewmackes/map2-audio/commit/77396d02c9cafc065e28258409c7898d503d3584) | docs(worklist): reconcile T2506 to Done — false-[ ] (code... | Map2 Audio | 2026-06-02 |
 | [`9bc50b680`](https://github.com/matthewmackes/map2-audio/commit/9bc50b680d06a16b12beb76b2049234f8e786366) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-02 |
-| [`ff1a26ae5`](https://github.com/matthewmackes/map2-audio/commit/ff1a26ae54c8179587d98af4f8bc6cbe2a57e817) | chore(audit): retire dead jsonschema validation fallback;... | Map2 Audio | 2026-06-02 |
-| [`1f827fd29`](https://github.com/matthewmackes/map2-audio/commit/1f827fd29536e8e61fef7242fe65f3439ef58fbc) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-02 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
