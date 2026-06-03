@@ -2844,8 +2844,9 @@ Last updated: 2026-06-02 — Claude.
 
 ID: T2512
 Parent: T2504
-Status: [>] In Progress (v1 SHIPPED 2026-05-12 — see "v1 completion" below; named follow-ons remain for the gated features the operator requested)
+Status: [✓] Done (software) — 2026-06-02 reconciliation: v1 + ALL pure-Python/pure-frontend follow-ons shipped; only after-release engine items remain
 Title: Stomp-style live loop pedal — guitarist-first UX layered on top of T2507 recording taps + T2511 playback engine.
+Status note (2026-06-02 — Claude, ship loop): reconciled stale "pending" handoffs against the live tree. EVERY pure-frontend/Python follow-on is SHIPPED + tested — PRESET-UI/PRESET-DISPATCH/AUTO-PEAK-UI/OS-COUNT-UI/MASTER-MUTE-UI/PACK-PRESET/SLICE-UI/AUTO-TRIGGER(Python state machine)/QUANT(math helper) — verified on LooperPage.tsx (PresetPanel, threshold Slider, one-shot NumberInput@1916, master panic-mute, SliceEditor) + **250 looper UI jest tests green across 6 suites**. The only remainders are **engine/C++ items → § After-Release Hardware Verification** (after-release per the 2026-06-02 "hardware is after-release, not a gate" directive): T2512-AUTO-TRIGGER engine RMS-push binding, T2512-QUANT-ENGINE (engine consumes snapped length), T2512-FADE-RAMP (engine gain-ramp on looper_stop), and the bench-only group (STOR/LONG/FX/TIME/DAW/BYP/SYNC-LOCK/CLOCK-outbound). Several "pending" lines in older handoff tables below are STALE (e.g. SLICE-UI is both "pending" at one handoff and "shipped" at the next — the latter is correct).
 
 v1 completion (2026-05-12)
 --------------------------
@@ -2982,15 +2983,15 @@ Shipped this run, in order (10 T2512 follow-ons + 1 T2508 cleanup):
 - Operator-visible "all done" list now also includes: auto-record-trigger debounce, auto-record-trigger peak meter + reset, multi-pass one-shot (N=1..32), `/activity` query filters, slice label rename, named in-memory state presets, master panic mute (service + dispatcher + JS pack), embedded metrics in WS frames.
 - Third handoff's order-1 picks status: T2512-QUANT-ENGINE still C++ bench (unchanged), T2512-AUTO-TRIGGER engine binding still bench (Python state machine fully complete; AUTO-HOLD + AUTO-PEAK both shipped in this run), T2512-FADE-RAMP still bench.
 
-**Next-session order-1 picks** (priority order; pure-Python or pure-frontend):
-1. **T2512-PRESET-UI** — surface preset save/apply/delete on LooperPage (dropdown + Save/Recall/Delete buttons + persist-to-localStorage layer above the volatile in-memory list). Backend done; pure-frontend.
-2. **T2512-PRESET-DISPATCH** — engine_command targets `audio.looper.preset.save/apply/delete` so footswitches can recall presets. Backend service + bridge exist; needs handler factories + register call + generic catalog entries.
-3. **T2512-AUTO-PEAK-UI** — operator-tuning meter on LooperPage threshold dial. Backend service + route ready; pure-frontend.
-4. **T2512-OS-COUNT-UI** — NumberInput for the multi-pass count on the one-shot row; surface the existing `one_shot_passes` field. Backend done; pure-frontend.
-5. **T2512-MASTER-MUTE-UI** — panic-mute Button on the master Tile; reuse danger-tertiary style from the existing Reset button. Backend done; pure-frontend.
-6. **T2512-QUANT-ENGINE** — engine-side consumer of `quantize_record_length`. C++ bench task; Python decision helper is already audio-thread-callable via pybind11.
-7. **T2512-AUTO-TRIGGER engine binding** — input-level RMS push from JUCE callback to Python. Python state machine (with HOLD + PEAK) is fully ready; just needs the audio-thread push.
-8. **T2512-FADE-RAMP** — gain-ramp on engine `looper_stop`. State surface shipped; engine work remains.
+**Next-session order-1 picks** — ⚠️ STALE/SUPERSEDED (reconciled 2026-06-02, ship loop). The pure-frontend/Python picks 1-5 below were ALL SHIPPED in the very next ("fifth run", section immediately below) — verified on disk + 250 looper UI tests green. Only the C++/engine items (6-8) remain, and under the 2026-06-02 "hardware is after-release, not a gate" directive those are after-release engine work. Itemized:
+1. **T2512-PRESET-UI** — ✓ DONE (PresetPanel Tile shipped; 82 refs on LooperPage; +6 client +8 RTL tests). See fifth-run handoff below.
+2. **T2512-PRESET-DISPATCH** — ✓ DONE (3 dispatcher targets `audio.looper.preset.{save,apply,delete}` + handler factories + bridge `_looper_call_preset`; +8 handler +4 bridge tests).
+3. **T2512-AUTO-PEAK-UI** — ✓ DONE (Carbon Slider on `auto_threshold_db` + peak/last Tags + reset-peak; +1 client +6 RTL tests).
+4. **T2512-OS-COUNT-UI** — ✓ DONE (NumberInput at `LooperPage.tsx:1916` on `one_shot_passes`; client `setOneShotPasses` + test).
+5. **T2512-MASTER-MUTE-UI** — ✓ DONE (one-click `PATCH /master/muted` panic-mute Button; +1 client +4 RTL tests).
+6. **T2512-QUANT-ENGINE** — engine-side consumer of `quantize_record_length`. C++ engine work → after-release (the Python decision helper is already pybind11-callable). § After-Release Hardware Verification.
+7. **T2512-AUTO-TRIGGER engine binding** — input-level RMS push from the JUCE callback to Python. The Python state machine (HOLD + PEAK) is fully ready; only the audio-thread push remains → after-release engine work.
+8. **T2512-FADE-RAMP** — gain-ramp on engine `looper_stop`. State surface shipped; the engine gain-ramp → after-release engine work.
 
 **Bench-only / spec-needed** (unchanged): T2512-STOR, T2512-LONG, T2512-FX, T2512-TIME, T2512-DAW, T2512-BYP, T2512-SYNC-LOCK, T2512-CLOCK outbound.
 
