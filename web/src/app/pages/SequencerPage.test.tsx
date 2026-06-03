@@ -1,9 +1,11 @@
 import '@testing-library/jest-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 
 import { SequencerPage } from './SequencerPage'
+import { DOMAIN_MODEL, PRIMARY_DOMAIN_IDS } from './sequencerViews/sequencerDomains'
+import { SECTION_IDS } from './sequencerViews/sequencerSectionIds'
 
 const mockGetState = jest.fn()
 const mockUpdateState = jest.fn()
@@ -613,5 +615,64 @@ describe('SequencerPage', () => {
     await waitFor(() => expect(screen.getByTestId('location-probe')).toHaveTextContent('/sequencer?instance_id=7&plugin_position=2&section=library'))
     await waitFor(() => expect(screen.getByTestId('location-probe')).not.toHaveTextContent('import_source'))
     expect(mockImportFromDrums).not.toHaveBeenCalled()
+  })
+
+  // ── T2527: 5-domain two-level navigation ──────────────────────────────────
+
+  it('renders the 5 primary task-domains as the top-level mode selector', async () => {
+    renderPage('/sequencer?section=performance')
+
+    const modeRow = await screen.findByRole('tablist', { name: 'Sequencer modes' })
+    for (const domainId of PRIMARY_DOMAIN_IDS) {
+      expect(within(modeRow).getByText(DOMAIN_MODEL[domainId].label)).toBeInTheDocument()
+    }
+  })
+
+  it('DOMAIN_MODEL partitions SECTION_IDS exactly — no dupes, no orphans', () => {
+    // This pins the operator-locked mapping: the union of every domain's
+    // sections must equal SECTION_IDS, with each section owned by one domain.
+    const grouped = PRIMARY_DOMAIN_IDS.flatMap((domainId) => DOMAIN_MODEL[domainId].sections)
+    expect(new Set(grouped).size).toBe(grouped.length) // no duplicates
+    expect(new Set(grouped)).toEqual(new Set(SECTION_IDS)) // no orphans / strays
+    expect(grouped.length).toBe(SECTION_IDS.length)
+  })
+
+  it('shows the active domain member sections as the secondary subnav (Mix / Route → console + routing)', async () => {
+    renderPage('/sequencer?section=routing')
+
+    const sectionRow = await screen.findByRole('tablist', { name: 'Mix / Route sections' })
+    expect(within(sectionRow).getByText('Console')).toBeInTheDocument()
+    expect(within(sectionRow).getByText('Routing')).toBeInTheDocument()
+    // Sections from other domains must NOT appear in the Mix / Route subnav.
+    expect(within(sectionRow).queryByText('Library')).not.toBeInTheDocument()
+    expect(within(sectionRow).queryByText('Performance')).not.toBeInTheDocument()
+  })
+
+  it('deep-link ?section=routing selects the Mix / Route domain and highlights the routing section', async () => {
+    renderPage('/sequencer?section=routing')
+
+    await waitFor(() => expect(screen.getByText('Bus matrix')).toBeInTheDocument())
+
+    const modeRow = screen.getByRole('tablist', { name: 'Sequencer modes' })
+    const mixRouteTab = within(modeRow).getByRole('tab', { name: /Mix \/ Route/ })
+    expect(mixRouteTab).toHaveAttribute('aria-selected', 'true')
+
+    const sectionRow = screen.getByRole('tablist', { name: 'Mix / Route sections' })
+    // The Console tab's sub-caption ("Mixer · Faders · Routing") also contains
+    // "Routing", so match on the exact section label and climb to its tab.
+    const routingTab = within(sectionRow).getByText('Routing', { selector: '.brain-overview__tab-label' }).closest('[role="tab"]')
+    expect(routingTab).toHaveAttribute('aria-selected', 'true')
+  })
+
+  it('switching to a domain selects that domain first member section', async () => {
+    renderPage('/sequencer?section=performance')
+
+    await waitFor(() => expect(screen.getByRole('tablist', { name: 'Sequencer modes' })).toBeInTheDocument())
+
+    const modeRow = screen.getByRole('tablist', { name: 'Sequencer modes' })
+    // Mix / Route's first member section is `console`.
+    fireEvent.click(within(modeRow).getByRole('tab', { name: /Mix \/ Route/ }))
+
+    await waitFor(() => expect(screen.getByTestId('location-probe')).toHaveTextContent('section=console'))
   })
 })

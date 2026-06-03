@@ -43,6 +43,26 @@
   scrollbar-width: thin;
 }
 
+/* T2527 — two-level Sequencer nav. The primary domain row is the prominent
+   mode selector; the secondary section row sits directly beneath it, scoped to
+   the active domain, with a slightly recessed surface so the hierarchy reads. */
+.brain-overview__tabs--domain {
+  border-bottom: none;
+}
+
+.brain-overview__tabs--section {
+  padding-top: 4px;
+  background: color-mix(in srgb, var(--bo-text, currentColor) 3%, transparent);
+}
+
+.brain-overview__tabs--section .brain-overview__tab {
+  font-size: 12px;
+}
+
+.brain-overview__tabs--section .brain-overview__tab-label {
+  font-size: 12px;
+}
+
 .brain-overview__tab {
   display: flex;
   align-items: center;

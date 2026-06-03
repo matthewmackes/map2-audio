@@ -247,22 +247,22 @@ const LAUNCHER_STOREFRONT_OVERRIDES: Record<string, StorefrontOverride> = {
     treeChildren: [],
   },
   '/sequencer': {
-    // T2442: Brain Overview tabs (Performance / Console / Step / Split) are now
-    // first-class `?section=` values, alongside the other Brain sections.
+    // T2527 — regrouped the flat 14-section list into the 5 task-domains the
+    // operator locked (was the flat T2442 `?section=` list). Each tree child is
+    // a primary domain deep-linking to that domain's FIRST member section; the
+    // in-page two-level nav then exposes the domain's remaining sections. The
+    // tree can't nest by `?section=` (GlobalTreeNav keys nested children off the
+    // path, which is identical for every `/sequencer?section=` child), so the
+    // domains collapse to 5 flat entries here. Every old `/sequencer?section=…`
+    // deep link still resolves directly — the section param is unchanged.
+    // Domain order + first-section must mirror DOMAIN_MODEL in
+    // pages/sequencerViews/sequencerDomains.ts.
     treeChildren: [
-      { route: '/sequencer?section=performance', label: 'Performance' },
-      { route: '/sequencer?section=console', label: 'Console' },
-      { route: '/sequencer?section=step', label: 'Step' },
-      { route: '/sequencer?section=split', label: 'Split' },
-      { route: '/sequencer?section=perform', label: 'Perform' },
-      { route: '/sequencer?section=layers', label: 'Layers' },
-      { route: '/sequencer?section=sequence', label: 'Sequence' },
-      { route: '/sequencer?section=routing', label: 'Routing' },
-      { route: '/sequencer?section=inputs', label: 'Inputs' },
-      { route: '/sequencer?section=library', label: 'Library' },
-      { route: '/sequencer?section=diagnostics', label: 'Diagnostics' },
-      { route: '/sequencer?section=session_media', label: 'Session Media' },
-      { route: '/sequencer?section=practice_coach', label: 'Practice Coach' },
+      { route: '/sequencer?section=performance', label: 'Perform' },
+      { route: '/sequencer?section=layers', label: 'Sound / Parts' },
+      { route: '/sequencer?section=step', label: 'Sequence' },
+      { route: '/sequencer?section=console', label: 'Mix / Route' },
+      { route: '/sequencer?section=setup', label: 'Media / Setup' },
     ],
   },
   '/avb': {

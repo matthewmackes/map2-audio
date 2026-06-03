@@ -211,20 +211,13 @@ describe('launcherCatalog', () => {
     ])
 
     expect(getLauncherCatalogTreeChildren('/sequencer')).toEqual([
-      // T2442: Brain Overview tabs are now first-class
-      { route: '/sequencer?section=performance', label: 'Performance' },
-      { route: '/sequencer?section=console', label: 'Console' },
-      { route: '/sequencer?section=step', label: 'Step' },
-      { route: '/sequencer?section=split', label: 'Split' },
-      { route: '/sequencer?section=perform', label: 'Perform' },
-      { route: '/sequencer?section=layers', label: 'Layers' },
-      { route: '/sequencer?section=sequence', label: 'Sequence' },
-      { route: '/sequencer?section=routing', label: 'Routing' },
-      { route: '/sequencer?section=inputs', label: 'Inputs' },
-      { route: '/sequencer?section=library', label: 'Library' },
-      { route: '/sequencer?section=diagnostics', label: 'Diagnostics' },
-      { route: '/sequencer?section=session_media', label: 'Session Media' },
-      { route: '/sequencer?section=practice_coach', label: 'Practice Coach' },
+      // T2527: regrouped into the 5 task-domains; each child deep-links to its
+      // domain's first member section. Order mirrors DOMAIN_MODEL.
+      { route: '/sequencer?section=performance', label: 'Perform' },
+      { route: '/sequencer?section=layers', label: 'Sound / Parts' },
+      { route: '/sequencer?section=step', label: 'Sequence' },
+      { route: '/sequencer?section=console', label: 'Mix / Route' },
+      { route: '/sequencer?section=setup', label: 'Media / Setup' },
     ])
   })
 })

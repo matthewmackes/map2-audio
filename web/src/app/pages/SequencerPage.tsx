@@ -46,54 +46,46 @@ import {
 import type { DrumBackingTrackSummary, DrumBackingTrackTransportState, DrumPack } from '@/map2/types'
 import { parseSequencerImportSource } from './sequencerHandoff'
 import { SequencerOverviewShell } from './sequencerViews/SequencerOverviewShell'
+import {
+  type SectionId,
+  SECTION_IDS,
+  parseSectionSearchParam,
+} from './sequencerViews/sequencerSectionIds'
+import {
+  type PrimaryDomainId,
+  DOMAIN_MODEL,
+  PRIMARY_DOMAIN_IDS,
+  domainForSection,
+  firstSectionOfDomain,
+} from './sequencerViews/sequencerDomains'
 import { MidiServicesCrossLinkBanner } from './midi-services/MidiServicesCrossLinkBanner'
 import './SequencerPage.css'
-
-// T2442: Brain Overview tabs are now first-class section ids. The legacy
-// `overview` aggregate is gone; `performance` is the default landing tab.
-type SectionId =
-  | 'performance'
-  | 'console'
-  | 'step'
-  | 'split'
-  | 'setup'
-  | 'perform'
-  | 'layers'
-  | 'sequence'
-  | 'routing'
-  | 'inputs'
-  | 'library'
-  | 'session_media'
-  | 'practice_coach'
-  | 'diagnostics'
-
-const SECTION_IDS: readonly SectionId[] = [
-  'performance',
-  'console',
-  'step',
-  'split',
-  'setup',
-  'perform',
-  'layers',
-  'sequence',
-  'routing',
-  'inputs',
-  'library',
-  'session_media',
-  'practice_coach',
-  'diagnostics',
-] as const
 
 /** Subset of section ids that share the Brain Overview shell. */
 const OVERVIEW_SECTIONS: readonly SectionId[] = ['performance', 'console', 'step', 'split', 'setup'] as const
 
+// T2527 — section tab metadata. `SectionId` / `SECTION_IDS` /
+// parseSectionSearchParam now live in ./sequencerViews/sequencerSectionIds so
+// the domain model can share them without a circular import. The 5-domain
+// grouping lives in ./sequencerViews/sequencerDomains; this map remains the
+// per-section label/icon source for the secondary (in-domain) subnav.
+//
+// Duplicate-label note (T2526): `performance` ("Performance") and `perform`
+// ("Perform") both belong to the Perform domain but render distinct surfaces —
+// `performance` is the Brain Overview pads/transport/meters shell, `perform` is
+// the quick transport + instant-layer + slot-gain panel. To remove the
+// confusing near-duplicate the operator flagged, `perform` is relabeled
+// "Quick Perform" so the two read as deliberately different surfaces within the
+// same domain. Likewise `step` ("Step", Overview step-grid) and `sequence`
+// ("Sequence", pattern-bank editor) are intentionally split across the Sequence
+// domain and kept distinct. No section is deleted — each renders unique content.
 const SECTION_TAB_META: Record<SectionId, { label: string; sub: string; Icon: typeof DataStructured }> = {
   performance: { label: 'Performance', sub: 'Pads · Transport · Meters', Icon: DataStructured },
   console: { label: 'Console', sub: 'Mixer · Faders · Routing', Icon: ConnectionSignal },
   step: { label: 'Step', sub: 'Sequencer · Pattern · Song', Icon: Flow },
   split: { label: 'Split', sub: 'Keyboard · Pads · Routing', Icon: Categories },
   setup: { label: 'Setup', sub: 'Onboarding · Bind · Activate', Icon: Catalog },
-  perform: { label: 'Perform', sub: 'Transport · Layers · Slots', Icon: PlayFilled },
+  perform: { label: 'Quick Perform', sub: 'Transport · Layers · Slots', Icon: PlayFilled },
   layers: { label: 'Layers', sub: 'Zones · Slots · Polyphony', Icon: Layers },
   sequence: { label: 'Sequence', sub: 'Patterns · Lanes · Fills', Icon: TrainSpeed },
   routing: { label: 'Routing', sub: 'Buses · Master · Sends', Icon: Router },
@@ -114,10 +106,6 @@ const PRACTICE_STYLES = [
   { id: 'jazz_swing', label: 'Jazz Swing', feel: 'Swing', signature: '4/4' },
   { id: 'reggae_1drop', label: 'Reggae 1', feel: 'One Drop', signature: '4/4' },
 ] as const
-
-function parseSectionSearchParam(value: string | null): SectionId | undefined {
-  return SECTION_IDS.includes(value as SectionId) ? (value as SectionId) : undefined
-}
 
 function parseNumericSearchParam(value: string | null): number | undefined {
   if (value == null || value.trim() === '') {
@@ -381,6 +369,10 @@ export function SequencerPage() {
     ...(generatedPracticePacksQuery.data ?? []),
   ]
   const activeSection: SectionId = routeSection ?? state?.active_section ?? 'performance'
+  // T2527 — the active primary domain is DERIVED from the active section, so
+  // every existing `?section=<id>` deep link still works unchanged: the section
+  // param stays the single source of truth and the domain is computed from it.
+  const activeDomain: PrimaryDomainId = domainForSection(activeSection)
   const currentSetName = state?.set_name ?? ''
 
   // T2461-A9 — bench snapshot captured at "Tag" click time so the
@@ -433,6 +425,16 @@ export function SequencerPage() {
       stateMutation.mutate({ active_section: sectionId })
     }
   }, [activeSection, searchParams, setSearchParams, stateMutation])
+
+  // T2527 — switching a primary domain lands on that domain's first section
+  // (unless the current section already belongs to the domain, in which case we
+  // keep the operator's place). The section param remains the source of truth.
+  const handleDomainChange = useCallback((domainId: PrimaryDomainId) => {
+    if (domainForSection(activeSection) === domainId) {
+      return
+    }
+    handleSectionChange(firstSectionOfDomain(domainId))
+  }, [activeSection, handleSectionChange])
 
   // T2461-A10 — Bench health pill mirrors /devices/diagnostics counts.
   const benchHealthQuery = useDeviceDiagnostics()
@@ -570,9 +572,60 @@ export function SequencerPage() {
 
         <hr className="brain-page__divider" role="separator" aria-hidden="true" />
 
+        {/* T2527 — two-level nav. The 5 task-domains (DOMAIN_MODEL) are the
+            top-level mode selector; the active domain's member sections render
+            as the secondary subnav below it. The active SECTION still drives
+            the body render exactly as before — this is a grouping layer ABOVE
+            the section tabs, not a replacement for section -> body routing. */}
+        <LayoutGroup id="sequencer-domain-tabs">
+          <div className="brain-overview__tabs brain-overview__tabs--domain" role="tablist" aria-label="Sequencer modes">
+            {PRIMARY_DOMAIN_IDS.map((domainId) => {
+              const { label, sub, Icon } = DOMAIN_MODEL[domainId]
+              const isActive = domainId === activeDomain
+              return (
+                <button
+                  key={domainId}
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  className={`brain-overview__tab${isActive ? ' brain-overview__tab--active' : ''}`}
+                  onClick={() => handleDomainChange(domainId)}
+                >
+                  {isActive ? (
+                    <motion.span
+                      layoutId="sequencer-domain-tab-indicator"
+                      className="brain-overview__tab-indicator"
+                      aria-hidden="true"
+                      transition={tabIndicatorTransition}
+                    />
+                  ) : null}
+                  <div className="brain-overview__tab-icon">
+                    <Icon size={12} />
+                  </div>
+                  <div className="brain-overview__tab-labels">
+                    <div className="brain-overview__tab-label">{label}</div>
+                    <div className="brain-overview__tab-sub">{sub}</div>
+                  </div>
+                </button>
+              )
+            })}
+            <div className="brain-overview__tab-spacer" />
+            <div className="brain-overview__tab-meta">
+              {computeWarnCount(diagnostics) > 0
+                ? <BoTag tone="warn">{computeWarnCount(diagnostics)} WARN</BoTag>
+                : null}
+              {qualification.controller_ready ? <BoTag tone="ok">READY</BoTag> : null}
+            </div>
+          </div>
+        </LayoutGroup>
+
         <LayoutGroup id="sequencer-section-tabs">
-          <div className="brain-overview__tabs" role="tablist" aria-label="Sequencer sections">
-            {SECTION_IDS.map((id) => {
+          <div
+            className="brain-overview__tabs brain-overview__tabs--section"
+            role="tablist"
+            aria-label={`${DOMAIN_MODEL[activeDomain].label} sections`}
+          >
+            {DOMAIN_MODEL[activeDomain].sections.map((id) => {
               const { label, sub, Icon } = SECTION_TAB_META[id]
               const isActive = id === activeSection
               return (
@@ -603,12 +656,6 @@ export function SequencerPage() {
               )
             })}
             <div className="brain-overview__tab-spacer" />
-            <div className="brain-overview__tab-meta">
-              {computeWarnCount(diagnostics) > 0
-                ? <BoTag tone="warn">{computeWarnCount(diagnostics)} WARN</BoTag>
-                : null}
-              {qualification.controller_ready ? <BoTag tone="ok">READY</BoTag> : null}
-            </div>
           </div>
         </LayoutGroup>
 
