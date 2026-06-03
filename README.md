@@ -166,7 +166,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1686** Python | **1768** TypeScript | **320** C++/H | **149** Docs | **4767** total commits | **3** stars | **0** forks | **0** open issues
+**1686** Python | **1768** TypeScript | **320** C++/H | **149** Docs | **4769** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -176,7 +176,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
-| [MAP2 Canonical Project Worklist](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-06-02 |
+| [MAP2 Canonical Project Worklist](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-06-03 |
 | [MAP2 API Contract Standards](https://github.com/matthewmackes/map2-audio/blob/master/docs/api-contract-standards.md) | 2026-05-14 |
 | [Third-Party Notices](https://github.com/matthewmackes/map2-audio/blob/master/docs/THIRD_PARTY_NOTICES.md) | 2026-05-13 |
 | [MAP2 — No-Hardware Worklist](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST_NO_HARDWARE.md) | 2026-05-11 |
@@ -194,7 +194,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 |  |  |  |
 | :---: | :---: | :---: |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner-3.png" width="280" alt="map2 banner 3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot-Cli.png" width="280" alt="Screenshot Cli"> |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM3.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM2-BANG.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM2 BANG"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM"> |
 <!-- GALLERY:END -->
 
@@ -207,14 +207,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`8d6d76744`](https://github.com/matthewmackes/map2-audio/commit/8d6d76744088c9afa4561aadd1f576af095b5cdd) | docs(worklist): sync Top-Active summary markers to reconc... | Map2 Audio | 2026-06-03 |
+| [`c9a690059`](https://github.com/matthewmackes/map2-audio/commit/c9a6900595ac73d78427e07c59cafd7f42c1810b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-03 |
 | [`eedb803a9`](https://github.com/matthewmackes/map2-audio/commit/eedb803a93ab33a4dc98bc4a46f0218a15d3fe66) | chore(web): T2524-B slice 4 — retire 3 fully-orphaned com... | Map2 Audio | 2026-06-02 |
 | [`966bd0bb1`](https://github.com/matthewmackes/map2-audio/commit/966bd0bb189f32237d460e6ddb02bbc1aa19ab90) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-03 |
 | [`253061f13`](https://github.com/matthewmackes/map2-audio/commit/253061f13a2fb5331d801597615630019ba42fda) | docs(worklist): reconcile T2512 to Done — all software fo... | Map2 Audio | 2026-06-02 |
 | [`d7effe0db`](https://github.com/matthewmackes/map2-audio/commit/d7effe0db39011ebbc3e6f49abdd3e2b8e17fc84) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-03 |
 | [`3b1c3ed13`](https://github.com/matthewmackes/map2-audio/commit/3b1c3ed135c2f7c086447e426a11e3c48983fd4f) | feat(sequencer): T2527 regroup nav into 5 task-domain pri... | Map2 Audio | 2026-06-02 |
 | [`67435149f`](https://github.com/matthewmackes/map2-audio/commit/67435149f61b72e6531071a5c9a670734a4b1e8f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-03 |
-| [`75872715f`](https://github.com/matthewmackes/map2-audio/commit/75872715ffa71046a413b6fe725a2dccaee7b061) | docs(worklist): reconcile to "all gates open" — hardware ... | Map2 Audio | 2026-06-02 |
-| [`068d16228`](https://github.com/matthewmackes/map2-audio/commit/068d162288dd5bb197d750d1b4f19812d983d6e7) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-02 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
