@@ -35,7 +35,12 @@ constexpr uint8_t  DEFAULT_MAX_CHANNELS = 32;      // Q14 system-wide cap
 constexpr const char* JACK_CLIENT_NAME = "map2-sonobus-transport";
 
 // Daemon version. Reported back to the supervisor on `hello` handshake.
-constexpr const char* DAEMON_VERSION = "0.1.0-stub";  // bumps to 1.0.0 on AOO vendor pull
+// Build-mode-aware: full once AOO is vendored + linked, stub otherwise.
+#if MAP2_SONOBUS_HAS_AOO
+constexpr const char* DAEMON_VERSION = "1.0.0";
+#else
+constexpr const char* DAEMON_VERSION = "0.1.0-stub";
+#endif
 
 // ───────────────────────────────────────────────────────────────────
 // Build-mode discrimination
