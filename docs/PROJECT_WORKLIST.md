@@ -99,6 +99,7 @@ Each task/subtask should contain these fields:
 - `[✓]` `T2500` — Cabinet IR + Reverb IR pickers fix in Snapshot Editor (closed 2026-05-08; root cause was `appendNodeQuery` accepting a TanStack `QueryFunctionContext` object as `nodeId` and stringifying it to `[object Object]`. Fixed at the http.ts seam — single-line type-guard tightening neutralizes this class of bug for every bare `queryFn` reference. 15 new http unit tests; modal now surfaces real backend errors via the existing `getErrorMessage` helper).
 - `[✓]` `T2501` — Snapshot slot-style variants regression test coverage (closed 2026-05-09; +17 net tests across `Block.test.tsx` (+8) and new `useSnapshotSlotStyle.test.tsx` (9) — locks data-attr reflection, V4 ring SVG render, V6 LED bar width, idle-floor (4%), full-load ceiling (95%), and the localStorage hook's persistence + cross-tab sync + quota-error path; full targeted sweep 127/127).
 - `[✓]` `T2502` — Snapshot slot accent palette de-collisioned (closed 2026-05-09; scope expanded mid-task from 2 → 5 collision groups: Distortion+Drums, Pitch+Multi-Effect, Cabinet+Utility+Effects, Dynamics+Instrument, Delay+AVB. 6 hexes changed: Drums coral, Pitch indigo, Utility cool-slate, Effects taupe, Instrument mint-cyan, AVB steel. New `categoryPalette.test.ts` (5 tests) sweeps `MAP2_CATEGORIES` for hex uniqueness; `categoryHues.test.ts` updated in lockstep; V3/V4/V6 variants pick up new palette automatically via `--ucg-accent`).
+- `[ ]` `T2533` — **Rust migration strategy (staged, FFI-bounded, strangler-fig)** — filed 2026-06-03 (Claude), **proposal / document-only, no code authorized.** Convert the platform to a "complete within reason" Rust product = ~80% Rust by *value* (all daemons + RT primitives + backend hot-path + new code) with a permanent C/C++ DSP floor (JUCE/la_avdecc/AOO/NAM — no Rust peer) and a permanent TS/Carbon frontend. Strangler-fig along existing process seams; each tier gated by golden/contract parity + `juce-random-effects-soak` (xruns=0, jitter ≤0.35ms). Tiers: 0 toolchain bootstrap → 1 controller-host (Rust midir/jack/tokio) → 2 RT primitives (recorder io_uring writer + rings via `cxx`) → 3 backend hot-path sidecar (axum/tokio, ~24 RT-adjacent modules) → 4 opportunistic. Reasoning + 5 diagrams: [`docs/architecture/RUST_MIGRATION_STRATEGY.md`](architecture/RUST_MIGRATION_STRATEGY.md). **Recommended positions pending operator ratification — execution needs go-ahead per tier.**
 - `[✗]` `T004` — AVB hardware qualification/release gating (lab-blocked)
 - `[✗]` `T065` — Tesira parity release closure (hardware evidence blocked)
 
@@ -106,6 +107,101 @@ Each task/subtask should contain these fields:
 
 - Completed and cancelled history remains in the archive file listed above.
 - This active worklist intentionally contains only unfinished work (`Todo`, `In Progress`, `Blocked`).
+
+
+## T2533 — Rust migration (staged, FFI-bounded, strangler-fig)
+
+ID: T2533
+**Filed:** 2026-06-03 (Claude) — operator asked for an approach + reasoning to "convert the platform to a complete (within reason) Rust-based product," then "document only."
+**Status:** `[ ]` Todo — **PROPOSAL / DOCUMENT-ONLY. No Rust code is authorized by this epic.** It is a ratifiable plan; each tier needs its own go-ahead. Recommended positions below were authored from a codebase-grounding sweep (6 parallel readers, 2026-06-03), not a 5-question operator protocol, so they are **not locked** — ratify or amend before Tier 0.
+**Reasoning + 5 diagrams:** [`docs/architecture/RUST_MIGRATION_STRATEGY.md`](architecture/RUST_MIGRATION_STRATEGY.md) (this worklist owns the canonical subtask grid; the arch doc owns the reasoning).
+**Recommendation:** ~80% Rust by *value*, not breadth. Strangler-fig along existing process seams.
+
+### Problem statement
+- "Complete Rust" is impossible within reason: the DSP/protocol substrate has **no production Rust equivalent** — JUCE 8.0.0 (graph + LV2/VST3 host + DSP), la_avdecc 4.3.1.1 (AVDECC/Milan), AOO v2.0-pre4 (SonoBus transport), NeuralAmpModelerCore (`.nam` inference), libavtp (IEEE-1722). These are a permanent FFI floor.
+- The platform's real pain is **RT/concurrency correctness, not throughput**: documented plugin-lifecycle segfaults, "RT allocations in the callback still need verification," lock-free metering-ring correctness, the controller-host protocol wedge (T2459-H9), and `os.sched_setscheduler(SCHED_FIFO, 80)` at module import (`app/services/audio_io.py:83`) elevating the whole Python interpreter to the audio band. These are exactly the bug classes Rust makes unrepresentable.
+- The surface is lopsided (measured 2026-06-03): Python backend = 756 files / **293K LOC** but only ~24 modules (~12-15K LOC) touch the RT path — **>90% is cold CRUD**; C++ engine = 195 files (JUCE-bound); web = 1,152 files (operator GUI, zero RT benefit from Rust); daemons = controller-host 24 files + sonobus 14 files (isolated, IPC-bounded — the clean migration seams).
+- A literal "complete rewrite" is dominated by porting cold Python CRUD — the part Rust helps least. The strategy must be selective and seam-aligned.
+
+### Recommended positions (proposed — pending operator ratification)
+- **R1 — Thesis:** adopt Rust where it eliminates a bug class we actually hit (RT-safety, lock-free correctness, GIL/GC-on-shared-loop), not uniformly. The win is "make the bug unrepresentable," not speed.
+- **R2 — Method:** strangler-fig along existing process/IPC seams. Never big-bang. Each cutover independently revertable behind a switch.
+- **R3 — FFI floor:** JUCE/la_avdecc/AOO/NAM/libavtp are FFI-wrapped or kept permanently. "Complete within reason" ≈ 80% Rust by value + permanent C/C++ floor + permanent TS frontend.
+- **R4 — Frontend:** OUT OF SCOPE — keep React/TypeScript/Carbon. WASM rewrite discards the T2481/T2475 Carbon investment for zero RT benefit.
+- **R5 — Engine:** keep JUCE; Rust enters only as `cxx`-linked RT-primitive crates. Do not rewrite the graph/plugin-host/DSP.
+- **R6 — Order:** Tier 0 toolchain → Tier 1 controller-host → Tier 2 RT primitives → Tier 3 backend hot-path sidecar → Tier 4 opportunistic (Tiers 3-4 may never fully complete — acceptable).
+- **R7 — Cutover gate:** reuse existing gate families — golden/contract parity + `juce-random-effects-soak` (xruns=0 / jitter ≤0.35ms, `MAP2_AUDIO_PREFER_JACK=1` mandatory). No tier cuts over until Gates 0-5 pass.
+
+### Per-tier acceptance gate (reused verbatim — applies to EVERY tier before cutover)
+- **Gate 0 — Build & A/B:** Rust + legacy coexist behind a switch; Rust struct/field manifest added to the cross-language sync test (`tests/test_controller_host_ipc_schema.py` model).
+- **Gate 1 — Golden/contract parity (byte-equal):** codegen `--check` drift gates; IPC-schema manifest sync (+Rust column); `test_midi_recorder_golden_parity_*` byte-equality; `test_controller_host_b5_golden_*` spawn-replay-trace pointed at the Rust binary; all nondeterminism pinned (`PYTHONHASHSEED=0`, mocked wall-clock).
+- **Gate 2 — Soak xruns==0:** `juce-random-effects-soak` full profile (`--duration-seconds 1800 --flow-rotation-seconds 20 --reset-stats-after-warmup --threshold-max-xruns 0`), **`MAP2_AUDIO_PREFER_JACK=1` exported** (mandatory — a real FAIL artifact shows 18.94ms/238 xruns without it); `--midi-driver host` for IPC components.
+- **Gate 3 — Soak jitter ≤0.35ms** + budget ≤80% + 0 flow errors; `summary.overall_pass==true`; evidence JSON+MD in `docs/fit-for-purpose-evidence/<date>/` with `--soak-tag rust-<component>`.
+- **Gate 4 — Dual-distro:** Fedora 41 (rpmbuild+rpmlint+dnf install, verify `map2` user + FHS dirs) + Ubuntu 24.04 (alien+lintian) via `.github/workflows/t2529-install-matrix.yml`.
+- **Gate 5 — Revertability:** cutover behind one switch; legacy path stays in-tree ≥1 release; rollback recorded in the evidence dir.
+- **Promotion rule:** flip default legacy→Rust only when Gates 0-5 pass + soak `overall_pass==true`; record evidence dir + git SHA here before marking the tier Done (mirrors §0.8 DoD).
+
+### Subtask plan (tiers; not yet scheduled — awaiting ratification + per-tier go-ahead)
+
+**Tier 0 — Toolchain bootstrap (enables all later tiers):**
+  - ID: T2533-T0-1
+    Status: [ ] Todo
+    Title: Cargo workspace + corrosion-rs ↔ CMake + RPM/vendor + CI lint, proven by a no-op binary
+    Description:
+    - Goal / acceptance criteria: cargo workspace at `rust/`; `corrosion-rs` fetched in the `juce-engine/CMakeLists.txt` FetchContent block (lines 45-54, next to JUCE); `corrosion_import_crate(MANIFEST_PATH rust/Cargo.toml)` with `RUNTIME_OUTPUT_DIRECTORY=CMAKE_BINARY_DIR` so the binary lands in `juce-engine/build` beside `map2-controller-host`; RPM wiring (`-DBUILD_MAP2_RUST_*` at `map2.spec:71-75`, append target to the `cmake --build` list at `:76`, `install -m 755` at `%install`, `%files` entry, `cargo vendor`→`rust/vendor` + `.cargo/config.toml` for offline `rpmbuild`, `BuildRequires: cargo rust`); CI lint parity (`t2529-install-matrix.yml`).
+    - Why: every later tier reuses this scaffolding; settle the mechanics before any port. A static Rust binary needs no `QA_RPATHS` workaround and should lint cleaner than the JUCE `.so`.
+    - Required outputs: a no-op Rust binary that builds under `cmake --build`, packages into the RPM, installs on both distros, and passes rpmlint/lintian at 0/0.
+    - Estimated effort: Medium (greenfield — no `Cargo.toml` exists in-tree today).
+
+**Tier 1 — `map2-controller-host` in Rust (isolated, high value):**
+  - ID: T2533-T1-1
+    Status: [ ] Todo
+    Title: Rewrite the controller-host daemon in Rust (midir+jack+tokio), preserving the IPC contract byte-for-byte
+    Description:
+    - Goal / acceptance criteria: preserve (1) the UDS control plane — AF_UNIX SOCK_STREAM at `/run/map2/controller-host.sock`, 4-byte BIG-ENDIAN length-prefixed minified UTF-8 JSON, 8 inbound types (shutdown / midi_list_ports_request[round-trip] / midi_open_input_request / midi_create_virtual_port_request[round-trip] / script_load_request / mapping_activate / mapping_deactivate / mapping_reload), 6 outbound (engine_command / log_event / script_error / controller_event / midi_send_request / event_feedback), unknown-type logged+dropped without closing; (2) the two SPSC shm rings — 64-byte Header (writeIndex@0/readIndex@8/capacity@16/droppedCount@24), 320-byte Slot (tsNanos@0/length@8 published-last-with-release/controllerIndex@10 with `kSlotFlagIsUmp=0x8000`/payload@12[256]), RT region 327744B@cap1024, Control 81984B@cap256, classifier routing (note/CC/pitchbend/clock→RT); (3) multi-client broadcast/prune poll-fanout (RT drain 64/tick, Control 16/tick). Resolve the two known quirks EXPLICITLY: the PID-suffixed shm names (`/map2-controller-host.midi.rt.<pid>`) vs the canonical constants the engine-side `IpcMidiBridge` opens — either reproduce or fix-and-document so the engine actually attaches; and the outbound `schema_version:1` literal while the const is `2`.
+    - Why: isolated process, MIDI+networking is Rust's home turf, and it had real protocol/lifecycle bugs (T2459-H9 wedge) that Rust's typing prevents. Doubles as the team's low-stakes Rust learning vehicle.
+    - Dependencies: T2533-T0-1. RISK: `midir` alone is ~ALSA-seq-only — needs the `jack` crate for the JACK-MIDI-preferred probe order; UMP stays software-gated.
+    - Required outputs/gates: passes `test_controller_host_b5_golden_*` (spawn-replay-trace) + `test_controller_host_ipc_schema.py` (manifest sync, +Rust column) + `test_controller_host_t2459h11_multi_client.py` + `test_controller_host_h9_no_per_connect_wedge.py` against the unchanged Python client (`app/services/midi_host_client.py`); shm byte-compat vs `ShmEventRingTests.cpp`; Gates 0-5.
+    - Estimated effort: Large.
+
+**Tier 2 — RT primitives as `cxx`-linked crates (retires the RT bug class):**
+  - ID: T2533-T2-1
+    Status: [ ] Todo
+    Title: Recorder io_uring disk writer + event/metering rings in Rust, linked into JUCE via cxx
+    Description:
+    - Goal / acceptance criteria: port the recorder's `io_uring` writer (`io-uring` crate), the lock-free event/metering rings (`rtrb`), and add `assert_no_alloc` to the audio path; link as `staticlib` into the JUCE engine via `cxx`. JUCE's `AudioProcessorGraph` + plugin hosting + DSP stay untouched. Behavior-preserving.
+    - Why: this is THE place Rust's no-alloc / no-data-race guarantees directly retire the recurring RT-safety debt (callback allocations, ring correctness, lifecycle segfaults).
+    - Dependencies: T2533-T0-1.
+    - Required outputs/gates: golden-byte parity on recorded artifacts; Gates 2-3 soak with the Rust writer live in the callback path (`--midi-driver host` not required, but `MAP2_AUDIO_PREFER_JACK=1` is); Gates 0-5.
+    - Estimated effort: Medium-Large.
+
+**Tier 3 — Backend hot-path sidecar (axum/tokio — kills GIL/GC-on-loop):**
+  - ID: T2533-T3-1
+    Status: [ ] Todo
+    Title: Carve the ~24 RT-adjacent Python modules into a Rust axum/tokio sidecar, in dependency order
+    Description:
+    - Goal / acceptance criteria: stand up a Rust sidecar owning ONLY the latency-sensitive slices, in order: (1) deterministic MIDI timing core — `midi_hub/clock_engine.py` (0.5ms tick), `scheduler.py` (ns `run_at` via `asyncio.sleep` — the worst jitter offender), recorder delta-sleep → a tokio timer-wheel; (2) RT param coalescer — `realtime_parameter_bridge.py:_process_loop` (1ms floor) → a lock-free shm channel to the engine; (3) engine actuation — replace the 449 `asyncio.to_thread` GIL crossings in `app/services/juce/`; (4) metering poll+fan-out — `metering_broadcast.py` 9 loops off the FastAPI event loop; (5) `SCHED_FIFO`/affinity ownership — relocate the `os.sched_setscheduler(SCHED_FIFO,80)` calls (`audio_io.py:83`, `midi_hub/hub.py:298`) into a thread that is actually RT; (6 optional) `engine_command` warm-dispatch. The >90% cold CRUD (routes/api ~70K, cluster 27K, snapshot 16K, tesira 9K, devices 7K) STAYS Python. Shared schema via the existing codegen contracts as the Rust↔Python boundary.
+    - Why: eliminates the GIL/GC-pause-on-the-audio-loop concern and the `asyncio.sleep` nanosecond-deadline jitter, without porting 293K lines that don't need it.
+    - Dependencies: T2533-T0-1; benefits from T2533-T2-1 (shm channel primitives).
+    - Required outputs/gates: per-slice golden parity; Gates 2-3 soak showing meter cadence no longer competes with HTTP on one loop; Gates 0-5.
+    - Estimated effort: Large (multi-slice; each slice is an independently shippable restart-safe unit).
+
+**Tier 4 — Opportunistic backend migration (long horizon, may never finish):**
+  - ID: T2533-T4-1
+    Status: [ ] Todo
+    Title: Migrate further Python services to the Rust sidecar only when touched for other reasons
+    Description:
+    - Goal / acceptance criteria: no scheduled mass port. As a cold-CRUD module is reworked for other reasons, evaluate moving it to the sidecar behind the shared schema contract. Terminal state "the rest stays Python forever" is an ACCEPTABLE, explicitly-non-failure outcome.
+    - Why: avoids rewriting working code for ideology; lets Rust depth accrue without a forced march.
+    - Estimated effort: Open-ended / opportunistic.
+
+### Definition of Done (epic-level)
+1. (This filing) Strategy doc + epic published, recommended positions + per-tier gates + diagrams recorded. **← satisfied at filing.**
+2. Operator ratifies (or amends) R1-R7 → positions become locked; epic moves `[ ]`→`[>]` and Tier 0 gets go-ahead.
+3-N. Each tier: all subtasks closed, Gates 0-5 green with soak `overall_pass==true`, evidence dir + git SHA recorded, legacy path kept ≥1 release, `[>]`→`[✓]` with closeout note. (Tiers 3-4 may remain partial indefinitely by design — that does not block epic closure of Tiers 0-2.)
+
+Assigned to: (unassigned — awaiting ratification)
+Last updated: 2026-06-03 — Claude: filed as document-only proposal; strategy doc `docs/architecture/RUST_MIGRATION_STRATEGY.md` + this epic written from a 6-reader grounding sweep. No code authorized; awaiting operator ratification of R1-R7 before Tier 0.
 
 
 ## T2530 — Release-prep update loop (2026-05-20)
