@@ -1,12 +1,21 @@
 """Run-14c cycle 4 — T2521-4 stub-mode event emission end-to-end.
 
-The daemon's stub-mode create_source / create_sink handlers now emit
+The daemon's stub-mode create_source / create_sink handlers emit
 synthetic `peer_up` + `session_start` events; destroy emits
 `session_stop` + `peer_down`. This lets the full pipeline
 (daemon → UDS → supervisor → event-relay → subscriber queue) be
 exercised without bench hardware or the AOO vendor pull.
 
-Skipped if the daemon binary isn't built.
+These assertions are **stub-build-specific**: the synthetic-event path is
+gated by `if (! IS_STUB_BUILD) return;` in DaemonServer.cpp, and stub-mode
+lifecycle commands return `transport_unavailable` (→ `DaemonCommandError`).
+Once AOO is vendored and the daemon links it (`MAP2_SONOBUS_HAS_AOO=1`,
+build_mode="full"), the daemon does real transport work — no synthetic
+events, no `transport_unavailable` — so this whole module is skipped.
+Full-mode behavior is exercised on the bench (T2521-10) and by the
+non-stub daemon suites.
+
+Skipped if the daemon binary isn't built, OR if it is a full (non-stub) build.
 """
 
 from __future__ import annotations
@@ -26,10 +35,38 @@ from app.services.sonobus.daemon_supervisor import (
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DAEMON_BIN = REPO_ROOT / "juce-engine" / "build" / "SonoBusDaemon" / "map2-sonobus-transport"
 
-pytestmark = pytest.mark.skipif(
-    not DAEMON_BIN.is_file(),
-    reason=f"daemon binary not built at {DAEMON_BIN}",
-)
+
+def _daemon_is_stub_build() -> bool:
+    """Read the daemon binary's embedded build-mode marker without spawning it.
+
+    `DAEMON_VERSION` is build-mode-aware in DaemonConfig.h: the stub build
+    embeds the literal ``0.1.0-stub`` while the full (AOO-linked) build embeds
+    ``1.0.0``. Detecting it from the binary's bytes lets this stub-only module
+    self-skip on full builds with no subprocess and no UDS round-trip.
+    """
+    if not DAEMON_BIN.is_file():
+        return False
+    try:
+        blob = DAEMON_BIN.read_bytes()
+    except OSError:
+        return False
+    return b"0.1.0-stub" in blob
+
+
+pytestmark = [
+    pytest.mark.skipif(
+        not DAEMON_BIN.is_file(),
+        reason=f"daemon binary not built at {DAEMON_BIN}",
+    ),
+    pytest.mark.skipif(
+        DAEMON_BIN.is_file() and not _daemon_is_stub_build(),
+        reason=(
+            "daemon is a full (AOO-linked) build — synthetic stub-event path "
+            "is compiled out (IS_STUB_BUILD=false); full-mode transport is "
+            "validated on the bench (T2521-10), not by this stub-only suite"
+        ),
+    ),
+]
 
 
 async def _wait_for_event(

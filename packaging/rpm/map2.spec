@@ -221,12 +221,13 @@ if [ $1 -eq 0 ]; then
     firewall-cmd --remove-service=map2-sonobus --permanent >/dev/null 2>&1 || true
     firewall-cmd --reload >/dev/null 2>&1 || true
 
-    # T2529-A2 — DELIBERATELY do NOT remove the map2 service user/group on
+    # T2529-A2 — DELIBERATELY do NOT remove the map2 user (nor its group) on
     # package uninstall. Per FHS 5.5 + Fedora/Debian packaging guidelines,
     # package removal must preserve user-generated data in /var/lib/map2.
-    # To fully decommission, the operator removes the user, group, and state
-    # dir manually (see docs/install/SERVICE_USER.md). We intentionally leave
-    # those destructive steps to the operator, not the package scriptlet.
+    # To fully decommission, the operator runs `userdel map2` + `rm -rf
+    # /var/lib/map2` manually (see docs/install/SERVICE_USER.md). We
+    # intentionally leave those destructive steps to the operator, not the
+    # package scriptlet.
     :
 fi
 

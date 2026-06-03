@@ -219,12 +219,18 @@ def _instance_to_response(chain_id: str, raw: Dict[str, Any]) -> InstanceConfigR
 # We expose two routers and the loader registers both. The split keeps the
 # tag list in /docs human-readable (one tag per resource family).
 
-chains_router = APIRouter(prefix="/api/v1/chains", tags=["Chains"])
-interfaces_router = APIRouter(prefix="/api/v1/interfaces", tags=["Interfaces"])
-mpx1_router = APIRouter(prefix="/api/v1/effects/mpx1", tags=["MPX-1 Effects Block"])
+# Single canonical module router (route-registration policy: exactly one
+# `router` per route module). Each route carries its own full path + tag so
+# the three resource families (chains / interfaces / effects.mpx1) stay
+# grouped in /docs without a separate sub-router variable per family.
+router = APIRouter()
 
 
-@chains_router.get("/hardware-usage", response_model=HardwareUsageResponse)
+@router.get(
+    "/api/v1/chains/hardware-usage",
+    response_model=HardwareUsageResponse,
+    tags=["Chains"],
+)
 async def get_hardware_usage() -> HardwareUsageResponse:
     """Snapshot of every singleton hardware plugin currently in use."""
     snap = _lock.snapshot()
@@ -232,7 +238,11 @@ async def get_hardware_usage() -> HardwareUsageResponse:
     return HardwareUsageResponse(in_use=rows)
 
 
-@interfaces_router.get("/capabilities", response_model=InterfaceCapabilitiesResponse)
+@router.get(
+    "/api/v1/interfaces/capabilities",
+    response_model=InterfaceCapabilitiesResponse,
+    tags=["Interfaces"],
+)
 async def get_interface_capabilities() -> InterfaceCapabilitiesResponse:
     """List every device-pack-declared audio interface and its capability tags."""
     rows = [_capability_row(cap) for cap in load_interface_capabilities().values()]
@@ -240,7 +250,11 @@ async def get_interface_capabilities() -> InterfaceCapabilitiesResponse:
     return InterfaceCapabilitiesResponse(interfaces=rows)
 
 
-@mpx1_router.get("/instance/{chain_id}", response_model=InstanceConfigResponse)
+@router.get(
+    "/api/v1/effects/mpx1/instance/{chain_id}",
+    response_model=InstanceConfigResponse,
+    tags=["MPX-1 Effects Block"],
+)
 async def get_mpx1_instance(chain_id: str) -> InstanceConfigResponse:
     state = _read_state()
     raw = state["instances"].get(chain_id)
@@ -252,7 +266,11 @@ async def get_mpx1_instance(chain_id: str) -> InstanceConfigResponse:
     return _instance_to_response(chain_id, raw)
 
 
-@mpx1_router.post("/instance/{chain_id}", response_model=InstanceConfigResponse)
+@router.post(
+    "/api/v1/effects/mpx1/instance/{chain_id}",
+    response_model=InstanceConfigResponse,
+    tags=["MPX-1 Effects Block"],
+)
 async def upsert_mpx1_instance(chain_id: str, body: InstanceConfigRequest) -> InstanceConfigResponse:
     """Create or update per-instance config + acquire the singleton lock."""
     _normalise_connection_type(body.connection_type)
@@ -288,7 +306,11 @@ async def upsert_mpx1_instance(chain_id: str, body: InstanceConfigRequest) -> In
     return _instance_to_response(chain_id, merged)
 
 
-@mpx1_router.delete("/instance/{chain_id}", status_code=204)
+@router.delete(
+    "/api/v1/effects/mpx1/instance/{chain_id}",
+    status_code=204,
+    tags=["MPX-1 Effects Block"],
+)
 async def delete_mpx1_instance(chain_id: str) -> None:
     """Tear down an instance — releases the singleton lock + removes persisted config."""
     with _STATE_FILE_LOCK:
@@ -300,7 +322,11 @@ async def delete_mpx1_instance(chain_id: str) -> None:
     logger.info("mpx1_bridge.instance_delete chain=%s", chain_id)
 
 
-@mpx1_router.post("/instance/{chain_id}/bypass", response_model=InstanceConfigResponse)
+@router.post(
+    "/api/v1/effects/mpx1/instance/{chain_id}/bypass",
+    response_model=InstanceConfigResponse,
+    tags=["MPX-1 Effects Block"],
+)
 async def set_mpx1_bypass(chain_id: str, body: Mpx1BypassRequest) -> InstanceConfigResponse:
     with _STATE_FILE_LOCK:
         state = _read_state()
@@ -316,7 +342,11 @@ async def set_mpx1_bypass(chain_id: str, body: Mpx1BypassRequest) -> InstanceCon
     return _instance_to_response(chain_id, raw)
 
 
-@mpx1_router.post("/instance/{chain_id}/calibrate", response_model=InstanceConfigResponse)
+@router.post(
+    "/api/v1/effects/mpx1/instance/{chain_id}/calibrate",
+    response_model=InstanceConfigResponse,
+    tags=["MPX-1 Effects Block"],
+)
 async def calibrate_mpx1(chain_id: str) -> InstanceConfigResponse:
     """Record a measured-latency calibration.
 
@@ -347,8 +377,5 @@ async def calibrate_mpx1(chain_id: str) -> InstanceConfigResponse:
     return _instance_to_response(chain_id, raw)
 
 
-# Combine all three sub-routers for app.main to mount via a single include.
-router = APIRouter()
-router.include_router(chains_router)
-router.include_router(interfaces_router)
-router.include_router(mpx1_router)
+# All routes are registered directly on the single module `router` above
+# (route-registration policy: exactly one APIRouter per route module).

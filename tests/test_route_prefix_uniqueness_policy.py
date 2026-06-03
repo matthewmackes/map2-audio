@@ -16,9 +16,30 @@ _ROUTE_DECORATOR_METHODS = {
     "websocket": "WEBSOCKET",
 }
 
+# Modules that legitimately share a router-level prefix. Empty-prefix ("")
+# modules declare a full literal path on every route, so they never actually
+# collide — the policy test independently verifies zero (method, full-path)
+# overlaps among the members below. Reconciled 2026-06-03 for the v1.0.0
+# release gate: added the empty-router modules that landed since the last
+# audit (midi / midi_ump_capabilities / midi_visualization_ws / sequencer /
+# ssh_bridge / mpx1_effects_block) and state_authority_corrections under /api;
+# dropped retired `brain`. Verified: no real path overlaps among any group.
 _ALLOWED_SHARED_PREFIXES = {
-    "": frozenset({"brain", "cluster_snapshots", "drums", "expression", "unified_snapshots", "websocket", "websocket_rt"}),
-    "/api": frozenset({"effects_loops", "health"}),
+    "": frozenset({
+        "cluster_snapshots",
+        "drums",
+        "expression",
+        "midi",
+        "midi_ump_capabilities",
+        "midi_visualization_ws",
+        "mpx1_effects_block",
+        "sequencer",
+        "ssh_bridge",
+        "unified_snapshots",
+        "websocket",
+        "websocket_rt",
+    }),
+    "/api": frozenset({"effects_loops", "health", "state_authority_corrections"}),
     "/api/cluster": frozenset({"cluster_admin", "cluster_health"}),
     "/api/deployment": frozenset({"deployment", "deployment_health"}),
 }

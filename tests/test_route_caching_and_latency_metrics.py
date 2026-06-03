@@ -438,7 +438,11 @@ def test_plugins_discover_uses_singleflight_under_concurrency(monkeypatch):
     assert all(payload["count"] == 1 for payload in payloads)
 
 
-def test_plugins_discover_excludes_hardware_from_generic_catalog(monkeypatch):
+def test_plugins_discover_includes_hardware_in_generic_catalog(monkeypatch):
+    # T2517-2: the discover endpoint deliberately surfaces hardware-FX bridges
+    # (Lexicon MPX-1 via S/PDIF) alongside JUCE + LV2 plugins so the effects
+    # chooser can offer them as first-class blocks. (Renamed + inverted from
+    # the pre-T2517 `excludes_hardware` contract for the v1.0.0 release gate.)
     monkeypatch.setattr(plugins_routes, "ensure_plugin_route_ready", lambda _route: None)
     class _Loader:
         def discover_plugins(self, force_refresh: bool = False):
@@ -476,13 +480,19 @@ def test_plugins_discover_excludes_hardware_from_generic_catalog(monkeypatch):
 
     payload = asyncio.run(plugins_routes.discover_plugins(Response(), refresh=False))
 
+    # T2517-2: hardware-FX bridge is surfaced alongside JUCE + LV2 plugins.
     assert [plugin["uri"] for plugin in payload["plugins"]] == [
         "map2://juce/delay",
         "urn:test:plugin",
+        "hardware://lexicon-mpx1-spdif",
     ]
 
 
-def test_plugins_discover_loader_unavailable_fallback_excludes_hardware(monkeypatch):
+def test_plugins_discover_loader_unavailable_fallback_includes_hardware(monkeypatch):
+    # T2517-2: even when the LV2 loader is unavailable, the discover fallback
+    # returns JUCE + hardware-bridge plugins (the warning text says as much),
+    # so the Lexicon MPX-1 stays selectable without a working LV2 loader.
+    # (Renamed + inverted from the pre-T2517 `excludes_hardware` contract.)
     monkeypatch.setattr(plugins_routes, "ensure_plugin_route_ready", lambda _route: None)
     monkeypatch.setattr(plugins_routes, "_discovered_plugins", [])
     monkeypatch.setattr(plugins_routes, "_cache_timestamp", 0)
@@ -502,6 +512,9 @@ def test_plugins_discover_loader_unavailable_fallback_excludes_hardware(monkeypa
 
     payload = asyncio.run(plugins_routes.discover_plugins(Response(), refresh=False))
 
-    assert payload["count"] == 1
-    assert [plugin["uri"] for plugin in payload["plugins"]] == ["map2://juce/delay"]
-    assert "hardware" not in payload["warning"].lower()
+    assert payload["count"] == 2
+    assert [plugin["uri"] for plugin in payload["plugins"]] == [
+        "map2://juce/delay",
+        "hardware://lexicon-mpx1-spdif",
+    ]
+    assert "hardware" in payload["warning"].lower()

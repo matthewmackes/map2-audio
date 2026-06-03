@@ -130,10 +130,18 @@ def test_run_and_status_routes_reflect_script_availability_and_latest_score(monk
 def test_system_test_service_history_accepts_legacy_naive_timestamps(tmp_path):
     logs_dir = tmp_path / "logs"
     logs_dir.mkdir()
+    # Use a naive (tz-less) timestamp dated relative to *now* so it always
+    # lands inside the days=30 history window — a hardcoded date bit-rots out
+    # of the window over time and stops exercising the naive-parse path.
+    from datetime import timedelta
+
+    legacy_dt = datetime.now() - timedelta(days=1)
+    legacy_timestamp = legacy_dt.replace(microsecond=0).isoformat()
+    assert "+" not in legacy_timestamp and "Z" not in legacy_timestamp  # naive
     (logs_dir / "juce-engine_test_legacy.json").write_text(
         json.dumps(
             {
-                "timestamp": "2026-04-11T06:00:00",
+                "timestamp": legacy_timestamp,
                 "score": 91,
                 "overall_status": "passed",
                 "passed_tests": 9,
@@ -150,5 +158,5 @@ def test_system_test_service_history_accepts_legacy_naive_timestamps(tmp_path):
     history = service.get_test_history("juce-engine", days=30)
 
     assert len(history["results"]) == 1
-    assert history["results"][0]["timestamp"] == "2026-04-11T06:00:00"
+    assert history["results"][0]["timestamp"] == legacy_timestamp
     assert history["trend_analysis"]["total_runs"] == 1
