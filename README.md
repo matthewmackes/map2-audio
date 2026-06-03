@@ -166,7 +166,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1686** Python | **1768** TypeScript | **320** C++/H | **149** Docs | **4773** total commits | **3** stars | **0** forks | **0** open issues
+**1686** Python | **1734** TypeScript | **320** C++/H | **149** Docs | **4775** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -207,14 +207,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`7317c3470`](https://github.com/matthewmackes/map2-audio/commit/7317c3470d812bb03d3593b9f95e8d6b9fcf88d7) | chore(web): drain T2524-B dead-code followup + reconcile ... | Map2 Audio | 2026-06-03 |
+| [`75059694b`](https://github.com/matthewmackes/map2-audio/commit/75059694ba007d820b4f84a5cc5b1f8cb0fe2eae) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-03 |
 | [`bcc6f0c4d`](https://github.com/matthewmackes/map2-audio/commit/bcc6f0c4d81632137a95444e67b04803467a470c) | docs(worklist): sync T2527 Top-Active marker to reconcile... | Map2 Audio | 2026-06-03 |
 | [`b40a83209`](https://github.com/matthewmackes/map2-audio/commit/b40a83209d9ae17a6844fff462595839927a41b0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-03 |
 | [`6b1b131cd`](https://github.com/matthewmackes/map2-audio/commit/6b1b131cd2ce35279edf233922dd6836298bd65f) | docs(worklist): reconcile T2510-0 to Done; file T2510-0-U... | Map2 Audio | 2026-06-03 |
 | [`67e6e2cb1`](https://github.com/matthewmackes/map2-audio/commit/67e6e2cb135db9a02a378348d3777e1bb3451b4d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-03 |
 | [`8d6d76744`](https://github.com/matthewmackes/map2-audio/commit/8d6d76744088c9afa4561aadd1f576af095b5cdd) | docs(worklist): sync Top-Active summary markers to reconc... | Map2 Audio | 2026-06-03 |
 | [`c9a690059`](https://github.com/matthewmackes/map2-audio/commit/c9a6900595ac73d78427e07c59cafd7f42c1810b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-03 |
-| [`eedb803a9`](https://github.com/matthewmackes/map2-audio/commit/eedb803a93ab33a4dc98bc4a46f0218a15d3fe66) | chore(web): T2524-B slice 4 — retire 3 fully-orphaned com... | Map2 Audio | 2026-06-02 |
-| [`966bd0bb1`](https://github.com/matthewmackes/map2-audio/commit/966bd0bb189f32237d460e6ddb02bbc1aa19ab90) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-03 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
