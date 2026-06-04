@@ -694,6 +694,7 @@ export function LooperPage() {
               >
                 Import state…
               </Button>
+              {/* carbon-allow: hidden file <input> — programmatic import trigger (display:none), no visual surface; Carbon has no headless file-input primitive. */}
               <input
                 ref={importInputRef}
                 type="file"
@@ -1240,6 +1241,7 @@ function PresetPanel({
         >
           Import cache…
         </Button>
+        {/* carbon-allow: hidden file <input> — programmatic import trigger (display:none), no visual surface; Carbon has no headless file-input primitive. */}
         <input
           ref={cacheImportInputRef}
           type="file"
