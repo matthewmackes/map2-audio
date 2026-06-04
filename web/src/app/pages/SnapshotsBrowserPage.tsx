@@ -333,15 +333,16 @@ export function SnapshotsBrowserPage() {
                               const bindingsHref = `/midi/bindings?consumer_type=snapshot&consumer_id=${snapshotId}`
                               return (
                                 <TableCell key={cell.id}>
-                                  <button
-                                    type="button"
+                                  <Button
+                                    kind="ghost"
+                                    size="sm"
                                     className="snapshots-browser__program-link"
                                     onClick={() => navigate(bindingsHref)}
                                     title={`View MIDI bindings for this snapshot (Program #${value})`}
                                     aria-label={`View MIDI bindings for snapshot, currently bound to Program #${value}`}
                                   >
                                     <Tag type="cool-gray">#{value}</Tag>
-                                  </button>
+                                  </Button>
                                 </TableCell>
                               )
                             }
