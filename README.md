@@ -166,7 +166,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1687** Python | **1736** TypeScript | **320** C++/H | **149** Docs | **4785** total commits | **3** stars | **0** forks | **0** open issues
+**1687** Python | **1736** TypeScript | **320** C++/H | **149** Docs | **4787** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -176,12 +176,12 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
+| [MIDI Device Selection Implementation - Complete](https://github.com/matthewmackes/map2-audio/blob/master/docs/MIDI_DEVICE_SELECTION_COMPLETE.md) | 2026-06-04 |
 | [MAP2 Canonical Project Worklist](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-06-04 |
+| [MAP2 — No-Hardware Worklist](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST_NO_HARDWARE.md) | 2026-06-04 |
 | [MAP2 API Contract Standards](https://github.com/matthewmackes/map2-audio/blob/master/docs/api-contract-standards.md) | 2026-05-14 |
 | [Third-Party Notices](https://github.com/matthewmackes/map2-audio/blob/master/docs/THIRD_PARTY_NOTICES.md) | 2026-05-13 |
-| [MAP2 — No-Hardware Worklist](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST_NO_HARDWARE.md) | 2026-05-11 |
 | [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-05-10 |
-| [React Staggered Reveal — universal page effect](https://github.com/matthewmackes/map2-audio/blob/master/docs/REACT_STAGGERED_REVEAL.md) | 2026-05-09 |
 <!-- RECENT-DOCS:END -->
 
 <p align="right"><a href="https://github.com/matthewmackes/map2-audio/tree/master/docs">Browse all docs &rarr;</a></p>
@@ -194,7 +194,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 |  |  |  |
 | :---: | :---: | :---: |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner-3.png" width="280" alt="map2 banner 3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot-Cli.png" width="280" alt="Screenshot Cli"> |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM3.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM2-BANG.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM2 BANG"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM"> |
 <!-- GALLERY:END -->
 
@@ -207,14 +207,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`eed58a50f`](https://github.com/matthewmackes/map2-audio/commit/eed58a50fad72a786d288794e5ff6fb8e2c2aeb4) | T2459-H6: retire stale "MIDI Device Selection Requires AL... | Map2 Audio | 2026-06-04 |
+| [`6975edaff`](https://github.com/matthewmackes/map2-audio/commit/6975edaff4fa3b362a8eda309549db2a77908bf9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-04 |
 | [`3c2a7875c`](https://github.com/matthewmackes/map2-audio/commit/3c2a7875c107409cc99bd6b828457b99e7e0f275) | T2535: fix flaky snapshot-activation test isolation + ws ... | Map2 Audio | 2026-06-04 |
 | [`935e30efe`](https://github.com/matthewmackes/map2-audio/commit/935e30efed471c3076e1ab380a344bfc4e8e58db) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-04 |
 | [`0f7aef5d0`](https://github.com/matthewmackes/map2-audio/commit/0f7aef5d0a4d7a02a6939c5cd3ded460c4a4c141) | T2534: stream realtime activation steps + warming feedbac... | Map2 Audio | 2026-06-04 |
 | [`fe6c9ea97`](https://github.com/matthewmackes/map2-audio/commit/fe6c9ea976d845d6611ed77625d74e0c1819646c) | skills: import audit/ship/plan from MackesWorkstation, ad... | Map2 Audio | 2026-06-04 |
 | [`c24c4a1e7`](https://github.com/matthewmackes/map2-audio/commit/c24c4a1e7ed9cd618805bf4bcbac85cdca395dfa) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-04 |
 | [`6c6a7234e`](https://github.com/matthewmackes/map2-audio/commit/6c6a7234eafd9a05670a70777dfc4e341570cdd0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-03 |
-| [`0f29dd3ca`](https://github.com/matthewmackes/map2-audio/commit/0f29dd3cadbc47c63594d4ab0bc1d2b442eb3cc2) | docs(worklist): file T2533 Rust-migration strategy epic +... | Map2 Audio | 2026-06-03 |
-| [`7d92d4734`](https://github.com/matthewmackes/map2-audio/commit/7d92d47342db83a88a62ea9956d3beebb4c19f05) | fix(release): green the v1.0.0 release-gate test suite | Map2 Audio | 2026-06-03 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
