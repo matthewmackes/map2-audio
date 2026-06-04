@@ -1542,7 +1542,8 @@ function MetricsPanel({
       className="looper-page__metrics"
       data-testid="looper-metrics-panel"
     >
-      <button
+      <Button
+        kind="ghost"
         type="button"
         className="looper-page__metrics-toggle"
         data-testid="looper-metrics-toggle"
@@ -1563,7 +1564,7 @@ function MetricsPanel({
           ) : null}
           )
         </span>
-      </button>
+      </Button>
       {open ? (
         <div className="looper-page__metrics-body">
           {entries.length === 0 ? (
@@ -2048,7 +2049,8 @@ function SliceEditor({
       className="looper-track__slice-editor"
       data-testid={`looper-slice-editor-${track.track}`}
     >
-      <button
+      <Button
+        kind="ghost"
         type="button"
         className="looper-track__slice-editor-toggle"
         onClick={() => setOpen((o) => !o)}
@@ -2060,7 +2062,7 @@ function SliceEditor({
         <Tag type={track.slices.length > 0 ? 'cool-gray' : 'gray'} size="sm">
           {track.slices.length}
         </Tag>
-      </button>
+      </Button>
 
       {open ? (
         <div className="looper-track__slice-editor-body">
@@ -2339,7 +2341,8 @@ function FeatureInventory() {
 
   return (
     <section className="looper-page__inventory">
-      <button
+      <Button
+        kind="ghost"
         type="button"
         className="looper-page__inventory-toggle"
         onClick={() => setOpen((o) => !o)}
@@ -2349,7 +2352,7 @@ function FeatureInventory() {
         <span>
           Feature inventory — {live.length} live, {gated.length} on the worklist
         </span>
-      </button>
+      </Button>
       {open ? (
         <div className="looper-page__inventory-body">
           <div>
@@ -2460,7 +2463,8 @@ function ActivityPanel({
 
   return (
     <section className="looper-page__inventory" data-testid="looper-activity-panel">
-      <button
+      <Button
+        kind="ghost"
         type="button"
         className="looper-page__inventory-toggle"
         onClick={() => setOpen((o) => !o)}
@@ -2471,7 +2475,7 @@ function ActivityPanel({
         <span>
           Recent activity — {events.length} of {cap} captured
         </span>
-      </button>
+      </Button>
       {open ? (
         <div className="looper-page__inventory-body">
           <div className="looper-page__activity-actions">
