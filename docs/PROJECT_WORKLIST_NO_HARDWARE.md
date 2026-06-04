@@ -57,15 +57,21 @@ Scope: Every active task whose remaining work can be completed without hardware-
 
 ### Snapshot Editor monolith decomposition (T2473 carry-over)
 - Source: [PROJECT_WORKLIST.md "Plugin Browser modal"](PROJECT_WORKLIST.md)
-- The monolith [SnapshotEditorPageContent.tsx](../web/src/app/pages/SnapshotEditorPageContent.tsx) is at ~8894 LOC after T2472 closed. The biggest remaining slice is the Plugin Browser modal (~305 inline LOC).
+- **Plugin Browser modal: DONE** (rescue 2026-06-04). It is fully extracted into `web/src/app/pages/snapshotEditor/SnapshotEditorPluginBrowser.tsx` (+ `.test.tsx`), with derived data in `useSnapshotEditorPluginBrowserData` and handlers/mode in `useSnapshotEditorPluginBrowserHandlers` (both paired with tests); the monolith renders `<SnapshotEditorPluginBrowser>` (delegated, reachable — no inline remnant). The earlier "~305 inline LOC" note was stale.
+- The monolith [SnapshotEditorPageContent.tsx](../web/src/app/pages/SnapshotEditorPageContent.tsx) is now **~5625 LOC** (down from ~8894). Remaining decomposition candidates are the inline render helpers still on the page: `renderAutomationWorkspace`, `renderSelectedBlockNavBar`, `renderLivePathFlowCard`.
 - No-hardware work:
-  1. Extract Plugin Browser modal into a sibling module.
-  2. Continue JSX partition (T2473).
-  3. Each slice ships with paired jest tests; no UI/audio engine touched.
+  1. Continue JSX partition (T2473): extract one inline render helper per slice into a sibling module, threading props explicitly.
+  2. Each slice ships with paired jest tests; no UI/audio engine touched.
 
 ### Carbon lint-rule ratchet maintenance (T2481 follow-ons)
 - Source: [PROJECT_WORKLIST.md §T2481-E1-sweep](PROJECT_WORKLIST.md)
 - T2481 closed 2026-05-07 with all 8 MAP2 lint rules at `error`, 0/0 lint state. Standing rule: any new raw `<input>` / `<select>` / `<table>` / `<dialog>` will trip the rules. No-hardware maintenance lane: clear violations as they appear in CI.
+- **2026-06-04 (/ship) — ratchet had regressed to 22 errors / 7 warnings.** Cleared the safe subset: excluded dead `src/_archive/**` (cancelled-T2503 reference shells — not code-imported, not conformance-gated) and tokenized two `8px` margins in the AVDECC wizard pages. **Remaining (12 live raw-primitive errors needing per-case judgment + a visual check — Carbon-component swap vs justified `// carbon-allow`, not safe to batch unattended):**
+  - `src/app/pages/LooperPage.tsx` — 9 (raw `<input>` ×5, raw `<button>` ×4); likely a mix of real Carbon swaps + hardware-skin `carbon-allow` exceptions.
+  - `src/app/components/StaggerPreviewTile.tsx:77` — raw `<button>`.
+  - `src/app/pages/NodeDetailPage.tsx:97` — raw `<button>`.
+  - `src/app/pages/SnapshotsBrowserPage.tsx:336` — raw `<button>`.
+  - Plus 7 `@typescript-eslint/no-explicit-any` warnings (non-blocking).
 
 ### MIDI dispatcher / engine_command handler expansion
 - Source: [PROJECT_WORKLIST.md §T2459-H3-CFG "Outer Loop 2"](PROJECT_WORKLIST.md)

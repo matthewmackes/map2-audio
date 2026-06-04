@@ -179,7 +179,7 @@ export function AvbServicesAvdeccBindingWizardPage({
       <Layer level={0}>
         <header style={{ padding: 16, borderBottom: '1px solid var(--cds-layer-accent)' }}>
           <Heading style={{ margin: 0 }}>Discover AVDECC devices</Heading>
-          <p style={{ margin: '8px 0 0', color: 'var(--cds-text-secondary)' }}>
+          <p style={{ margin: 'var(--cds-spacing-03) 0 0', color: 'var(--cds-text-secondary)' }}>
             Bind an AVDECC stream to a Brain input. Set <code>MAP2_AVDECC_SIMULATOR=small</code> to
             drive the wizard against the simulator on a host without AVB hardware.
           </p>

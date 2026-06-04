@@ -191,7 +191,7 @@ function EmptyState(): React.ReactElement {
   return (
     <div data-testid="avdecc-wizard-empty">
       <h2 style={{ marginTop: 0, fontSize: '1rem' }}>No AVDECC entities discovered</h2>
-      <p style={{ margin: '8px 0' }}>
+      <p style={{ margin: 'var(--cds-spacing-03) 0' }}>
         The AVDECC controller is up, but no entities are advertising on the
         bus. Verify the AVB interface, PTP lock, and that talker / listener
         devices are powered on.

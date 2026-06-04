@@ -6,7 +6,11 @@ import tseslint from 'typescript-eslint'
 import map2 from './eslint-rules/index.js'
 
 export default tseslint.config(
-  { ignores: ['dist', 'build', '.dist-backup-*', '.dist-staging-*'] },
+  // src/_archive/** is intentionally-retained dead reference code (salvaged
+  // shells from cancelled epics, e.g. the T2503 DAW tree kept for T2509
+  // reference). It is not code-imported anywhere and is not held to Carbon
+  // conformance — exclude it from lint rather than churn archived files.
+  { ignores: ['dist', 'build', '.dist-backup-*', '.dist-staging-*', 'src/_archive/**'] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ['**/*.{ts,tsx}'],
