@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Button } from '@carbon/react'
 
 import { runStaggerOnRoot } from './UniversalStagger'
 import { getStaggerTimings, type StaggerSpeed } from '../stores/effectsSettingsStore'
@@ -74,15 +75,16 @@ export function StaggerPreviewTile({ speed, reduced = false }: StaggerPreviewTil
             Reduced motion
           </span>
         ) : null}
-        <button
-          type="button"
+        <Button
+          kind="ghost"
+          size="sm"
           className="stagger-preview-tile__replay"
           onClick={() => setRunCount((count) => count + 1)}
           aria-label="Replay staggered reveal preview"
           disabled={replayLocked}
         >
           Replay
-        </button>
+        </Button>
       </div>
       <div ref={gridRef} className="stagger-preview-tile__grid" data-testid="stagger-preview-grid">
         {PREVIEW_TILE_LABELS.map((label) => (
