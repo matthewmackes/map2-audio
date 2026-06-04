@@ -166,7 +166,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1686** Python | **1734** TypeScript | **320** C++/H | **149** Docs | **4779** total commits | **3** stars | **0** forks | **0** open issues
+**1686** Python | **1734** TypeScript | **320** C++/H | **149** Docs | **4780** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -207,6 +207,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`6c6a7234e`](https://github.com/matthewmackes/map2-audio/commit/6c6a7234eafd9a05670a70777dfc4e341570cdd0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-03 |
 | [`0f29dd3ca`](https://github.com/matthewmackes/map2-audio/commit/0f29dd3cadbc47c63594d4ab0bc1d2b442eb3cc2) | docs(worklist): file T2533 Rust-migration strategy epic +... | Map2 Audio | 2026-06-03 |
 | [`7d92d4734`](https://github.com/matthewmackes/map2-audio/commit/7d92d47342db83a88a62ea9956d3beebb4c19f05) | fix(release): green the v1.0.0 release-gate test suite | Map2 Audio | 2026-06-03 |
 | [`3d6ca974a`](https://github.com/matthewmackes/map2-audio/commit/3d6ca974a73cdd5fb535b91ab0f2b33bb561ccb5) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-03 |
@@ -214,7 +215,6 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | [`7317c3470`](https://github.com/matthewmackes/map2-audio/commit/7317c3470d812bb03d3593b9f95e8d6b9fcf88d7) | chore(web): drain T2524-B dead-code followup + reconcile ... | Map2 Audio | 2026-06-03 |
 | [`75059694b`](https://github.com/matthewmackes/map2-audio/commit/75059694ba007d820b4f84a5cc5b1f8cb0fe2eae) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-03 |
 | [`bcc6f0c4d`](https://github.com/matthewmackes/map2-audio/commit/bcc6f0c4d81632137a95444e67b04803467a470c) | docs(worklist): sync T2527 Top-Active marker to reconcile... | Map2 Audio | 2026-06-03 |
-| [`b40a83209`](https://github.com/matthewmackes/map2-audio/commit/b40a83209d9ae17a6844fff462595839927a41b0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-03 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
