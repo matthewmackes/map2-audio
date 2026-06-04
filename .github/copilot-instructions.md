@@ -1493,22 +1493,11 @@ These files represent best practices and architectural patterns to follow:
 - **Fix**: Edit systemd service file, restart service
 - **Test**: `python3 test_tier_a_locks.py` must show ✅
 
-**15. MIDI Device Selection (✅ SOLVED - Feb 12, 2026)**
-- **File**: `juce-engine/Source/MidiHandler.cpp:190-410`, `MidiHandler.h:321-327`
-- **Problem**: `openInputDevice()` stored device name but didn't actually connect
-- **Symptom**: All MIDI devices sent events to MAP2 regardless of selection
-- **Root Cause**: TODO stub accepted connections from any device
-- **Fix**: Implemented proper ALSA sequencer subscriptions (~150 lines)
-  - Parse device name format: `"ClientName:PortName"`
-  - Search ALSA clients/ports via `snd_seq_query_next_client()`
-  - Create specific subscription: device → MAP2 input port (input) or MAP2 output port → device (output)
-  - Track connections via `std::vector<AlsaConnection>` for proper cleanup
-  - Implement `closeInputDevice()` / `closeOutputDevice()` with proper unsubscribe
-- **Code**: `MidiHandler::openInputDevice()`, `MidiHandler::openOutputDevice()`, `MidiHandler::closeInputDevice()`, `MidiHandler::closeOutputDevice()`
-- **Test**: `engine.set_midi_device("DeviceName:Port")` now filters to that device only
-- **Commit**: `54d6dfd` - Pushed to GitHub master
-- **Docs**: `docs/MIDI_DEVICE_SELECTION_COMPLETE.md`
-- **Lesson**: ALSA device selection requires explicit `snd_seq_subscribe_port()` calls with proper sender/dest addresses. Device names must match exactly "ClientName:PortName" format from `snd_seq_client_info_get_name()` + `snd_seq_port_info_get_name()`
+**15. MIDI Device Selection — ⛔ RETIRED 2026-05-08 (T2459-H6)**
+- **Status**: No longer applicable. The raw `snd_seq_*` ALSA-subscription device-selection path (`MidiHandler.cpp` / the C++ `Map2MidiController`) was **deleted** under T2459-H6 (2026-05-08). The JUCE engine no longer opens or subscribes to ALSA devices directly — it consumes MIDI events exclusively from the `map2-controller-host` shm event ring.
+- **What replaced it**: the controller host owns all MIDI I/O via **libremidi**, which selects the backend (ALSA seq / ALSA raw / JACK / PipeWire native) automatically per device — no hand-rolled `snd_seq_subscribe_port()` calls. Engine-side consumer: `juce-engine/Source/Controllers/Midi/IpcMidiBridgeController.cpp`; host-side I/O: `juce-engine/Source/ControllerHost/Midi/LibremidiAdapter.{h,cpp}`.
+- **References**: `docs/midi/MAP2MIDICONTROLLER_RETIREMENT.md`, and the live PipeWire UMP/MIDI-2 substrate decision in `docs/midi/T2459_H7_PW_UMP_DECISION.md`. The original ALSA-subscription writeup `docs/MIDI_DEVICE_SELECTION_COMPLETE.md` is retained only as a historical record (it documents the deleted code path).
+- **Lesson**: don't reintroduce direct ALSA subscriptions in the engine; route new MIDI work through the host + shm ring.
 
 **16. H3000 Glide=0 Callback Crash (✅ SOLVED - Feb 24, 2026)**
 - **Files**: `juce-engine/Source/H3000Processor.cpp`, `juce-engine/Source/JuceAudioIO.cpp`, `juce-engine/Source/Map2AudioEngine.cpp`, `tests/test_juce_engine_audio_start_stability.py`
@@ -3145,7 +3134,8 @@ Target: < 5 ms total
 - **Impact**: `map2-web-prod` stop/start now targets the real node server process directly and repeated production restarts no longer depend on systemd’s forced-kill escape hatch.
 - **Files**: `systemd/map2-web-prod.service`, `scripts/build/deploy`, `scripts/install-node.sh`, `scripts/serve_web_dist.mjs`, `tests/test_serve_web_dist.py`
 
-### [2026-02-12] - MIDI Device Selection Implementation (COMPLETE)
+### [2026-02-12] - MIDI Device Selection Implementation (COMPLETE) — ⛔ SUPERSEDED 2026-05-08 (T2459-H6)
+- **Superseded**: the ALSA-subscription implementation below was deleted under T2459-H6. MIDI I/O now lives in the `map2-controller-host` (libremidi) and the engine consumes the shm event ring; see Gotcha #15 and `docs/midi/MAP2MIDICONTROLLER_RETIREMENT.md`. The entry is kept as historical changelog only.
 - **Section**: Gotchas & Learned Fixes (#15)
 - **Change**: Documented complete MIDI device selection implementation
 - **Reason**: Resolved TODO stub that allowed all devices instead of selected device

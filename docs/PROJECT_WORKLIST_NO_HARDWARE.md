@@ -41,7 +41,8 @@ Scope: Every active task whose remaining work can be completed without hardware-
 - Source: [PROJECT_WORKLIST.md §T2503](PROJECT_WORKLIST.md)
 - Status: **Cancelled** 2026-05-11; superseded by T2504 Multi-Track Recorder + Playback. Code-side artefacts retired under T2505 (this section is preserved only as an audit trail; no remaining no-hardware work). New no-hardware work for the reframed epic appears under T2505-T2509 in `PROJECT_WORKLIST.md`.
 
-### `[ ]` T2459-H6 (Gotcha cleanup) — MEMORY.md / CLAUDE.md update after legacy ALSA retirement
+### `[✓]` T2459-H6 (Gotcha cleanup) — MEMORY.md / CLAUDE.md update after legacy ALSA retirement
+- **Closed 2026-06-04 (Claude, /ship).** Audited all AI-instruction + doc surfaces for the stale "MIDI Device Selection Requires ALSA Subscriptions" note. Findings: `docs/CLAUDE.md` already retired (HISTORICAL entry, line ~753); `docs/MEMORY.md` clean (no such note); `.gemini/instructions.md` does not exist. Retired the still-stale surfaces: `.github/copilot-instructions.md` Gotcha #15 rewritten to "⛔ RETIRED 2026-05-08 (T2459-H6)" + its changelog entry annotated superseded; `docs/MIDI_DEVICE_SELECTION_COMPLETE.md` gained a SUPERSEDED banner. All cited replacement paths verified to exist (libremidi `LibremidiAdapter`, `IpcMidiBridgeController`, `MAP2MIDICONTROLLER_RETIREMENT.md`). `HIL_OPERATOR_RUNBOOK.md:229` left as-is (a checklist reference to this cleanup, not a current-behavior claim).
 - Source: [PROJECT_WORKLIST.md §T2459-H6 "Required outputs"](PROJECT_WORKLIST.md)
 - Status: T2459-H6 **closed** 2026-05-08; legacy `Map2MidiController` deleted. The Required-Outputs bullet says: "update `docs/MEMORY.md` and `CLAUDE.md` Gotchas to retire the 'MIDI Device Selection Requires ALSA Subscriptions' note (no longer relevant — libremidi handles this)."
 - Remaining no-hardware work:

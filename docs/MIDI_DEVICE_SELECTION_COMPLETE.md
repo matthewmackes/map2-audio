@@ -1,7 +1,16 @@
 # MIDI Device Selection Implementation - Complete
 
+> ⛔ **SUPERSEDED 2026-05-08 (T2459-H6) — HISTORICAL RECORD ONLY.**
+> The `MidiHandler.cpp` raw `snd_seq_*` ALSA device-selection path described
+> below was **deleted**. MIDI I/O now lives in the `map2-controller-host`
+> (libremidi, which auto-selects ALSA seq / ALSA raw / JACK / PipeWire native),
+> and the JUCE engine consumes MIDI exclusively from the shm event ring via
+> `IpcMidiBridgeController`. Do **not** treat this document as current behavior
+> or reintroduce direct ALSA subscriptions in the engine. See
+> [`docs/midi/MAP2MIDICONTROLLER_RETIREMENT.md`](midi/MAP2MIDICONTROLLER_RETIREMENT.md).
+
 **Date:** February 12, 2026
-**Status:** ✅ COMPLETE
+**Status:** ✅ COMPLETE (superseded — see banner above)
 **Files Modified:** 2
 **Build Status:** ✅ Passing
 
