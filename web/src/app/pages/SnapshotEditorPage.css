@@ -8976,3 +8976,61 @@
 }
 
 /* ── 960px Narrow Viewport ─────────────────────────────────────────────── */
+
+/* ── T2534: realtime activation progress panel ─────────────────────────── */
+.snapshot-activation-progress {
+  margin: var(--cds-spacing-04, 0.75rem) 0;
+  padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-05, 1rem);
+  background: var(--cds-layer);
+  border-left: 2px solid var(--cds-border-interactive);
+  border-radius: 2px;
+}
+
+.snapshot-activation-progress__header {
+  display: flex;
+  align-items: center;
+  gap: var(--cds-spacing-03, 0.5rem);
+  margin-bottom: var(--cds-spacing-03, 0.5rem);
+}
+
+.snapshot-activation-progress__title {
+  font-weight: 600;
+  color: var(--cds-text-primary);
+}
+
+.snapshot-activation-progress__steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-02, 0.25rem);
+}
+
+.snapshot-activation-progress__step {
+  display: grid;
+  grid-template-columns: minmax(8rem, auto) 1fr auto;
+  align-items: center;
+  gap: var(--cds-spacing-03, 0.5rem);
+  min-height: 1.75rem;
+}
+
+.snapshot-activation-progress__step-label {
+  color: var(--cds-text-primary);
+}
+
+.snapshot-activation-progress__step-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--cds-spacing-03, 0.5rem);
+  justify-content: flex-end;
+}
+
+.snapshot-activation-progress__step-elapsed {
+  color: var(--cds-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.snapshot-activation-progress__step[data-status='completed'] .snapshot-activation-progress__step-label {
+  color: var(--cds-text-secondary);
+}

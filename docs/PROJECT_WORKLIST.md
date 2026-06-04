@@ -605,6 +605,19 @@ Architecture deep-dive for the Configurator stack: [`MELOAUDIO_COMMANDER_CONFIGU
 
 ## In Progress
 
+ID: T2534
+Status: [✓] Done
+Completion note: 2026-06-04 — Claude. Shipped backend step streaming + frontend live step list. Verified on the dev box (MAP2-TESTBED): live WS probe captured all 22 `activation_step` frames in order during a create+activate (preflight → topology_probe → pipewire_quantum → audio_device_bindings → monitoring_output → sonobus_io → output_safety → runtime_chains → engine_graph_apply → topology_settle → authority_confirm), each with started/completed + elapsed; soft-deadline watcher + readiness-based "warming" flags covered by unit tests. Gates green: `pytest tests/test_snapshot_activation_step_streaming.py` (2 passed) + 117 related activation/runtime tests pass; jest `useSnapshotActivationProgress` (5 passed); `tsc --noEmit` 0 errors; `npm run build` clean (component bundled into SnapshotEditorPageContent). Note: pre-existing unrelated red `test_snapshot_service.py::test_snapshot_service_activation_rejects_missing_runtime_channels` (MissingGreenlet) reproduces on clean master — not caused by this change; candidate for an audit-rescue task.
+Title: Realtime activation-step streaming + warming feedback (fixes 60s silent "create snapshot" on fresh reboot)
+Description:
+- Goal: When creating/activating a snapshot on a fresh reboot, surface every activation step in realtime as it occurs (with a "warming" flag for steps waiting on a still-initializing subsystem), instead of a frozen "Creating…" button for 60s+. Bound activation with a soft deadline that emits a "still activating" heartbeat (never aborts the audio path).
+- Root cause: `useSnapshotEditorCreateFromEditorMutation` chains create→activate; `state_authority_activation_service.activate_snapshot` runs ~11 sequential JUCE-engine/PipeWire/etcd round-trips with no overall deadline and only phase-boundary events. On cold boot each round-trip pays warmup latency → >60s with no per-step feedback.
+- Implementation: backend emits granular `kind="activation_step"` frames over the existing `snapshot_activation_events` WS topic (`SnapshotRuntimeStateService.emit_activation_step`); each instrumented step (preflight, topology_probe, pipewire_quantum, audio_device_bindings, monitoring_output, sonobus_io, output_safety, runtime_chains, engine_graph_apply, topology_settle, authority_confirm) reports started/completed with elapsed + warming; soft-deadline watcher emits `still_activating`. Frontend `useSnapshotActivationProgress` accumulates the stream; `<SnapshotActivationProgress>` renders a live step list (Carbon Layer + Tags + InlineLoading) mounted in the Snapshot Editor while create is pending.
+- Acceptance (runtime-observable): WS shows step frames in order during a create/activate (verified on dev box); the editor shows a live step list with a "Warming up <subsystem>" tag on cold-boot slow steps; existing audit-event list ignores the ephemeral step frames; typecheck + web build + `pytest tests/test_snapshot_activation_step_streaming.py` + jest `useSnapshotActivationProgress` green.
+- Dependencies: none. Files: `app/services/state_authority_activation_service.py`, `app/services/snapshot_runtime_state_service.py`, `web/src/map2/types.ts`, `web/src/app/hooks/useSnapshotRuntimeState.ts`, `web/src/app/components/snapshots/SnapshotActivationProgress.tsx`, `web/src/app/pages/SnapshotEditorPageContent.tsx` (+ CSS), tests.
+- Estimated effort: Medium.
+Last updated: 2026-06-04 - Claude: implemented + verified end-to-end on dev box; gates green; done.
+
 ID: T2459-H
 Status: [✓] Done — bench-session HIL gates; hardware verification is after-release work, not a gate (operator 2026-06-02)
 Parent: T2459

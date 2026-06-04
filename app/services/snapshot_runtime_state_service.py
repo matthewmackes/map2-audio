@@ -472,6 +472,47 @@ class SnapshotRuntimeStateService:
         except Exception as exc:
             logger.debug("Snapshot activation event broadcast failed: %s", exc)
 
+    async def emit_activation_step(
+        self,
+        *,
+        request_id: str,
+        snapshot_id: int | None,
+        node_id: str | None,
+        phase: str,
+        step: str,
+        status: str,
+        index: int,
+        subsystem: str | None = None,
+        elapsed_ms: float | None = None,
+        warming: bool = False,
+        warming_subsystem: str | None = None,
+        note: str | None = None,
+    ) -> None:
+        """T2534: broadcast a single realtime activation step over the
+        activation-events WS topic. These are ephemeral progress frames
+        (``kind="activation_step"``) — not the persisted activation audit
+        events — so the operator sees each step as it happens, with a
+        ``warming`` flag when the subsystem is still starting after a reboot.
+        Best-effort: never raises into the activation path."""
+        emitted_at = _utcnow()
+        payload = {
+            "kind": "activation_step",
+            "request_id": request_id,
+            "snapshot_id": snapshot_id,
+            "node_id": node_id or self.local_node_id,
+            "phase": _normalize_activation_phase(phase),
+            "step": step,
+            "status": status,
+            "index": index,
+            "subsystem": subsystem,
+            "elapsed_ms": round(float(elapsed_ms), 1) if elapsed_ms is not None else None,
+            "warming": bool(warming),
+            "warming_subsystem": warming_subsystem,
+            "note": note,
+            "at": emitted_at.isoformat(),
+        }
+        await self._broadcast_activation_event(payload, emitted_at=emitted_at)
+
     async def _trim_activation_events(self, session: AsyncSession, node_id: str) -> None:
         result = await session.execute(
             select(SnapshotActivationEvent.id)

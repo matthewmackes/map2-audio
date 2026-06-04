@@ -1,3 +1,4 @@
+import { useCallback, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { snapshotsApi } from '../../map2/clients/snapshots'
@@ -5,6 +6,7 @@ import { useWebSocketTopic } from '../../map2/hooks/useWebSocket'
 import type {
   SnapshotActivationAuditEvent,
   SnapshotActivationEventsResponse,
+  SnapshotActivationStepEvent,
   SnapshotRuntimeClusterLiveStateResponse,
   SnapshotRuntimeLiveState,
 } from '../../map2/types'
@@ -72,6 +74,11 @@ export function useSnapshotActivationEvents(
     if (message.type !== 'snapshot_activation_event' || !data || !enabled) {
       return
     }
+    // T2534: ignore ephemeral realtime step frames here — they belong to
+    // useSnapshotActivationProgress, not the persisted audit-event list.
+    if ((data as { kind?: string }).kind === 'activation_step') {
+      return
+    }
     const targetNodeId = nodeId ?? data.node_id
     if (data.node_id !== targetNodeId) {
       return
@@ -96,6 +103,124 @@ export function useSnapshotActivationEvents(
     staleTime: 2_000,
     refetchInterval,
   })
+}
+
+// --- T2534: realtime activation progress ---------------------------------
+
+export interface SnapshotActivationProgressState {
+  requestId: string | null
+  snapshotId: number | null
+  /** Latest frame per step, ordered by emission index. */
+  steps: SnapshotActivationStepEvent[]
+  /** True once steps have arrived and no terminal (authority confirmed / failed) yet. */
+  isActivating: boolean
+  /** True while any in-flight step is waiting on a still-warming subsystem. */
+  warming: boolean
+  /** Distinct subsystems currently warming (e.g. ['engine','etcd']). */
+  warmingSubsystems: string[]
+  failed: boolean
+}
+
+export interface ActivationProgressRun {
+  requestId: string | null
+  snapshotId: number | null
+  byStep: Record<string, SnapshotActivationStepEvent>
+  order: string[]
+  terminal: boolean
+  failed: boolean
+}
+
+export const EMPTY_ACTIVATION_RUN: ActivationProgressRun = {
+  requestId: null,
+  snapshotId: null,
+  byStep: {},
+  order: [],
+  terminal: false,
+  failed: false,
+}
+
+export function reduceActivationStep(
+  run: ActivationProgressRun,
+  event: SnapshotActivationStepEvent,
+): ActivationProgressRun {
+  // A new request_id starts a fresh run (only one activation per node at a time).
+  const base: ActivationProgressRun =
+    event.request_id && event.request_id !== run.requestId
+      ? { ...EMPTY_ACTIVATION_RUN, requestId: event.request_id, snapshotId: event.snapshot_id }
+      : { ...run, byStep: { ...run.byStep }, order: [...run.order] }
+
+  const existing = base.byStep[event.step]
+  // Keep the latest frame for a step (index increases monotonically per emission).
+  if (!existing || event.index >= existing.index) {
+    base.byStep[event.step] = event
+    if (!base.order.includes(event.step)) {
+      base.order.push(event.step)
+    }
+  }
+  if (base.snapshotId == null && event.snapshot_id != null) {
+    base.snapshotId = event.snapshot_id
+  }
+  if (event.status === 'failed') {
+    base.failed = true
+    base.terminal = true
+  }
+  if (event.phase === 'VERIFYING' && event.step === 'authority_confirm' && event.status === 'completed') {
+    base.terminal = true
+  }
+  return base
+}
+
+/**
+ * Accumulates the local node's most recent activation step stream into an
+ * ordered, ephemeral progress view. Drives the realtime "what's happening now"
+ * step list during a create/activate, including which steps are warming.
+ */
+export function useSnapshotActivationProgress(
+  options: { enabled?: boolean } = {},
+): SnapshotActivationProgressState {
+  const { enabled = true } = options
+  const [run, setRun] = useState<ActivationProgressRun>(EMPTY_ACTIVATION_RUN)
+
+  const handler = useCallback(
+    (data: SnapshotActivationStepEvent, message: { type: string }) => {
+      if (
+        message.type !== 'snapshot_activation_event' ||
+        !data ||
+        !enabled ||
+        (data as { kind?: string }).kind !== 'activation_step'
+      ) {
+        return
+      }
+      setRun((current) => reduceActivationStep(current, data))
+    },
+    [enabled],
+  )
+
+  useWebSocketTopic<SnapshotActivationStepEvent>('snapshot_activation_events', handler)
+
+  const steps = run.order
+    .map((stepName) => run.byStep[stepName])
+    .filter((entry): entry is SnapshotActivationStepEvent => Boolean(entry))
+    .sort((a, b) => a.index - b.index)
+
+  const warmingSubsystems = Array.from(
+    new Set(
+      steps
+        .filter((entry) => entry.warming && entry.status !== 'completed')
+        .map((entry) => entry.warming_subsystem || entry.subsystem)
+        .filter((value): value is string => Boolean(value)),
+    ),
+  )
+
+  return {
+    requestId: run.requestId,
+    snapshotId: run.snapshotId,
+    steps,
+    isActivating: steps.length > 0 && !run.terminal,
+    warming: warmingSubsystems.length > 0,
+    warmingSubsystems,
+    failed: run.failed,
+  }
 }
 
 export function useClusterSnapshotRuntimeLiveState(

@@ -12,6 +12,7 @@ import asyncio
 import copy
 import json
 import logging
+import time
 import weakref
 from typing import Any, Callable, Literal, Optional
 from uuid import uuid4
@@ -29,6 +30,17 @@ from app.services.audio.pipewire_quantum_enforcer import (
 from app.services.snapshot_system_blocks import extract_chain_system_blocks
 
 logger = logging.getLogger(__name__)
+
+
+# Realtime activation-step streaming (T2534). Each instrumented step broadcasts
+# started/completed events over the snapshot_activation_events WS topic so the
+# operator sees activation progress as it happens instead of a frozen "Creating…"
+# button. A step is flagged "warming" when the subsystem it touches (JUCE engine,
+# PipeWire, etcd authority) is not yet ready — the fresh-reboot case where
+# activation can take >60s while those services finish initializing.
+_ACTIVATION_STEP_WARMING_MS = 1500.0  # a step slower than this is retro-flagged warming
+_ACTIVATION_SOFT_DEADLINE_S = 12.0  # past this the deadline watcher emits "still activating"
+_ACTIVATION_WARN_INTERVAL_S = 5.0  # cadence of the "still activating" warn heartbeat
 
 
 def _extract_quantum_policy(detail: Any) -> QuantumPolicy:
@@ -829,6 +841,16 @@ class StateAuthorityActivationService:
         async with self._activation_lock_for_node(resolve_local_node_id()):
             return await self._activate_snapshot_locked(snapshot_id, triggered_by=triggered_by)
 
+    def _engine_ready(self) -> bool:
+        """True when the JUCE engine is up. Used to flag activation steps as
+        "warming" when they have to wait on an engine that is still starting
+        (the fresh-reboot slow path)."""
+        try:
+            engine = self.get_audio_engine()
+            return bool(getattr(engine, "is_available", False) and getattr(engine, "is_running", False))
+        except Exception:
+            return False
+
     async def _activate_snapshot_locked(
         self,
         snapshot_id: int,
@@ -884,6 +906,121 @@ class StateAuthorityActivationService:
             note="Running activation preflight checks.",
         )
 
+        # --- T2534: realtime activation-step streaming -------------------------
+        # Broadcast each instrumented step (started/completed, with elapsed and a
+        # "warming" flag) over the activation-events WS topic so the operator sees
+        # live progress during the long fresh-reboot activation instead of a
+        # frozen button. All emission is best-effort and never alters activation.
+        _step_request_id = str(intent.get("request_id") or "")
+        _step_node_id = str(intent.get("node_id") or "") or None
+        _step_counter = {"i": 0}
+        _step_progress = {"phase": "VALIDATING", "step": None, "subsystem": None}
+
+        async def _emit_step(
+            phase: str,
+            step: str,
+            status: str,
+            *,
+            subsystem: str | None = None,
+            elapsed_ms: float | None = None,
+            warming: bool = False,
+            warming_subsystem: str | None = None,
+            note: str | None = None,
+        ) -> None:
+            _step_progress["phase"] = phase
+            _step_progress["step"] = step
+            _step_progress["subsystem"] = subsystem
+            _step_counter["i"] += 1
+            try:
+                await runtime_state_service.emit_activation_step(
+                    request_id=_step_request_id,
+                    snapshot_id=int(snapshot.id),
+                    node_id=_step_node_id,
+                    phase=phase,
+                    step=step,
+                    status=status,
+                    index=_step_counter["i"],
+                    subsystem=subsystem,
+                    elapsed_ms=elapsed_ms,
+                    warming=warming,
+                    warming_subsystem=warming_subsystem,
+                    note=note,
+                )
+            except Exception:  # pragma: no cover - emission is best-effort
+                pass
+
+        async def _run_step(
+            phase: str,
+            step: str,
+            subsystem: str | None,
+            coro: Any,
+            *,
+            readiness: Callable[[], bool] | None = None,
+        ) -> Any:
+            warming = False
+            warming_subsystem: str | None = None
+            if readiness is not None:
+                try:
+                    ready = bool(readiness())
+                except Exception:
+                    ready = True
+                if not ready:
+                    warming = True
+                    warming_subsystem = subsystem
+                    await _emit_step(
+                        phase, step, "warming",
+                        subsystem=subsystem, warming=True, warming_subsystem=subsystem,
+                        note=f"Waiting for {subsystem} to finish starting up…",
+                    )
+            await _emit_step(
+                phase, step, "started",
+                subsystem=subsystem, warming=warming, warming_subsystem=warming_subsystem,
+            )
+            started_at = time.monotonic()
+            try:
+                result = await coro
+            except Exception:
+                await _emit_step(
+                    phase, step, "failed",
+                    subsystem=subsystem, elapsed_ms=(time.monotonic() - started_at) * 1000.0,
+                    warming=warming, warming_subsystem=warming_subsystem,
+                )
+                raise
+            elapsed_ms = (time.monotonic() - started_at) * 1000.0
+            if not warming and elapsed_ms >= _ACTIVATION_STEP_WARMING_MS:
+                warming = True
+                warming_subsystem = subsystem
+            await _emit_step(
+                phase, step, "completed",
+                subsystem=subsystem, elapsed_ms=elapsed_ms,
+                warming=warming, warming_subsystem=warming_subsystem,
+            )
+            return result
+
+        async def _deadline_watcher(activation_started_at: float) -> None:
+            """Soft deadline: past _ACTIVATION_SOFT_DEADLINE_S, emit a periodic
+            'still activating' warming heartbeat naming the in-flight subsystem.
+            Never aborts — aborting mid-activation on the audio path is unsafe."""
+            try:
+                while True:
+                    await asyncio.sleep(_ACTIVATION_WARN_INTERVAL_S)
+                    elapsed = time.monotonic() - activation_started_at
+                    if elapsed < _ACTIVATION_SOFT_DEADLINE_S:
+                        continue
+                    sub = _step_progress.get("subsystem") or "engine"
+                    await _emit_step(
+                        _step_progress.get("phase") or "APPLYING",
+                        "still_activating",
+                        "warming",
+                        subsystem=sub,
+                        elapsed_ms=elapsed * 1000.0,
+                        warming=True,
+                        warming_subsystem=sub,
+                        note=f"Still activating after {elapsed:.0f}s — {sub} is still warming up after the reboot.",
+                    )
+            except asyncio.CancelledError:
+                return
+
         params_applied = 0
         bypass_applied = 0
         topology_reused = False
@@ -910,9 +1047,12 @@ class StateAuthorityActivationService:
         }
         try:
             try:
-                await asyncio.wait_for(
-                    self.owner._validate_snapshot_activation_preflight(detail),
-                    timeout=10.0,
+                await _run_step(
+                    "VALIDATING", "preflight", "database",
+                    asyncio.wait_for(
+                        self.owner._validate_snapshot_activation_preflight(detail),
+                        timeout=10.0,
+                    ),
                 )
             except TimeoutError as exc:
                 raise ValueError("Snapshot activation validation timed out after 10 seconds.") from exc
@@ -934,6 +1074,7 @@ class StateAuthorityActivationService:
             )
             raise
 
+        _deadline_task = asyncio.ensure_future(_deadline_watcher(time.monotonic()))
         try:
             intent = await runtime_state_service.mark_intent_phase(
                 intent=intent,
@@ -942,16 +1083,37 @@ class StateAuthorityActivationService:
                 note="Preparing runtime resources and preload state.",
             )
             activation_topology_metrics["before"] = self._normalize_topology_mutation_stats(
-                await self.get_audio_engine().get_topology_mutation_stats()
+                await _run_step(
+                    "STAGING", "topology_probe", "engine",
+                    self.get_audio_engine().get_topology_mutation_stats(),
+                    readiness=self._engine_ready,
+                )
             )
             # T2448: observe live PipeWire settings; re-force or fail per
             # snapshot policy. Default is "reforce" (silent correction).
             quantum_policy = _extract_quantum_policy(detail)
-            quantum_result = await _enforce_quantum_for_activation(policy=quantum_policy)
-            audio_device_binding_result = await self.owner._apply_snapshot_audio_device_bindings(detail)
-            monitoring_output_result = await self.owner._apply_snapshot_monitoring_output_binding(detail)
-            sonobus_io_binding_result = await self.owner._apply_snapshot_sonobus_io_binding(detail)
-            output_safety_result = await self.owner._apply_snapshot_output_safety_settings(detail)
+            quantum_result = await _run_step(
+                "STAGING", "pipewire_quantum", "pipewire",
+                _enforce_quantum_for_activation(policy=quantum_policy),
+            )
+            audio_device_binding_result = await _run_step(
+                "STAGING", "audio_device_bindings", "engine",
+                self.owner._apply_snapshot_audio_device_bindings(detail),
+                readiness=self._engine_ready,
+            )
+            monitoring_output_result = await _run_step(
+                "STAGING", "monitoring_output", "pipewire",
+                self.owner._apply_snapshot_monitoring_output_binding(detail),
+            )
+            sonobus_io_binding_result = await _run_step(
+                "STAGING", "sonobus_io", "sonobus",
+                self.owner._apply_snapshot_sonobus_io_binding(detail),
+            )
+            output_safety_result = await _run_step(
+                "STAGING", "output_safety", "engine",
+                self.owner._apply_snapshot_output_safety_settings(detail),
+                readiness=self._engine_ready,
+            )
             current_runtime_state = await runtime_state_service.get_live_state()
             previous_preload_state = self.owner._extract_preload_state(current_runtime_state.get("runtime_metrics"))
             preload_instance_ids = [
@@ -965,6 +1127,19 @@ class StateAuthorityActivationService:
             )
             if preload_instance_ids and not preload_hit:
                 await self.chain_service.release_detached_instance_ids(preload_instance_ids)
+            _chains_warming = not self._engine_ready()
+            if _chains_warming:
+                await _emit_step(
+                    "STAGING", "runtime_chains", "warming",
+                    subsystem="engine", warming=True, warming_subsystem="engine",
+                    note="Waiting for engine to finish starting up…",
+                )
+            await _emit_step(
+                "STAGING", "runtime_chains", "started",
+                subsystem="engine", warming=_chains_warming,
+                warming_subsystem="engine" if _chains_warming else None,
+            )
+            _chains_started_at = time.monotonic()
             current_live_detail = await runtime_state_service.get_live_snapshot_payload()
             if not isinstance(current_live_detail, dict):
                 current_live_detail = await self.owner.get_live_snapshot()
@@ -989,6 +1164,13 @@ class StateAuthorityActivationService:
             if preload_instance_ids and preload_hit:
                 await self.chain_service.release_detached_instance_ids(preload_instance_ids)
             await self.session.flush()
+            _chains_elapsed = (time.monotonic() - _chains_started_at) * 1000.0
+            await _emit_step(
+                "STAGING", "runtime_chains", "completed",
+                subsystem="engine", elapsed_ms=_chains_elapsed,
+                warming=_chains_warming or _chains_elapsed >= _ACTIVATION_STEP_WARMING_MS,
+                warming_subsystem="engine",
+            )
             intent = await runtime_state_service.mark_intent_phase(
                 intent=intent,
                 phase="STAGING",
@@ -1044,9 +1226,13 @@ class StateAuthorityActivationService:
             )
             warm_path_succeeded = False
             try:
-                graph_document_apply_result = await self.apply_graph_document_to_engine(
-                    snapshot=snapshot,
-                    normalized=normalized,
+                graph_document_apply_result = await _run_step(
+                    "APPLYING", "engine_graph_apply", "engine",
+                    self.apply_graph_document_to_engine(
+                        snapshot=snapshot,
+                        normalized=normalized,
+                    ),
+                    readiness=self._engine_ready,
                 )
                 if graph_document_apply_result is not None:
                     params_applied = int(graph_document_apply_result.get("plugin_count") or 0)
@@ -1090,7 +1276,11 @@ class StateAuthorityActivationService:
                         )
             activation_topology_metrics = self._build_activation_topology_metrics(
                 activation_topology_metrics["before"],
-                await self.get_audio_engine().get_topology_mutation_stats(),
+                await _run_step(
+                    "APPLYING", "topology_settle", "engine",
+                    self.get_audio_engine().get_topology_mutation_stats(),
+                    readiness=self._engine_ready,
+                ),
             )
             # T2454-B2: thread per-slot adoption stats into the activation
             # intent extra so ops can attribute warm-vs-cold instance reuse
@@ -1168,6 +1358,13 @@ class StateAuthorityActivationService:
                 status="in_progress",
                 note="Running post-apply verification and synchronization.",
             )
+            _verify_warming = not self._engine_ready()
+            await _emit_step(
+                "VERIFYING", "authority_confirm", "started",
+                subsystem="etcd", warming=_verify_warming,
+                warming_subsystem="etcd" if _verify_warming else None,
+            )
+            _verify_started_at = time.monotonic()
             # T2452: collect every sub-sync error across the phase so a single
             # activation surfaces all failures at once, then enforce strictness.
             verify_mode = _extract_verify_mode(detail)
@@ -1337,6 +1534,13 @@ class StateAuthorityActivationService:
                 runtime_live_state=live_runtime_state,
             )
             runtime_metrics["authority_publication"] = authority_publication_result or {}
+            await _emit_step(
+                "VERIFYING", "authority_confirm", "completed",
+                subsystem="etcd",
+                elapsed_ms=(time.monotonic() - _verify_started_at) * 1000.0,
+                warming=_verify_warming or (time.monotonic() - _verify_started_at) * 1000.0 >= _ACTIVATION_STEP_WARMING_MS,
+                warming_subsystem="etcd" if _verify_warming else None,
+            )
             sequencer_runtime_reconcile_result["broadcast_count"] = await self.owner._broadcast_snapshot_brain_runtime_updates(
                 sequencer_runtime_reconcile_result
             )
@@ -1359,6 +1563,14 @@ class StateAuthorityActivationService:
                 runtime_metrics={},
             )
             raise
+        finally:
+            # Stop the soft-deadline "still activating" heartbeat regardless of
+            # how the activation body exited (success, raise, or cancellation).
+            _deadline_task.cancel()
+            try:
+                await _deadline_task
+            except (asyncio.CancelledError, Exception):  # pragma: no cover
+                pass
 
         try:
             hook_results = await self._run_activation_hooks(

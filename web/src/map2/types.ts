@@ -2807,6 +2807,41 @@ export interface SnapshotActivationEventsResponse {
   events: SnapshotActivationAuditEvent[];
 }
 
+// T2534: ephemeral realtime activation-step frames streamed over the
+// snapshot_activation_events WS topic (kind === 'activation_step'). These are
+// NOT persisted audit events — they drive the live "what's happening now" step
+// list during a create/activate, including a "warming" flag for steps waiting
+// on a subsystem that's still starting up after a reboot.
+export type SnapshotActivationStepStatus =
+  | 'warming'
+  | 'started'
+  | 'completed'
+  | 'failed';
+
+export type SnapshotActivationStepPhase =
+  | 'VALIDATING'
+  | 'STAGING'
+  | 'APPLYING'
+  | 'VERIFYING'
+  | string;
+
+export interface SnapshotActivationStepEvent {
+  kind: 'activation_step';
+  request_id: string;
+  snapshot_id: number | null;
+  node_id: string;
+  phase: SnapshotActivationStepPhase;
+  step: string;
+  status: SnapshotActivationStepStatus;
+  index: number;
+  subsystem: string | null;
+  elapsed_ms: number | null;
+  warming: boolean;
+  warming_subsystem: string | null;
+  note: string | null;
+  at: string;
+}
+
 export interface SnapshotActivationIntent {
   request_id: string;
   node_id: string;

@@ -122,6 +122,7 @@ import { NumberInput } from '../components/ParameterControl'
 import { SegmentedLedText } from '../components/Displays/SegmentedLedText'
 import { MapAudioGridIcon } from '../components/icons/map'
 import { LandscapePrompt } from '../components/shared/LandscapePrompt'
+import { SnapshotActivationProgress } from '../components/snapshots/SnapshotActivationProgress'
 import type {
   AuthoritativeAudioStateEnvelope,
   Chain,
@@ -5084,6 +5085,7 @@ export function SnapshotEditorPage() {
   return (
     <div className={`juce-grid-page ${isTabletTouchLayout ? 'is-tablet-mode' : ''}`}>
       <LandscapePrompt componentId="juce-grid" />
+      <SnapshotActivationProgress active={createSnapshotFromEditorMutation.isPending} />
       {snapshotLoadFailureMessage ? (
         <div className="juce-grid-page__inline-error" role="alert">
           <InlineNotification
