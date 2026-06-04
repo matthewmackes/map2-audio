@@ -26,5 +26,8 @@
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.46.1"
+  },
+  "overrides": {
+    "ws": "^8.20.1"
   }
 }

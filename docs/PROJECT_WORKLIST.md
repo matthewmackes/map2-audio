@@ -605,6 +605,14 @@ Architecture deep-dive for the Configurator stack: [`MELOAUDIO_COMMANDER_CONFIGU
 
 ## In Progress
 
+ID: T2535
+Status: [✓] Done
+Title: Fix flaky test_snapshot_service activation test + ws Dependabot alert (both surfaced during T2534)
+Completion note: 2026-06-04 — Claude. Two corrections:
+  (1) **Flaky `test_snapshot_service_activation_rejects_missing_runtime_channels`** — failed order-dependently with `MissingGreenlet` / `Event loop is closed`. Root cause: each suite drives the DB via a bare `asyncio.run(_run())` (fresh loop, then closed); aiosqlite binds every connection + worker thread to its creating loop, so a pooled connection left open when the loop closes can only be closed from that loop — a later `init_async_db` disposing it crashes. Fix in `tests/conftest.py`: autouse fixture wraps `asyncio.run` to `await engine.dispose()` in-loop after the coroutine, before the loop closes (pooling semantics during the test unchanged — `NullPool` was tried and rejected because it altered connection visibility). A second autouse fixture isolates each test under a unique `/map2/audio-state-test/<uuid>` etcd namespace so a sibling activation test's committed state can't leak via the shared authority on a host with live etcd (swept once at session end). Verified on the dev box: load set went 117→**118 passed, 0 failed across 3 runs**, MissingGreenlet=0; broader authority+snapshot slice 102 passed; explicit-config authority tests unaffected.
+  (2) **Dependabot GHSA-58qx-3vcg-4xpx** (`ws` < 8.20.1, "uninitialized memory disclosure", `tui/package-lock.json`) — added `overrides.ws ^8.20.1` to `tui/package.json` and regenerated the lockfile; `ws` now resolves to 8.21.0, zero vulnerable versions remain.
+Last updated: 2026-06-04 - Claude: both fixes verified on dev box.
+
 ID: T2534
 Status: [✓] Done
 Completion note: 2026-06-04 — Claude. Shipped backend step streaming + frontend live step list. Verified on the dev box (MAP2-TESTBED): live WS probe captured all 22 `activation_step` frames in order during a create+activate (preflight → topology_probe → pipewire_quantum → audio_device_bindings → monitoring_output → sonobus_io → output_safety → runtime_chains → engine_graph_apply → topology_settle → authority_confirm), each with started/completed + elapsed; soft-deadline watcher + readiness-based "warming" flags covered by unit tests. Gates green: `pytest tests/test_snapshot_activation_step_streaming.py` (2 passed) + 117 related activation/runtime tests pass; jest `useSnapshotActivationProgress` (5 passed); `tsc --noEmit` 0 errors; `npm run build` clean (component bundled into SnapshotEditorPageContent). Note: pre-existing unrelated red `test_snapshot_service.py::test_snapshot_service_activation_rejects_missing_runtime_channels` (MissingGreenlet) reproduces on clean master — not caused by this change; candidate for an audit-rescue task.
