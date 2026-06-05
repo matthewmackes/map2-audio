@@ -166,7 +166,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1687** Python | **1736** TypeScript | **320** C++/H | **149** Docs | **4789** total commits | **3** stars | **0** forks | **0** open issues
+**1687** Python | **1736** TypeScript | **320** C++/H | **149** Docs | **4794** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -207,14 +207,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`d3e2c961b`](https://github.com/matthewmackes/map2-audio/commit/d3e2c961bb2371f816374d77e730ca15da7cd576) | ship: LooperPage disclosure toggles -> Carbon Button (lin... | Map2 Audio | 2026-06-04 |
+| [`ad201d0ab`](https://github.com/matthewmackes/map2-audio/commit/ad201d0ab61b30e63c8685fadf76b0ac341b23f3) | ship: carbon-allow LooperPage hidden file inputs (lint ra... | Map2 Audio | 2026-06-04 |
+| [`d24bced9d`](https://github.com/matthewmackes/map2-audio/commit/d24bced9d27a1b32777301d1a031619f31fd1042) | ship: SnapshotsBrowserPage program badge -> Carbon Button... | Map2 Audio | 2026-06-04 |
+| [`04b026589`](https://github.com/matthewmackes/map2-audio/commit/04b026589b5343ca2a7e6accf7781ba0d8daacdf) | ship: StaggerPreviewTile replay button -> Carbon Button (... | Map2 Audio | 2026-06-04 |
+| [`7592c5e55`](https://github.com/matthewmackes/map2-audio/commit/7592c5e553e30d919305c4cfd6aacc5d3951c687) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-04 |
 | [`d19084ca4`](https://github.com/matthewmackes/map2-audio/commit/d19084ca4903f8510b57a7bba159bbe378e15656) | ship: Carbon lint ratchet cleanup (safe subset) + Plugin ... | Map2 Audio | 2026-06-04 |
 | [`eb95ab4eb`](https://github.com/matthewmackes/map2-audio/commit/eb95ab4eb30ecad9ee7c657f2e1494659518707c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-04 |
 | [`eed58a50f`](https://github.com/matthewmackes/map2-audio/commit/eed58a50fad72a786d288794e5ff6fb8e2c2aeb4) | T2459-H6: retire stale "MIDI Device Selection Requires AL... | Map2 Audio | 2026-06-04 |
-| [`6975edaff`](https://github.com/matthewmackes/map2-audio/commit/6975edaff4fa3b362a8eda309549db2a77908bf9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-04 |
-| [`3c2a7875c`](https://github.com/matthewmackes/map2-audio/commit/3c2a7875c107409cc99bd6b828457b99e7e0f275) | T2535: fix flaky snapshot-activation test isolation + ws ... | Map2 Audio | 2026-06-04 |
-| [`935e30efe`](https://github.com/matthewmackes/map2-audio/commit/935e30efed471c3076e1ab380a344bfc4e8e58db) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-04 |
-| [`0f7aef5d0`](https://github.com/matthewmackes/map2-audio/commit/0f7aef5d0a4d7a02a6939c5cd3ded460c4a4c141) | T2534: stream realtime activation steps + warming feedbac... | Map2 Audio | 2026-06-04 |
-| [`fe6c9ea97`](https://github.com/matthewmackes/map2-audio/commit/fe6c9ea976d845d6611ed77625d74e0c1819646c) | skills: import audit/ship/plan from MackesWorkstation, ad... | Map2 Audio | 2026-06-04 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
