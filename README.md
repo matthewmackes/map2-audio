@@ -166,7 +166,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1687** Python | **1736** TypeScript | **320** C++/H | **149** Docs | **4794** total commits | **3** stars | **0** forks | **0** open issues
+**1687** Python | **1736** TypeScript | **320** C++/H | **151** Docs | **4796** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -176,12 +176,12 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
+| [Building MAP2: A Chronological Guide](https://github.com/matthewmackes/map2-audio/blob/master/docs/BUILDING_MAP2_A_CHRONOLOGICAL_GUIDE.md) | 2026-06-05 |
+| [Building MAP2 — Slide-by-Slide Deck Outline (for Microsoft Copilot 365 / PowerPoint)](https://github.com/matthewmackes/map2-audio/blob/master/docs/BUILDING_MAP2_SLIDE_DECK_OUTLINE.md) | 2026-06-05 |
 | [MIDI Device Selection Implementation - Complete](https://github.com/matthewmackes/map2-audio/blob/master/docs/MIDI_DEVICE_SELECTION_COMPLETE.md) | 2026-06-04 |
 | [MAP2 Canonical Project Worklist](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-06-04 |
 | [MAP2 — No-Hardware Worklist](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST_NO_HARDWARE.md) | 2026-06-04 |
 | [MAP2 API Contract Standards](https://github.com/matthewmackes/map2-audio/blob/master/docs/api-contract-standards.md) | 2026-05-14 |
-| [Third-Party Notices](https://github.com/matthewmackes/map2-audio/blob/master/docs/THIRD_PARTY_NOTICES.md) | 2026-05-13 |
-| [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-05-10 |
 <!-- RECENT-DOCS:END -->
 
 <p align="right"><a href="https://github.com/matthewmackes/map2-audio/tree/master/docs">Browse all docs &rarr;</a></p>
@@ -207,14 +207,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`7e241ba3c`](https://github.com/matthewmackes/map2-audio/commit/7e241ba3c80ffa9333277115f4866e5d4c98b747) | docs: add MAP2 build-story presentation pack | Map2 Audio | 2026-06-05 |
+| [`42143d86a`](https://github.com/matthewmackes/map2-audio/commit/42143d86a9161c29806078adc5aaa3798663c478) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-05 |
 | [`d3e2c961b`](https://github.com/matthewmackes/map2-audio/commit/d3e2c961bb2371f816374d77e730ca15da7cd576) | ship: LooperPage disclosure toggles -> Carbon Button (lin... | Map2 Audio | 2026-06-04 |
 | [`ad201d0ab`](https://github.com/matthewmackes/map2-audio/commit/ad201d0ab61b30e63c8685fadf76b0ac341b23f3) | ship: carbon-allow LooperPage hidden file inputs (lint ra... | Map2 Audio | 2026-06-04 |
 | [`d24bced9d`](https://github.com/matthewmackes/map2-audio/commit/d24bced9d27a1b32777301d1a031619f31fd1042) | ship: SnapshotsBrowserPage program badge -> Carbon Button... | Map2 Audio | 2026-06-04 |
 | [`04b026589`](https://github.com/matthewmackes/map2-audio/commit/04b026589b5343ca2a7e6accf7781ba0d8daacdf) | ship: StaggerPreviewTile replay button -> Carbon Button (... | Map2 Audio | 2026-06-04 |
 | [`7592c5e55`](https://github.com/matthewmackes/map2-audio/commit/7592c5e553e30d919305c4cfd6aacc5d3951c687) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-04 |
 | [`d19084ca4`](https://github.com/matthewmackes/map2-audio/commit/d19084ca4903f8510b57a7bba159bbe378e15656) | ship: Carbon lint ratchet cleanup (safe subset) + Plugin ... | Map2 Audio | 2026-06-04 |
-| [`eb95ab4eb`](https://github.com/matthewmackes/map2-audio/commit/eb95ab4eb30ecad9ee7c657f2e1494659518707c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-04 |
-| [`eed58a50f`](https://github.com/matthewmackes/map2-audio/commit/eed58a50fad72a786d288794e5ff6fb8e2c2aeb4) | T2459-H6: retire stale "MIDI Device Selection Requires AL... | Map2 Audio | 2026-06-04 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
