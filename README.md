@@ -166,7 +166,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1687** Python | **1736** TypeScript | **320** C++/H | **151** Docs | **4796** total commits | **3** stars | **0** forks | **0** open issues
+**1687** Python | **1736** TypeScript | **320** C++/H | **151** Docs | **4797** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -194,7 +194,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 |  |  |  |
 | :---: | :---: | :---: |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner-3.png" width="280" alt="map2 banner 3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot-Cli.png" width="280" alt="Screenshot Cli"> |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM3.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM2-BANG.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM2 BANG"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM"> |
 <!-- GALLERY:END -->
 
@@ -207,6 +207,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`58f6e0d0b`](https://github.com/matthewmackes/map2-audio/commit/58f6e0d0b333d5b7de829dfef5254a1b040ac757) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-05 |
 | [`7e241ba3c`](https://github.com/matthewmackes/map2-audio/commit/7e241ba3c80ffa9333277115f4866e5d4c98b747) | docs: add MAP2 build-story presentation pack | Map2 Audio | 2026-06-05 |
 | [`42143d86a`](https://github.com/matthewmackes/map2-audio/commit/42143d86a9161c29806078adc5aaa3798663c478) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-05 |
 | [`d3e2c961b`](https://github.com/matthewmackes/map2-audio/commit/d3e2c961bb2371f816374d77e730ca15da7cd576) | ship: LooperPage disclosure toggles -> Carbon Button (lin... | Map2 Audio | 2026-06-04 |
@@ -214,7 +215,6 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | [`d24bced9d`](https://github.com/matthewmackes/map2-audio/commit/d24bced9d27a1b32777301d1a031619f31fd1042) | ship: SnapshotsBrowserPage program badge -> Carbon Button... | Map2 Audio | 2026-06-04 |
 | [`04b026589`](https://github.com/matthewmackes/map2-audio/commit/04b026589b5343ca2a7e6accf7781ba0d8daacdf) | ship: StaggerPreviewTile replay button -> Carbon Button (... | Map2 Audio | 2026-06-04 |
 | [`7592c5e55`](https://github.com/matthewmackes/map2-audio/commit/7592c5e553e30d919305c4cfd6aacc5d3951c687) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-04 |
-| [`d19084ca4`](https://github.com/matthewmackes/map2-audio/commit/d19084ca4903f8510b57a7bba159bbe378e15656) | ship: Carbon lint ratchet cleanup (safe subset) + Plugin ... | Map2 Audio | 2026-06-04 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
