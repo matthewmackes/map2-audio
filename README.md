@@ -166,7 +166,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1687** Python | **1736** TypeScript | **320** C++/H | **151** Docs | **4797** total commits | **3** stars | **0** forks | **0** open issues
+**1687** Python | **1736** TypeScript | **320** C++/H | **151** Docs | **4798** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -207,6 +207,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`680de1495`](https://github.com/matthewmackes/map2-audio/commit/680de14958497a0522e2e849f7ff02afbefe9690) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-06 |
 | [`58f6e0d0b`](https://github.com/matthewmackes/map2-audio/commit/58f6e0d0b333d5b7de829dfef5254a1b040ac757) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-05 |
 | [`7e241ba3c`](https://github.com/matthewmackes/map2-audio/commit/7e241ba3c80ffa9333277115f4866e5d4c98b747) | docs: add MAP2 build-story presentation pack | Map2 Audio | 2026-06-05 |
 | [`42143d86a`](https://github.com/matthewmackes/map2-audio/commit/42143d86a9161c29806078adc5aaa3798663c478) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-05 |
@@ -214,7 +215,6 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | [`ad201d0ab`](https://github.com/matthewmackes/map2-audio/commit/ad201d0ab61b30e63c8685fadf76b0ac341b23f3) | ship: carbon-allow LooperPage hidden file inputs (lint ra... | Map2 Audio | 2026-06-04 |
 | [`d24bced9d`](https://github.com/matthewmackes/map2-audio/commit/d24bced9d27a1b32777301d1a031619f31fd1042) | ship: SnapshotsBrowserPage program badge -> Carbon Button... | Map2 Audio | 2026-06-04 |
 | [`04b026589`](https://github.com/matthewmackes/map2-audio/commit/04b026589b5343ca2a7e6accf7781ba0d8daacdf) | ship: StaggerPreviewTile replay button -> Carbon Button (... | Map2 Audio | 2026-06-04 |
-| [`7592c5e55`](https://github.com/matthewmackes/map2-audio/commit/7592c5e553e30d919305c4cfd6aacc5d3951c687) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-04 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
