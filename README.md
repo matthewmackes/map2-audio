@@ -166,7 +166,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1687** Python | **1736** TypeScript | **320** C++/H | **151** Docs | **4800** total commits | **3** stars | **0** forks | **0** open issues
+**1687** Python | **1736** TypeScript | **320** C++/H | **151** Docs | **4801** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -207,6 +207,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`d06329e9f`](https://github.com/matthewmackes/map2-audio/commit/d06329e9f51b8bf857983745ed963981108a3d18) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-09 |
 | [`5a56c4fad`](https://github.com/matthewmackes/map2-audio/commit/5a56c4fad0408ab6294d282d5e2e4f7d28d1be8e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-08 |
 | [`a93d9af1a`](https://github.com/matthewmackes/map2-audio/commit/a93d9af1ac5db0822ed599824f9570531ee6822e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-07 |
 | [`680de1495`](https://github.com/matthewmackes/map2-audio/commit/680de14958497a0522e2e849f7ff02afbefe9690) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-06 |
@@ -214,7 +215,6 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | [`7e241ba3c`](https://github.com/matthewmackes/map2-audio/commit/7e241ba3c80ffa9333277115f4866e5d4c98b747) | docs: add MAP2 build-story presentation pack | Map2 Audio | 2026-06-05 |
 | [`42143d86a`](https://github.com/matthewmackes/map2-audio/commit/42143d86a9161c29806078adc5aaa3798663c478) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-06-05 |
 | [`d3e2c961b`](https://github.com/matthewmackes/map2-audio/commit/d3e2c961bb2371f816374d77e730ca15da7cd576) | ship: LooperPage disclosure toggles -> Carbon Button (lin... | Map2 Audio | 2026-06-04 |
-| [`ad201d0ab`](https://github.com/matthewmackes/map2-audio/commit/ad201d0ab61b30e63c8685fadf76b0ac341b23f3) | ship: carbon-allow LooperPage hidden file inputs (lint ra... | Map2 Audio | 2026-06-04 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
